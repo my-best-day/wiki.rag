@@ -1,0 +1,24 @@
+# files to be ignored
+**/*.pyc
+.ipynb_checkpoints
+.env
+settings.json
+config.ini
+local_config.ini
+**/.DS_Store
+# soft links to directories
+/data
+/ignore
+
+
+# directories to be ignored
+# must end with / to avoid ignoring files with the same prefix
+# anywhere in the directory tree
+venv/
+tmp/
+/movies
+/instacart
+/dickens
+/wiki
+**/checkpoints/
+**/logs/
