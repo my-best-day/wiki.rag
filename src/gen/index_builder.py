@@ -3,18 +3,46 @@ import time
 import logging
 import argparse
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List
 
 logger = logging.getLogger(__name__)
 
 
-class Chunk:
+class Element:
     def __init__(self, offset: int, text: str):
         self.offset = offset
         self.text = text
 
     def __str__(self):
         return f"Chunk(offset={self.offset}, text={self.text})"
+
+
+class Chunk(Element):
+    pass
+
+
+class Header(Element):
+    pass
+
+
+class Paragraph(Element):
+    pass
+
+
+class Article:
+    def __init__(self, header: Header, paragraphs: List[Paragraph]):
+        self.header = header
+        self.paragraphs = paragraphs
+
+
+class ByteReader:
+    def __init__(self, path: Path):
+        self.path = path
+        self.file = open(path, "rb")
+
+    def read(self, offset: int, size: int) -> bytes:
+        self.file.seek(offset)
+        return self.file.read(size)
 
 
 class IndexBuilder:
@@ -26,52 +54,74 @@ class IndexBuilder:
     ARTICLE_HEADER_REGEX = re.compile(ARTICLE_HEADER_PATTERN)
 
     # hold one: PARAGRAPH_PATTERN = br'^.+?\r?\n'
-    PARAGRAPH_PATTERN = br'[\r\n]*[^\r\n]+[\r\n]*'
+    PARAGRAPH_PATTERN = br'[\r\n]*[^\r\n]+[\r\n]+'
     PARAGRAPH_REGEX = re.compile(PARAGRAPH_PATTERN)
 
     def __init__(self, args):
         self.args = args
         self.collect = []
+        self.reader = ByteReader(args.text)
 
     def build(self):
+        remainder = b""
         for chunk in self.read_chunks():
-            start = 0
+            if remainder:
+                chunk.text = remainder + chunk.text
+                chunk.offset -= len(remainder)
+                remainder = b""
+            print("CCC CCC CCC CCC: <<<", chunk.text[-100:].decode('utf-8'), ">>>")
+            offset = chunk.offset
             text = chunk.text
             while text:
                 match = self.ARTICLE_HEADER_REGEX.match(text)
                 if match:
                     header = match.group(0)
-                    self.collect.append([header])
-                    start = len(header)
-                    text = text[start:]
+                    self.collect.append([Header(offset, header)])
+                    length = len(header)
+                    text = text[length:]
                 else:
                     match = self.PARAGRAPH_REGEX.match(text)
                     if match:
                         paragraph = match.group(0)
-                        self.collect[-1].append(paragraph)
-                        start = len(paragraph)
-                        text = text[start:]
-                        # print("PARAGRAPH: <<<", paragraph.decode('utf-8')[:200], ".....",
-                        #       paragraph.decode('utf-8')[-200:], ">>>")
+                        self.collect[-1].append(Paragraph(offset, paragraph))
+                        length = len(paragraph)
+                        text = text[length:]
                     else:
-                        raise ValueError(f"No match found for {text}")
+                        remainder = text
+                        text = b""
+                offset += length
 
     def dump(self):
         print("Number of articles:", len(self.collect))
         for article in self.collect:
             header = article[0]
             print("." * 80)
-            print("*** HEADER: <<<", header.decode('utf-8'), ">>>")
+            self.say("HEADER", header)
             for paragraph in article[1:]:
-                if len(paragraph) < 200:
-                    print("*** PARAGRAPH: sss", paragraph.decode('utf-8'), ">>>")
-                else:
-                    m = 100
-                    print("*** PARAGRAPH: <<<", paragraph.decode('utf-8')[:m], "....",
-                          paragraph.decode('utf-8')[-m:], ">>>")
+                self.say("PARAGRAPH", paragraph)
             print("<" * 80)
 
-    def read_chunks(self) -> Generator[Chunk, None, None]:
+    def say(self, caption: str, element: Element):
+        see = self.reader.read(element.offset, len(element.text))
+        caption_length = len(caption)
+        see_caption = "SEE:"
+        see_caption_length = len(see_caption)
+        if see_caption_length < caption_length:
+            see_caption = see_caption.ljust(caption_length)
+        see_caption = see_caption[:caption_length]
+
+        print(caption, ">>>", self.format_text(element.text), "<<<")
+        print(see_caption, ">>>", self.format_text(see), "<<<")
+
+    @staticmethod
+    def format_text(bytes: bytes) -> str:
+        text = bytes.decode('utf-8')
+        if len(text) > 200:
+            m = 100
+            return text[:m] + "...." + text[-m:]
+        return text
+
+    def read_chunks(self) -> Generator[Element, None, None]:
         with open(self.args.text, "rb") as inp:
             buffer = b""
             while True:
@@ -91,7 +141,7 @@ class IndexBuilder:
                     text = chunk[:e.start]
                     buffer = chunk[e.start:]
 
-                yield Chunk(offset, text)
+                yield Element(offset, text)
 
 
 def main(args):
