@@ -1,0 +1,86 @@
+ZZZ container: ['hello', ' world'] -> bytes: b'hello world' but when we clean ' world'
+  we get 'world' so the clean_length is 10 instead of 11
+ZZZ continue to use common tests for container
+ZZZ maybe use test container with all concrete classes?
+ZZZ remove duplicates
+
+
+1. Min-threshold, soft-max, hard-max, and overlaps.
+2. Token-to-character conversion (~3.9 per token).
+3. Segmentation and encoding on cleaned text while
+   tracking raw and cleaned text lengths separately.
+
+
+
+max_len = 1024
+
+max = n
+
+if index == 0:
+  i_overlap = 0
+  f_overlap = 0.1 N
+
+else:
+  i_overlap = 0.1 N
+  f_overlap = 0.1 N
+
+soft_max = 0.8 N
+
+
+while True:
+  if can add fragment to segment:
+    add fragment to segment
+    break
+  else:
+    if segment is empty:
+    segment = new segment
+
+article_segments = []
+segment = Segment()
+article_segments.append(segment)
+
+while section = sections.shift():
+    if segment.clean_length + section.clean_length <= max_len:
+
+      # simple case, just add section
+      add section to segment
+      continue
+
+    if current segment length == 0:
+      # if first section is too long, split it
+      first, remainder = section.split(max-len)
+      segment.append(first)
+      sections.unshift(remainder)
+      continue
+
+    # add overlap to the end of the current segment
+    overlap = min(max_overlap, max_len - current segment length)
+    segment.append(section[-overlap:])
+
+    # create a new segment
+
+
+
+
+
+
+for a_index, article in articles:
+  segment_length = 0
+  for p_index, paragraph in article:
+    soft_max = 0.9 * N if p_index == 0 else 0.8 * soft_max
+
+    if segment_length + len(paragraph) < hard_max:
+      segment.append(paragraph)
+
+
+    if segment_length + len(paragraph) < soft_max:
+      segment_length += len(paragraph)
+    elif segment_length + len(paragraph) < hard_max:
+      segment_length += len(paragraph)
+    elif segment_length == 0:
+      segment_length = paragraph[:soft_max]
+      segment_length = paragraph[soft_max:]
+
+      segment = new segment(paragraph)
+      segment_length = len(paragraph)
+      yield segment_length, article, p_index
