@@ -8,6 +8,8 @@ class Container(Element, ABC):
     A Container is an element that contains (group) other elements.
     """
     def __init__(self):
+        Element.__init__(self)
+        ABC.__init__(self)
         # for caching, see reset()
         self.__bytes: Union[bytes, None] = None
         self.__text: Union[str, None] = None

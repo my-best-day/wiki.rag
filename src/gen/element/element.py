@@ -17,6 +17,19 @@ class Element(ABC):
     CLEAN_TEXT_PATTERN = r'[^a-zA-Z0-9\s,.!?\'"-]+'
     CLEAN_TEXT_REGEX = re.compile(CLEAN_TEXT_PATTERN)
 
+    __next_index = 0
+
+    def __init__(self):
+        self.index = Element.next_index()
+
+    def __str__(self):
+        return f"{self.__class__.__name__} (index={self.index})"
+
+    @staticmethod
+    def next_index():
+        Element.__next_index += 1
+        return Element.__next_index
+
     @property
     def offset(self) -> int:
         """

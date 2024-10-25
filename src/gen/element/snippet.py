@@ -1,10 +1,8 @@
 #
 # WIP
 #
-from typing import TextIO, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from gen.element.element import Element
+from typing import TextIO
+from gen.element.element import Element
 
 
 class Snippet(Element):

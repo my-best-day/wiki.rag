@@ -1,9 +1,8 @@
 from typing import Tuple, TYPE_CHECKING
+from gen.element.element import Element
 
 if TYPE_CHECKING:
     from gen.element.fragment import Fragment
-
-from gen.element.element import Element
 
 
 def is_positive_number(value):
@@ -17,6 +16,8 @@ class Section(Element):
     """
 
     def __init__(self, offset: int, _bytes: bytes) -> None:
+        super().__init__()
+
         assert isinstance(_bytes, bytes), f'bytes must be a bytes object (got {type(_bytes)})'
         assert is_positive_number(offset), f'offset must be a positive number (got {type(offset)})'
 
