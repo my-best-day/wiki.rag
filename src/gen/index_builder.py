@@ -41,7 +41,6 @@ class IndexBuilder(Chainable):
         self.articles: List[Article] = []
 
     def forward(self, element: Section):
-        logger.info(f"Forwarding {element} in {self.__class__.__name__}")
         super().forward(element)
 
     def build(self):
@@ -77,7 +76,6 @@ class IndexBuilder(Chainable):
                         text = b""
                 offset += length
 
-        logger.info("@@@ @@@ @@@ Forwarding poison pill")
         self.forward(None)
 
     def read_chunks(self) -> Generator[Section, None, None]:

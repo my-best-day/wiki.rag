@@ -37,16 +37,11 @@ def main(args):
         chainable_builder.start()
         chainable_validator.start()
 
-    logger.info("Sleeping...")
-    time.sleep(5)
-    logger.info("Building index")
     builder.build()
-    logger.info("Index built")
 
     if args.mode == "queued":
-        logger.info("Stopping queued handlers")
-        # chainable_builder.stop()
-        # chainable_validator.stop()
+        chainable_builder.stop()
+        chainable_validator.stop()
 
 
 if __name__ == '__main__':

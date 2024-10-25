@@ -44,7 +44,6 @@ class ElementValidator(Handler, Chainable):
         super().start()
 
     def handle(self, element: Element):
-        logger.info("Handling element")
         if element is not None:
             self.validate_element(element)
         else:
@@ -52,7 +51,6 @@ class ElementValidator(Handler, Chainable):
             self.forward(None)
 
     def validate_element(self, element: Element):
-        logger.info(f"Validating element {element}")
         snippet = self.reader.read(element.offset, len(element.bytes))
         if snippet != element.bytes:
             caption = element.__class__.__name__
@@ -63,5 +61,4 @@ class ElementValidator(Handler, Chainable):
         self.forward(element)
 
     def forward(self, element: Element):
-        logger.info(f"Forwarding {element} in {self.__class__.__name__}")
         super().forward(element)
