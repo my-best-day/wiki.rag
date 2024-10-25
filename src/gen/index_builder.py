@@ -10,40 +10,21 @@ Here we have
 - IndexDumper: dumps the index in a human readable format
 """
 import re
-import time
-import logging
 import argparse
-from pathlib import Path
+import logging
 from typing import Generator, List
+from gen.element.chunk import Chunk
+from gen.element.header import Header
 from gen.element.article import Article
 from gen.element.section import Section
-from gen.element.header import Header
 from gen.element.paragraph import Paragraph
-from gen.element.chunk import Chunk
+from plumbing.chainable import Chainable
+
 
 logger = logging.getLogger(__name__)
 
 
-class ByteReader:
-    def __init__(self, path: Path):
-        self.path = path
-        self.file = open(path, "rb")
-
-    def read(self, offset: int, size: int) -> bytes:
-        self.file.seek(offset)
-        return self.file.read(size)
-
-
-def format_text(bytes: bytes) -> str:
-    text = bytes.decode('utf-8')
-    if len(text) > 200:
-        m = 100
-        return text[:m] + "...." + text[-m:]
-    return text
-
-
-class IndexBuilder:
-
+class IndexBuilder(Chainable):
     CHUNK_SIZE_BYTES = 2 ** 15  # 32KB
 
     # looks for lines that looks like ' = Heading 1 = '
@@ -55,9 +36,13 @@ class IndexBuilder:
     PARAGRAPH_REGEX = re.compile(PARAGRAPH_PATTERN)
 
     def __init__(self, args):
-        self.args = args
-        self.articles = []
-        self.reader = ByteReader(args.text)
+        super().__init__()
+        self.args: argparse.Namespace = args
+        self.articles: List[Article] = []
+
+    def forward(self, element: Section):
+        logger.info(f"Forwarding {element} in {self.__class__.__name__}")
+        super().forward(element)
 
     def build(self):
         remainder = b""
@@ -76,6 +61,8 @@ class IndexBuilder:
                     self.articles.append(article)
                     length = header.byte_length
                     text = text[length:]
+                    self.forward(header)
+
                 else:
                     match = self.PARAGRAPH_REGEX.match(text)
                     if match:
@@ -83,10 +70,15 @@ class IndexBuilder:
                         self.articles[-1].append_paragraph(paragraph)
                         length = paragraph.byte_length
                         text = text[length:]
+                        self.forward(paragraph)
+
                     else:
                         remainder = text
                         text = b""
                 offset += length
+
+        logger.info("@@@ @@@ @@@ Forwarding poison pill")
+        self.forward(None)
 
     def read_chunks(self) -> Generator[Section, None, None]:
         with open(self.args.text, "rb") as inp:
@@ -117,82 +109,3 @@ class IndexBuilder:
                     buffer = chunk[e.start:]
 
                 yield Chunk(offset, text)
-
-
-class IndexValidator:
-
-    def __init__(self, args):
-        self.args = args
-        self.reader = ByteReader(args.text)
-
-    def validate(self, articles: List[Article]):
-        for article in articles:
-            for element in article.elements:
-                snippet = self.reader.read(element.offset, len(element.bytes))
-                if snippet != element.bytes:
-                    caption = element.__class__.__name__
-
-                    raise ValueError(f"snippet does not match section at offset {element.offset}:\n"
-                                     f"{caption}: <<<{format_text(element.bytes)}>>>\n"
-                                     f"Snippet: <<<{format_text(snippet)}>>>")
-
-
-class IndexDumper:
-
-    def __init__(self, args):
-        self.args = args
-
-    def dump(self, articles: List[Article]):
-        print("Number of articles:", len(articles))
-        for article in articles:
-            print("." * 80)
-            for element in article.elements:
-                caption = element.__class__.__name__
-                print(f"{caption}: <<<{format_text(element.bytes)}>>>")
-            print("^" * 80)
-
-
-def main(args):
-
-    print("Building index...")
-    builder = IndexBuilder(args)
-    builder.build()
-
-    print("Validating index...")
-    validator = IndexValidator(args)
-    validator.validate(builder.articles)
-
-    print("Dumping index...")
-    dumper = IndexDumper(args)
-    dumper.dump(builder.articles)
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser(description="Show random paragraphs from a JSON file.")
-    parser.add_argument("-t", "--text", type=str, help="Path to the text file")
-    parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
-    parser.add_argument("-m", "--max-len", type=int, help="Maximum segment length")
-    parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
-    args = parser.parse_args()
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    if args.text is None:
-        parser.error("Please provide the path to the text file")
-    if args.text != "stdin":
-        text = Path(args.text)
-        if not text.exists():
-            parser.error(f"File {args.text} not found")
-
-    if args.path_prefix is None:
-        parser.error("Please provide the path prefix")
-
-    if args.max_len is None:
-        parser.error("Please provide the maximum segment length")
-
-    main(args)
-    logger.debug(f"Elapsed time: {time.time() - t0:.2f} seconds")

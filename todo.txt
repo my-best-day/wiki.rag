@@ -84,3 +84,100 @@ for a_index, article in articles:
       segment = new segment(paragraph)
       segment_length = len(paragraph)
       yield segment_length, article, p_index
+
+
+
+
+indexer(Dispatcher):
+  def add_paragraph(paragraph)
+    self.articles[-1].append_paragraph(paragraph)
+    super().handle(paragraph)
+
+validator(Dispatcher):
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+
+    def validate(self, paragraph):
+      self.validate(paragraph)
+      super().handle(paragraph)
+
+
+def main_simple_in_process():
+  indexer = Indexer()
+  validator = Validator()
+  dumper = Dumper()
+
+  indexer.register_handler(lambda par: validator.validate(par))
+  indexer.register_handler(lambda par: dumper.dump(par))
+
+
+def main_queued_threaded():
+  indexer = Indexer()
+  validator = Validator()
+  dumper = Dumper()
+
+  validator_stage = QueuedStage()
+  validator_stage.register_handler(lambda par: validator.validate(par))
+  indexer.register_handler(validator_stage)
+
+  dumper_stage = QueuedStage()
+  dumper_stage.register_handler(lambda par: dumper.dump(par))
+  indexer.register_handler(dumper_stage)
+
+  validator_stage.start()
+  dumper_stage.start()
+
+  indexer.index(path)
+
+  validator_stage.stop()
+  dumper_stage.stop()
+
+
+
+########################################################
+
+
+IndexBuilder:
+    def handle_element(element):
+        pass
+
+SnippetValidator:
+    def __init__(self, args: argparse.Namespace):
+        self.args = args
+
+    def validate_element(element):
+        self._validate_element(element)
+        self.handle_element(element)
+
+    def handle_element(element):
+        pass
+
+IndexDumper:
+    def dump_element(element):
+        self._dump_element(element)
+        self.handle_element(element)
+
+    def dump_element(element):
+        pass
+
+
+
+def main():
+  builder = IndexBuilder()
+
+  if mode == "inline":
+      validator = SnippetValidator(args)
+      builder.register_handler(lambda element: validator.validate_element(element))
+
+      dumper = IndexDumper(args)
+      builder.register_handler(lambda element: dumper.dump_element(element))
+  else:
+      validator_stage = QueuedStage().delayed_initialize(lambda self: self.)
+
+      validator = QueuedStage()
+      validator.register_handler(SnippetValidator())
+
+  dumper = IndexDumper()
+
+  builder.register_handler(validator)
+  builder.register_handler(dumper)
