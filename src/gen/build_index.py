@@ -5,7 +5,8 @@ from pathlib import Path
 from gen.index_builder import IndexBuilder
 from gen.element_dumper import ElementDumper
 from gen.element_validator import ElementValidator
-from plumbing.queued_handler import QueuedHandler
+from plumbing.queued_handler import QueuedHandler, JsonQueuedHandler, \
+    BatchedQueuedHandler, JBQueuedHandler
 
 
 logger = logging.getLogger(__name__)
@@ -14,9 +15,19 @@ logger = logging.getLogger(__name__)
 def main(args):
     # Chain: builder -> chainable_builder -> validator -> chainable_validator -> dumper
 
+    choice = 3
+    if choice == 1:
+        queued_handler_class = JsonQueuedHandler
+    elif choice == 2:
+        queued_handler_class = BatchedQueuedHandler
+    elif choice == 3:
+        queued_handler_class = JBQueuedHandler
+    else:
+        queued_handler_class = QueuedHandler
+
     builder: IndexBuilder = IndexBuilder(args)
     if args.mode == "queued":
-        chainable_builder = QueuedHandler("builder -> validator")
+        chainable_builder = queued_handler_class("builder -> validator")
         builder.chain(chainable_builder)
     else:
         chainable_builder = builder
@@ -25,7 +36,7 @@ def main(args):
     chainable_builder.chain(validator)
 
     if args.mode == "queued":
-        chainable_validator = QueuedHandler("validator -> dumper")
+        chainable_validator = queued_handler_class("validator -> dumper")
         validator.chain(chainable_validator)
     else:
         chainable_validator = validator
@@ -34,14 +45,18 @@ def main(args):
     chainable_validator.chain(dumper)
 
     if args.mode == "queued":
-        chainable_builder.start()
-        chainable_validator.start()
+        getattr(chainable_builder, 'start', lambda: None)()
+        getattr(chainable_validator, 'start', lambda: None)()
 
     builder.build()
 
     if args.mode == "queued":
-        chainable_builder.stop()
-        chainable_validator.stop()
+        getattr(chainable_builder, 'stop', lambda: None)()
+        getattr(chainable_validator, 'stop', lambda: None)()
+
+    article_count = len(builder.articles)
+    paragraph_count = sum(len(article._paragraphs) for article in builder.articles)
+    print(f"Done. {article_count} articles, {paragraph_count} paragraphs")
 
 
 if __name__ == '__main__':

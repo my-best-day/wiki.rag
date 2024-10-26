@@ -28,6 +28,18 @@ class Section(Element):
         self.__text = None
         self.__clean_text = None
 
+    def to_data(self):
+        data = super().to_data()
+        data['offset'] = self.offset
+        data['text'] = self.text
+        return data
+
+    @classmethod
+    def from_data(cls, data):
+        section = Section(data['offset'], data['text'].encode('utf-8'))
+        section.index = data['index']
+        return section
+
     @property
     def offset(self) -> int:
         return self._offset

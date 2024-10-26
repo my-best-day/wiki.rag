@@ -1,4 +1,5 @@
 import re
+import json
 import unicodedata
 from abc import ABC
 
@@ -29,6 +30,30 @@ class Element(ABC):
     def next_index():
         Element.__next_index += 1
         return Element.__next_index
+
+    def to_data(self):
+        return {
+            'class': self.__class__.__name__,
+            'index': self.index
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_data())
+
+    @classmethod
+    def hierarchy_from_json(cls, json_string):
+        data = json.loads(json_string)
+        return cls.hierarchy_from_data(data)
+
+    @classmethod
+    def hierarchy_from_data(cls, data):
+        if data['class'] == cls.__name__:
+            return cls.from_data(data)
+        for subclass in cls.__subclasses__():
+            result = subclass.hierarchy_from_data(data)
+            if result is not None:
+                return result
+        return None
 
     @property
     def offset(self) -> int:
