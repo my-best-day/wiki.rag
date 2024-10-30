@@ -22,6 +22,5 @@ class ElementDumper(Handler):
         self.dump(element)
 
     def dump(self, element: Element):
-        # caption = element.__class__.__name__
-        # logger.info(f"{caption}: <<<{format_text(element.bytes)}>>>")
-        pass
+        caption = element.__class__.__name__
+        logger.info(f"{caption}: <<<{format_text(element.bytes)}>>>")
