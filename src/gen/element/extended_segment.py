@@ -1,4 +1,4 @@
-from typing import Iterator, Union
+from typing import Iterator, Optional
 from gen.element.container import Container
 from gen.element.element import Element
 from gen.element.segment import Segment
@@ -10,16 +10,17 @@ class ExtendedSegment(Container):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._before_overlap: Union[Element, None] = None
+        self._before_overlap: Optional[bytes] = None
+        # most likely we will segment.segment = segment. init _segment to None
         self._segment: Segment = Segment()
-        self._after_overlap: Union[Element, None] = None
+        self._after_overlap: Optional[bytes] = None
 
     @property
-    def before_overlap(self) -> Union[Element, None]:
+    def before_overlap(self) -> Optional[bytes]:
         return self._before_overlap
 
     @before_overlap.setter
-    def before_overlap(self, value: Union[Element, None]) -> None:
+    def before_overlap(self, value: bytes) -> None:
         self._before_overlap = value
         self.reset()
 
@@ -33,11 +34,11 @@ class ExtendedSegment(Container):
         self.reset()
 
     @property
-    def after_overlap(self) -> Union[Element, None]:
+    def after_overlap(self) -> Optional[bytes]:
         return self._after_overlap
 
     @after_overlap.setter
-    def after_overlap(self, value: Union[Element, None]) -> None:
+    def after_overlap(self, value: bytes) -> None:
         self._after_overlap = value
         self.reset()
 
@@ -58,8 +59,7 @@ class ExtendedSegment(Container):
         """
         The offset of the extended segment.
         """
+        offset = self.segment.offset
         if self.before_overlap:
-            offset = self.before_overlap.offset
-        else:
-            offset = self.segment.offset
+            offset -= len(self.before_overlap)
         return offset
