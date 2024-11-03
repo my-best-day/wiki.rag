@@ -58,8 +58,16 @@ class TestElement(unittest.TestCase):
         self.assertIsInstance(first, Fragment)
         self.assertIsInstance(second, Fragment)
         self.assertEqual(first.offset, 23)
+        self.assertEqual(first.bytes, b'h')
+        self.assertEqual(second.offset, 24)
+        self.assertEqual(second.bytes, b'\xc3\xa9llo world')
+
+        first, second = section.split(2, after_char=True)
+        self.assertIsInstance(first, Fragment)
+        self.assertIsInstance(second, Fragment)
+        self.assertEqual(first.offset, 23)
         self.assertEqual(first.bytes, b'h\xc3\xa9')
-        self.assertEqual(second.offset, 25)
+        self.assertEqual(second.offset, 26)
         self.assertEqual(second.bytes, b'llo world')
 
 

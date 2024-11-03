@@ -3,6 +3,7 @@ import re
 import json
 import unicodedata
 from abc import ABC
+from xutils.encoding_utils import EncodingUtils
 
 if TYPE_CHECKING:
     from gen.element.fragment import Fragment
@@ -135,13 +136,14 @@ class Element(ABC):
         text = text.lower()
         return text
 
-    def split(self, byte_length: int, include_first: bool = True,
+    def split(self, byte_length: int, after_char: bool = False, include_first: bool = True,
               include_remainder: bool = True) -> Tuple[Optional['Fragment'], Optional['Fragment']]:
         """
         Split the element into a first and remainder fragment, adjusting the split point if
         necessary to avoid splitting in the middle of a multi-byte character.
         Args:
             byte_length: the length of the first fragment
+            after_char: if True, the split point is after the character, otherwise it is before
             include_first: whether to include the first fragment
             include_remainder: whether to include the remainder fragment
         Returns:
@@ -152,7 +154,7 @@ class Element(ABC):
 
         first, remainder = None, None
         # prevent splitting in the middle of a multi-byte character
-        split_point = self.valid_utf8_length(self.bytes, byte_length)
+        split_point = EncodingUtils.adjust_split_point(self.bytes, byte_length, after_char)
 
         if include_first:
             first_bytes = self.bytes[:split_point]
@@ -163,20 +165,3 @@ class Element(ABC):
             remainder = Fragment(self, self.offset + split_point, remainder_bytes)
 
         return first, remainder
-
-    @staticmethod
-    def valid_utf8_length(_bytes: bytes, split_point: int) -> int:
-        """Calculate the maximum valid UTF-8 byte length."""
-        assert abs(split_point) <= len(_bytes)
-
-        if split_point >= 0:
-            effective_split_point = split_point
-        else:
-            effective_split_point = len(_bytes) + split_point
-
-        try:
-            _bytes[:effective_split_point].decode('utf-8')
-        except UnicodeDecodeError as e:
-            effective_split_point = e.end
-
-        return effective_split_point
