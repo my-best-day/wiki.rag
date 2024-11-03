@@ -1,8 +1,4 @@
-from typing import Tuple, TYPE_CHECKING
 from gen.element.element import Element
-
-if TYPE_CHECKING:
-    from gen.element.fragment import Fragment
 
 
 def is_positive_number(value):
@@ -72,10 +68,11 @@ class Section(Element):
     def clean_length(self) -> int:
         return len(self.clean_text)
 
-    def prepend_bytes(self, _bytes: bytes) -> None:
-        self._bytes = _bytes + self._bytes
-        self._offset -= len(_bytes)
-        self.reset()
+    # TODO: remove this, not used
+    # def prepend_bytes(self, _bytes: bytes) -> None:
+    #     self._bytes = _bytes + self._bytes
+    #     self._offset -= len(_bytes)
+    #     self.reset()
 
     def append_bytes(self, _bytes: bytes) -> None:
         self._bytes += _bytes
@@ -84,10 +81,3 @@ class Section(Element):
     def reset(self) -> None:
         self.__text = None
         self.__clean_text = None
-
-    def split(self, byte_length: int) -> Tuple['Fragment', 'Fragment']:
-        from gen.element.fragment import Fragment
-
-        first = Fragment(self, self.offset, self.bytes[:byte_length])
-        remainder = Fragment(self, self.offset + byte_length, self.bytes[byte_length:])
-        return first, remainder

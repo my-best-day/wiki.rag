@@ -10,17 +10,17 @@ class ExtendedSegment(Container):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._before_overlap: Optional[bytes] = None
+        self._before_overlap: Optional[Element] = None
         # most likely we will segment.segment = segment. init _segment to None
         self._segment: Segment = Segment()
-        self._after_overlap: Optional[bytes] = None
+        self._after_overlap: Optional[Element] = None
 
     @property
-    def before_overlap(self) -> Optional[bytes]:
+    def before_overlap(self) -> Optional[Element]:
         return self._before_overlap
 
     @before_overlap.setter
-    def before_overlap(self, value: bytes) -> None:
+    def before_overlap(self, value: Element) -> None:
         self._before_overlap = value
         self.reset()
 
@@ -34,11 +34,11 @@ class ExtendedSegment(Container):
         self.reset()
 
     @property
-    def after_overlap(self) -> Optional[bytes]:
+    def after_overlap(self) -> Optional[Element]:
         return self._after_overlap
 
     @after_overlap.setter
-    def after_overlap(self, value: bytes) -> None:
+    def after_overlap(self, value: Element) -> None:
         self._after_overlap = value
         self.reset()
 
@@ -59,7 +59,9 @@ class ExtendedSegment(Container):
         """
         The offset of the extended segment.
         """
-        offset = self.segment.offset
         if self.before_overlap:
-            offset -= len(self.before_overlap)
+            offset = self.before_overlap.offset
+        else:
+            offset = self.segment.offset
+
         return offset

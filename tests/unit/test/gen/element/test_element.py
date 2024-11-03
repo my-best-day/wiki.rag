@@ -1,5 +1,7 @@
 import unittest
+from gen.element.section import Section
 from gen.element.element import Element
+from gen.element.fragment import Fragment
 
 
 class TestElement(unittest.TestCase):
@@ -35,6 +37,30 @@ class TestElement(unittest.TestCase):
         long_input = "A" * n + "@#$%" * m + "Z" * n
         expected_output = "a" * n + " " + "z" * n
         self.assertEqual(Element.normalize_text(long_input), expected_output.strip())
+
+    def test_split_naive(self):
+        offset = 23
+        _bytes = b'h\xc3\xa9llo world'
+        section = Section(offset, _bytes)
+        first, second = section.split(7)
+        self.assertIsInstance(first, Fragment)
+        self.assertIsInstance(second, Fragment)
+        self.assertEqual(first.offset, 23)
+        self.assertEqual(first.bytes, b'h\xc3\xa9llo ')
+        self.assertEqual(second.offset, 30)
+        self.assertEqual(second.bytes, b'world')
+
+    def test_split_multi_bytes_char(self):
+        offset = 23
+        _bytes = b'h\xc3\xa9llo world'
+        section = Section(offset, _bytes)
+        first, second = section.split(2)
+        self.assertIsInstance(first, Fragment)
+        self.assertIsInstance(second, Fragment)
+        self.assertEqual(first.offset, 23)
+        self.assertEqual(first.bytes, b'h\xc3\xa9')
+        self.assertEqual(second.offset, 25)
+        self.assertEqual(second.bytes, b'llo world')
 
 
 if __name__ == '__main__':

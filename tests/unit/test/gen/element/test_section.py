@@ -1,6 +1,5 @@
 import unittest
 from gen.element.section import Section
-from gen.element.fragment import Fragment
 
 
 class TestSection(unittest.TestCase):
@@ -94,30 +93,6 @@ class TestSection(unittest.TestCase):
         self.assertEqual(section.bytes, b'h\xc3\xa9llo!abc')
         self.assertEqual(section.text, 'héllo!abc')
         self.assertEqual(section.clean_text, 'hello!abc')
-
-    def test_prepend_and_reset(self):
-        offset = 23
-        _bytes = b'h\xc3\xa9llo!'
-        section = self.create_section(offset, _bytes)
-        self.assertEqual(section.text, 'héllo!')
-        self.assertEqual(section.clean_text, 'hello!')
-        section.prepend_bytes(b'abc')
-        self.assertEqual(section.offset, offset - 3)
-        self.assertEqual(section.bytes, b'abch\xc3\xa9llo!')
-        self.assertEqual(section.text, 'abchéllo!')
-        self.assertEqual(section.clean_text, 'abchello!')
-
-    def test_split(self):
-        offset = 23
-        _bytes = b'h\xc3\xa9llo world'
-        section = self.create_section(offset, _bytes)
-        first, second = section.split(7)
-        self.assertIsInstance(first, Fragment)
-        self.assertIsInstance(second, Fragment)
-        self.assertEqual(first.offset, 23)
-        self.assertEqual(first.bytes, b'h\xc3\xa9llo ')
-        self.assertEqual(second.offset, 30)
-        self.assertEqual(second.bytes, b'world')
 
 
 if __name__ == '__main__':

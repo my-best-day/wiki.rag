@@ -79,12 +79,6 @@ class TestArticle(unittest.TestCase):
         self.assertEqual(self.article.text, 'hello <<sweet>> worlddear')
         self.assertEqual(self.article.clean_text, 'hello sweet worlddear')
 
-    def test_prepend_and_reset(self):
-        self.paragraphs[0].prepend_bytes(b'hey$$$ ')
-        self.assertEqual(self.article.offset, self.paragraphs[0].offset)
-        self.assertEqual(self.article.text, 'hey$$$ helloworlddear')
-        self.assertEqual(self.article.clean_text, 'hey helloworlddear')
-
     def test_elements_property_returns_iterator(self):
         self.assertIsInstance(self.article.elements, Iterator)
 
