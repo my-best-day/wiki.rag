@@ -19,7 +19,7 @@ from gen.element.article import Article
 from gen.element.section import Section
 from gen.element.paragraph import Paragraph
 from plumbing.chainable import Chainable
-
+from xutils.encoding_utils import EncodingUtils
 
 logger = logging.getLogger(__name__)
 
@@ -96,14 +96,13 @@ class IndexBuilder(Chainable):
                 offset -= len(buffer)
 
                 # check if there is a split Unicode character in the end of chunk
-                try:
-                    chunk.decode('utf-8')
-                    buffer = b""
+                adjusted = EncodingUtils.adjust_split_point(chunk, len(chunk), after_char=False)
+                if adjusted == len(chunk):
+                    buffer = b''
                     text = chunk
-                    # print(f"Unicode ok at {offset + len(chunk)}: {chunk[:20]}")
-                except UnicodeDecodeError as e:
-                    print(f"adjusting chunk at {offset + e.start} (offset: {offset})")
-                    text = chunk[:e.start]
-                    buffer = chunk[e.start:]
+                else:
+                    print(f"adjusting chunk at {offset + adjusted} (offset: {offset})")
+                    text = chunk[:adjusted]
+                    buffer = chunk[adjusted:]
 
                 yield Chunk(offset, text)
