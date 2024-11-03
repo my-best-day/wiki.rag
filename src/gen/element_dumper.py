@@ -19,7 +19,10 @@ class ElementDumper(Handler):
         super().__init__()
 
     def handle(self, element: Element):
-        self.dump(element)
+        if element is not None:
+            self.dump(element)
+        else:
+            logger.info("Received poison pill")
 
     def dump(self, element: Element):
         caption = element.__class__.__name__
