@@ -152,8 +152,13 @@ class TestEncodingUtils(unittest.TestCase):
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
+        index = 6
+        expected = 6
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
+        self.assertEqual(adjusted, expected)
+
         with self.assertRaises(ValueError):
-            index = 6
+            index = 7
             EncodingUtils.adjust_split_point(_bytes, index, after)
 
     def test_adjust_split_point_multi_negative_before(self):
@@ -227,6 +232,28 @@ class TestEncodingUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             index = -7
             EncodingUtils.adjust_split_point(_bytes, index, after)
+
+    def test_at_end_of_string(self):
+        _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
+        after = False
+
+        chunk = _bytes[:len(_bytes)]
+        index = len(chunk)
+        expected = index
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = _bytes[:len(_bytes) - 1]
+        index = len(chunk)
+        expected = index
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = _bytes[:len(_bytes) - 2]
+        index = len(chunk)
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
 
 
 if __name__ == '__main__':

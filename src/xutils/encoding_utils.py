@@ -41,7 +41,7 @@ class EncodingUtils:
 
     @staticmethod
     def index_in_bound(array, index):
-        return -len(array) <= index < len(array)
+        return -len(array) <= index <= len(array)
 
     @staticmethod
     def num_bytes_in_char(first_byte: int) -> int:
