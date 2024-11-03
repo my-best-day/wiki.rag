@@ -1,5 +1,5 @@
 import unittest
-from datax.iterator_deque import IteratorDeque
+from xutils.iterator_deque import IteratorDeque
 
 
 class iter:
