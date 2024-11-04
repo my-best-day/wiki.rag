@@ -8,11 +8,11 @@ class ExtendedSegment(Container):
     """
     ExtendedSegment is a container that contains a segment and (optional) overlaps.
     """
-    def __init__(self) -> None:
+    def __init__(self, segment: Segment) -> None:
         super().__init__()
         self._before_overlap: Optional[Element] = None
         # most likely we will segment.segment = segment. init _segment to None
-        self._segment: Segment = Segment()
+        self._segment: Segment = segment
         self._after_overlap: Optional[Element] = None
 
     @property
@@ -30,8 +30,7 @@ class ExtendedSegment(Container):
 
     @segment.setter
     def segment(self, value: Segment) -> None:
-        self._segment = value
-        self.reset()
+        raise NotImplementedError("Cannot set segment after initialization")
 
     @property
     def after_overlap(self) -> Optional[Element]:
