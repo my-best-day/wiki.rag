@@ -4,7 +4,7 @@ class EncodingUtils:
     """
 
     @staticmethod
-    def adjust_split_point(_bytes: bytes, index: int, after_char: bool) -> int:
+    def adjust_split_point(_bytes: bytes, index: int, after_char: bool, sign_mode: int = 1) -> int:
         """
         Adjust the split point to ensure it does not split a multi-byte character
         in the middle.
@@ -14,17 +14,20 @@ class EncodingUtils:
             index (int): the index to split at
             after_char (bool): if True, the split point is after the character, otherwise
                 it is before the character
+            sign_mode (int): If 1, always return a positive index (default).
+              If 0, the returned index mimics the input index's sign.
+              If -1, always return a negative index.
+
 
         returns:
             int: the adjusted split point
         """
+        if not isinstance(index, int):
+            raise TypeError(f"Index must be an int (got {type(index)} ({index}))")
         if not EncodingUtils.index_in_bound(_bytes, index):
             raise ValueError(f"Index is out of bounds (ind: {index}, len: {len(_bytes)})")
 
-        if index >= 0:
-            adjusted_index = index
-        else:
-            adjusted_index = len(_bytes) + index
+        adjusted_index = index if index >= 0 else len(_bytes) + index
 
         try:
             _bytes[:adjusted_index].decode('utf-8')
@@ -34,13 +37,14 @@ class EncodingUtils:
             else:
                 adjusted_index = e.start
 
-        if index < 0:
+        # adjust the sign of the index
+        if sign_mode == -1 or (sign_mode == 0 and index < 0):
             adjusted_index = adjusted_index - len(_bytes)
 
         return adjusted_index
 
     @staticmethod
-    def index_in_bound(array, index):
+    def index_in_bound(array: list, index: int) -> bool:
         return -len(array) <= index <= len(array)
 
     @staticmethod
