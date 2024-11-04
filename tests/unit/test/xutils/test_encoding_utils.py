@@ -235,6 +235,87 @@ class TestEncodingUtils(unittest.TestCase):
             index = -7
             EncodingUtils.adjust_split_point(_bytes, index, after)
 
+    def test_adjust_split_point_multi_after_sign_mode_minus_1(self):
+        _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
+        after = True
+
+        index = 0
+        expected = index - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 1
+        expected = index - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 2
+        expected = 5 - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 3
+        expected = 5 - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 4
+        expected = 5 - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 5
+        expected = 5 - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        index = 6
+        expected = 6 - len(_bytes)
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+        self.assertEqual(adjusted, expected)
+
+        with self.assertRaises(ValueError):
+            index = 7
+            EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=-1)
+
+    def test_adjust_split_point_multi_negative_after_sign_mode_0(self):
+        _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
+        after = True
+
+        index = -1
+        expected = index
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        index = -2
+        expected = -1
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        index = -3
+        expected = -1
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        index = -4
+        expected = -1
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        index = -5
+        expected = -5
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        index = -6
+        expected = -6
+        adjusted = EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+        self.assertEqual(adjusted, expected)
+
+        with self.assertRaises(ValueError):
+            index = -7
+            EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
+
     def test_at_end_of_string(self):
         _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
         after = False
