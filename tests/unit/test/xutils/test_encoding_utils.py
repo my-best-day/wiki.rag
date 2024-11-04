@@ -47,17 +47,17 @@ class TestEncodingUtils(unittest.TestCase):
         after = False
 
         index = -1
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -2
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -3
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
@@ -70,17 +70,17 @@ class TestEncodingUtils(unittest.TestCase):
         after = True
 
         index = -1
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -2
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -3
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
@@ -166,66 +166,68 @@ class TestEncodingUtils(unittest.TestCase):
         after = False
 
         index = -1
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -2
-        expected = -5
+        expected = len(_bytes) + -5
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -3
-        expected = -5
+        expected = len(_bytes) + -5
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -4
-        expected = -5
+        expected = len(_bytes) + -5
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -5
-        expected = -5
+        expected = len(_bytes) + -5
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -6
-        expected = -6
+        expected = len(_bytes) + -6
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
+
+    # TODO: try sign_mode 0 and -1
 
     def test_adjust_split_point_multi_negative_after(self):
         _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
         after = True
 
         index = -1
-        expected = index
+        expected = len(_bytes) + index
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -2
-        expected = -1
+        expected = len(_bytes) + -1
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -3
-        expected = -1
+        expected = len(_bytes) + -1
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -4
-        expected = -1
+        expected = len(_bytes) + -1
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -5
-        expected = -5
+        expected = len(_bytes) + -5
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
         index = -6
-        expected = -6
+        expected = len(_bytes) + -6
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
