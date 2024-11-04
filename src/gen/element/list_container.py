@@ -1,12 +1,14 @@
 from gen.element.element import Element
 from gen.element.container import Container
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
 
 class ListContainer(Container):
-    def __init__(self):
+    def __init__(self, element: Optional[Element] = None):
         super().__init__()
         self._elements: List[Element] = []
+        if element is not None:
+            self.append_element(element)
 
     @property
     def elements(self) -> Iterator[Element]:
