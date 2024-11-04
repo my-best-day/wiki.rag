@@ -1,69 +1,109 @@
+# cSpell:disable
+
 import unittest
-from gen.element.header import Header
-from gen.element.article import Article
-from gen.element.paragraph import Paragraph
 from gen.segment_builder import SegmentBuilder
+from gen.element.segment import Segment
+from gen.element.section import Section
+from gen.element.extended_segment import ExtendedSegment
 
 
 class TestSegmentBuilder(unittest.TestCase):
 
-    def setUp(self):
-        # Set up test data for SegmentBuilder
-        # self.max_len = 100
-        # self.articles = [Article(paragraphs=[Section(byte_length=50), Section(byte_length=30)])]
-        # self.segment_builder = SegmentBuilder(self.max_len, self.articles)
-        pass
+    def _create(self, byte_length: int, _bytes: bytes) -> ExtendedSegment:
+        return ExtendedSegment(Segment(Section(byte_length, _bytes)))
 
-    def test_initialization_1(self):
-        # Test if the SegmentBuilder initializes correctly
-        header = Header(offset=0, _bytes=b'abcdefghijklmnopqrstuvwxyz')
-        article = Article(header=header)
-        articles = [article]
-        max_len = 100
-        segment_builder = SegmentBuilder(max_len=max_len, articles=articles)
-        self.assertEqual(segment_builder.max_len, max_len)
-        self.assertEqual(len(segment_builder.articles), len(articles))
+    def test_set_overlaps_enough_room(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
 
-    def test_initialization_2(self):
-        header = Header(offset=0, _bytes=b'abcdefghijklmnopqrstuvwxyz')
-        paragraph = Paragraph(offset=26, _bytes=b'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        SegmentBuilder.set_overlaps(20, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'6789')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'ABCD')
 
-        article = Article(header=header)
-        article.append_paragraph(paragraph)
+        curr_sec = self._create(10, b'abcdefghij')
+        SegmentBuilder.set_overlaps(18, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'789')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'ABC')
 
-        articles = [article]
-        max_len = 100
+        curr_sec = self._create(10, b'abcdefghij')
+        SegmentBuilder.set_overlaps(15, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'89')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'AB')
 
-        segment_builder = SegmentBuilder(max_len=max_len, articles=articles)
-        self.assertEqual(segment_builder.max_len, max_len)
-        self.assertEqual(len(segment_builder.articles), len(articles))
+        curr_sec = self._create(10, b'abcdefghij')
+        SegmentBuilder.set_overlaps(14, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'89')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'AB')
 
-    def test_initialization_3(self):
-        header1 = Header(offset=0, _bytes=b'abcdefghijklmnopqrstuvwxyz')
-        paragraph1 = Paragraph(offset=26, _bytes=b'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-        article1 = Article(header=header1)
-        article1.append_paragraph(paragraph1)
+    def test_set_overlaps_tight_room(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
 
-        header2 = Header(offset=52, _bytes=b'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-        paragraph2 = Paragraph(offset=26, _bytes=b'abcdefghijklmnopqrstuvwxyz')
-        article2 = Article(header=header2)
-        article2.append_paragraph(paragraph2)
+        SegmentBuilder.set_overlaps(12, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'9')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'A')
 
-        articles = [article1, article2]
-        max_len = 100
-        segment_builder = SegmentBuilder(max_len=max_len, articles=articles)
-        self.assertEqual(segment_builder.max_len, max_len)
-        self.assertEqual(len(segment_builder.articles), len(articles))
+    def test_set_overlaps_before_is_short(self):
+        prev_sec = self._create(0, b'01')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
 
+        SegmentBuilder.set_overlaps(20, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'01')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'ABCD')
 
-    # def test_segment_creation(self):
-    #     # Test if segments are created correctly
-    #     self.segment_builder._build()
-    #     self.assertGreater(len(self.segment_builder.segments), 0)
+    def test_set_overlaps_after_is_short(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'AB')
 
-    # def test_close_segment(self):
-    #     # Test the close_segment method
-    #     self.segment_builder._build()
-    #     initial_segment_count = len(self.segment_builder.segments)
-    #     self.segment_builder.close_segment()
-    #     self.assertEqual(len(self.segment_builder.segments), initial_segment_count)
+        SegmentBuilder.set_overlaps(20, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'6789')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'AB')
+
+    def test_set_overlaps_before_is_short_bound_by_0_2(self):
+        prev_sec = self._create(0, b'0')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
+
+        SegmentBuilder.set_overlaps(20, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'0')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'ABCD')
+
+    def test_set_overlaps_after_is_short_bound_by_0_2(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'A')
+
+        SegmentBuilder.set_overlaps(20, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'6789')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'A')
+
+    def test_set_overlaps_before_is_shorter(self):
+        prev_sec = self._create(0, b'01')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
+
+        SegmentBuilder.set_overlaps(12, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'1')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'A')
+
+    def test_set_overlaps_after_is_shorter(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'AB')
+
+        SegmentBuilder.set_overlaps(12, prev_sec, curr_sec, next_sec)
+        self.assertEqual(curr_sec.before_overlap.bytes, b'9')
+        self.assertEqual(curr_sec.after_overlap.bytes, b'A')
+
+    def test_set_overlaps_no_room(self):
+        prev_sec = self._create(0, b'0123456789')
+        curr_sec = self._create(10, b'abcdefghij')
+        next_sec = self._create(20, b'ABCDEFGHIJ')
+
+        SegmentBuilder.set_overlaps(10, prev_sec, curr_sec, next_sec)
+        self.assertIsNone(curr_sec.before_overlap)
+        self.assertIsNone(curr_sec.after_overlap)
