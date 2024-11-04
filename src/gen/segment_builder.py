@@ -181,13 +181,11 @@ class SegmentBuilder:
                 if available_backward > 0:
                 if before_overlap < allowed:
                 before_overlap = min(allowed, initial_room + available_backward, prev_seg_length)
-
-        * DONE:later we'll adjust for the first and last segment, ignore for now
         """
         prev_seg_length = prev_segment.byte_length if prev_segment else 0
         next_seg_length = next_segment.byte_length if next_segment else 0
         allowed = int(0.2 * max_len)
-        initial_room = (max_len - target_segment.byte_length) / 2
+        initial_room = int((max_len - target_segment.byte_length) / 2)
         before_overlap = min(allowed, initial_room, prev_seg_length)
         after_overlap = min(allowed, initial_room, next_seg_length)
         available_forward = initial_room - before_overlap
@@ -203,12 +201,12 @@ class SegmentBuilder:
             assert prev_segment is not None
 
             _, before_overlap_fragment = prev_segment.split(
-                -before_overlap, include_first=False, include_remainder=True)
+                -before_overlap, after_char=True, include_first=False, include_remainder=True)
             target_segment.before_overlap = before_overlap_fragment
 
         if after_overlap:
             # if next_segment is None, we expect after_overlap to be 0
             assert next_segment is not None
             after_overlap_fragment, _ = next_segment.split(
-                after_overlap, include_first=True, include_remainder=False)
+                after_overlap, after_char=False, include_first=True, include_remainder=False)
             target_segment.after_overlap = after_overlap_fragment
