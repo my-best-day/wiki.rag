@@ -45,7 +45,7 @@ class ExtendedSegment(Container):
     def elements(self) -> Iterator[Element]:
         if self.before_overlap:
             yield self.before_overlap
-        yield from self.segment.elements
+        yield self.segment
         if self.after_overlap:
             yield self.after_overlap
 
@@ -64,3 +64,14 @@ class ExtendedSegment(Container):
             offset = self.segment.offset
 
         return offset
+
+    def element_count(self) -> int:
+        """
+        The number of elements in the extended segment.
+        """
+        count = 1 if self.segment.element_count() > 0 else 0
+        if self.before_overlap:
+            count += 1
+        if self.after_overlap:
+            count += 1
+        return count

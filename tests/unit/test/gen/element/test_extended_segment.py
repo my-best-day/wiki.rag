@@ -35,7 +35,7 @@ class TestExtendedSegment(unittest.TestCase):
         elements = list(self.ext_segment.elements)
         self.assertEqual(elements[0], self.before_overlap)
         self.assertEqual(elements[-1], self.after_overlap)
-        self.assertEqual(len(elements), 4)
+        self.assertEqual(len(elements), 3)
 
     def test_offset_with_before_overlap(self):
         self.assertEqual(self.ext_segment.offset, self.before_overlap.offset)
