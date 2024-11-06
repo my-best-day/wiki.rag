@@ -2,6 +2,9 @@ register a reset listener with a contained object so we can reset the container
 
 
 
+* test first / last extended article_segments
++ encoding utils -- test sign_mode 0 and -1
+
 1. Min-threshold, soft-max, hard-max, and overlaps.
 2. Token-to-character conversion (~3.9 per token).
 3. Segmentation and encoding on cleaned text while
