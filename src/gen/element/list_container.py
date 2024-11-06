@@ -24,3 +24,9 @@ class ListContainer(Container):
         if not self._elements:
             raise ValueError('no elements in container')
         return self._elements[0].offset
+
+    def element_count(self) -> int:
+        """
+        The number of elements in the container.
+        """
+        return len(self._elements)

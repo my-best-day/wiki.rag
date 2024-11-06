@@ -62,3 +62,9 @@ class Article(Container):
         The header of the article.
         """
         return self._header
+
+    def element_count(self) -> int:
+        """
+        The number of elements in the article.
+        """
+        return len(self._paragraphs) + 1

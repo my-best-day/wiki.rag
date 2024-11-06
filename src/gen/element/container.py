@@ -101,3 +101,9 @@ class Container(Element, ABC):
         self.__bytes = None
         self.__text = None
         self.__clean_text = None
+
+    def element_count(self) -> int:
+        """
+        The number of elements in the container.
+        """
+        return len(list(self.elements))
