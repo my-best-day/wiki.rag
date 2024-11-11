@@ -18,6 +18,43 @@ class Article(Container):
         self._header: Header = header
         self._paragraphs: List[Paragraph] = []
 
+    def to_data(self):
+        data = super().to_data()
+        data['header'] = self.header.to_data()
+        paragraphs_data = [paragraph.to_data() for paragraph in self.paragraphs]
+        data['paragraphs'] = paragraphs_data
+        return data
+
+    @classmethod
+    def from_data(cls, data):
+        header = Element.hierarchy_from_data(data['header'])
+
+        paragraphs = []
+        paragraphs_data = data['paragraphs']
+        for paragraph_data in paragraphs_data:
+            paragraph = Element.hierarchy_from_data(paragraph_data)
+            paragraphs.append(paragraph)
+
+        article = cls(header)
+        for paragraph in paragraphs:
+            article.append_paragraph(paragraph)
+
+        return article
+
+    @property
+    def offset(self) -> int:
+        """
+        The offset of the article.
+        """
+        return self.header.offset
+
+    @property
+    def header(self) -> Header:
+        """
+        The header of the article.
+        """
+        return self._header
+
     @property
     def paragraphs(self) -> Iterator[Paragraph]:
         """
@@ -50,19 +87,6 @@ class Article(Container):
         self.append_paragraph(element)
 
     @property
-    def offset(self) -> int:
-        """
-        The offset of the article.
-        """
-        return self.header.offset
-
-    @property
-    def header(self) -> Header:
-        """
-        The header of the article.
-        """
-        return self._header
-
     def element_count(self) -> int:
         """
         The number of elements in the article.

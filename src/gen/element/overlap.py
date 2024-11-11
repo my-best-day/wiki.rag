@@ -13,3 +13,13 @@ class Overlap(Section):
     @property
     def offset(self) -> int:
         raise NotImplementedError
+
+    def to_data(self):
+        data = super(Section, self).to_data()
+        data['text'] = self.text
+        return data
+
+    @classmethod
+    def from_data(cls, data):
+        section = cls(data['text'].encode('utf-8'))
+        return section

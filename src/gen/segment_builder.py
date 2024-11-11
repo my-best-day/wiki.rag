@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from gen.element.element import Element
 from gen.element.section import Section
 from gen.element.article import Article
@@ -33,7 +33,7 @@ class SegmentBuilder:
         # segments for the current article
         self.article_segments: List[ExtendedSegment] = []
         # sections for the current article
-        self.article_sections: IteratorDeque[Element] = None
+        self.article_sections: Optional[IteratorDeque[Element]] = None
         # the current segment being built
         self.segment: ExtendedSegment = ExtendedSegment(Segment())
 
@@ -68,21 +68,21 @@ class SegmentBuilder:
             logger.debug("--------------------------------")
             logger.debug("article_segments:")
             for seg in self.article_segments:
-                logger.debug(f"    {seg.segment.bytes}")
-            logger.debug(f"segment status: {self.segment.segment.bytes}")
+                logger.debug("    %s", seg.segment.bytes)
+            logger.debug("segment status: %s", self.segment.segment.bytes)
 
-            logger.debug(f"now looking at section: {section.bytes}")
+            logger.debug("now looking at section: %s", section.bytes)
 
             # if the first section is too long, split it
             if self._is_first_section():
-                logger.debug(f"first section, looking into splitting")
+                logger.debug("first section, looking into splitting")
                 if self._split_section(section):
-                    logger.debug(f"first section, split")
+                    logger.debug("first section, split")
                     continue
                 else:
-                    logger.debug(f"first section, not split")
+                    logger.debug("first section, not split")
             else:
-                logger.debug(f"not first section")
+                logger.debug("not first section")
 
             # if there is room for the section, add it to the segment
             if self.segment.segment.byte_length + section.byte_length <= 0.8 * max_len:
@@ -105,7 +105,7 @@ class SegmentBuilder:
         self.segments.extend(self.article_segments)
 
     def _is_first_section(self) -> bool:
-        return self.segment.element_count() == 0
+        return self.segment.element_count == 0
 
     def _split_section(self, section: Section) -> bool:
         """
@@ -126,15 +126,15 @@ class SegmentBuilder:
         else:
             if section.byte_length > 1.6 * max_len:
                 split_at = int(0.8 * max_len)
-                logger.debug(f"section is long, splitting at {split_at}")
+                logger.debug("section is long, splitting at %d", split_at)
             elif section.byte_length > 0.8 * max_len:
                 split_at = int(section.byte_length / 2)
-                logger.debug(f"section is medium, splitting at {split_at}")
+                logger.debug("section is medium, splitting at %d", split_at)
             else:
                 assert False, "should never get here"
 
             lead, remainder = section.split(split_at)
-            logger.debug(f"split at {split_at} into {lead.bytes} and {remainder.bytes}")
+            logger.debug("split at %d into %s and %s", split_at, lead.bytes, remainder.bytes)
             self.article_sections.appendleft(remainder)
             self.article_sections.appendleft(lead)
 
@@ -231,39 +231,39 @@ class SegmentBuilder:
         prev_seg_length = prev_segment.segment.byte_length if prev_segment else 0
         next_seg_length = next_segment.segment.byte_length if next_segment else 0
         allowed = int(0.2 * max_len)
-        logger.debug(f"prev_seg_length: {prev_seg_length}, next_seg_length: {next_seg_length}")
+        logger.debug("prev_seg_length: %d, next_seg_length: %d", prev_seg_length, next_seg_length)
         initial_room = max(0, int((max_len - target_segment.segment.byte_length) / 2))
         before_overlap = min(allowed, initial_room, prev_seg_length)
         after_overlap = min(allowed, initial_room, next_seg_length)
-        logger.debug(f"initial_room: {initial_room}, before_overlap: {before_overlap}, "
-                     f"after_overlap: {after_overlap}")
+        logger.debug("initial_room: %d, before_overlap: %d, after_overlap: %d",
+                     initial_room, before_overlap, after_overlap)
 
         available_forward = initial_room - before_overlap
-        logger.debug(f"available_forward: {available_forward}")
+        logger.debug("available_forward: %d", available_forward)
         if available_forward > 0 and after_overlap < allowed:
             after_overlap = min(allowed, initial_room + available_forward, next_seg_length)
         else:
             available_backward = initial_room - after_overlap
-            logger.debug(f"available_backward: {available_backward}")
+            logger.debug("available_backward: %d", available_backward)
             if available_backward > 0 and before_overlap < allowed:
                 before_overlap = min(allowed, initial_room + available_backward, prev_seg_length)
 
         if before_overlap:
             # if prev_segment is None, we expect before_overlap to be 0
             assert prev_segment is not None
-            logger.debug(f"before_overlap: {before_overlap}")
+            logger.debug("before_overlap: %d", before_overlap)
             _, before_overlap_fragment = prev_segment.segment.split(
                 -before_overlap, after_char=True, include_first=False, include_remainder=True)
-            logger.debug(f"before_overlap_fragment: {before_overlap_fragment.bytes}")
+            logger.debug("before_overlap_fragment: %s", before_overlap_fragment.bytes)
             target_segment.before_overlap = before_overlap_fragment
-            logger.debug(f"target_segment: {target_segment.bytes}")
+            logger.debug("target_segment: %s", target_segment.bytes)
 
         if after_overlap:
             # if next_segment is None, we expect after_overlap to be 0
             assert next_segment is not None
-            logger.debug(f"after_overlap: {after_overlap}")
+            logger.debug("after_overlap: %d", after_overlap)
             after_overlap_fragment, _ = next_segment.segment.split(
                 after_overlap, after_char=False, include_first=True, include_remainder=False)
-            logger.debug(f"after_overlap_fragment: {after_overlap_fragment.bytes}")
+            logger.debug("after_overlap_fragment: %s", after_overlap_fragment.bytes)
             target_segment.after_overlap = after_overlap_fragment
-            logger.debug(f"target_segment: {target_segment.bytes}")
+            logger.debug("target_segment: %s", target_segment.bytes)

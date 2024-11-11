@@ -32,8 +32,7 @@ class Section(Element):
 
     @classmethod
     def from_data(cls, data):
-        section = Section(data['offset'], data['text'].encode('utf-8'))
-        section.index = data['index']
+        section = cls(data['offset'], data['text'].encode('utf-8'))
         return section
 
     @property
@@ -67,12 +66,6 @@ class Section(Element):
     @property
     def clean_length(self) -> int:
         return len(self.clean_text)
-
-    # TODO: remove this, not used
-    # def prepend_bytes(self, _bytes: bytes) -> None:
-    #     self._bytes = _bytes + self._bytes
-    #     self._offset -= len(_bytes)
-    #     self.reset()
 
     def append_bytes(self, _bytes: bytes) -> None:
         self._bytes += _bytes

@@ -32,15 +32,6 @@ class Container(Element, ABC):
         raise NotImplementedError
 
     @property
-    @abstractmethod
-    def offset(self) -> int:
-        """
-        The offset of the container.
-        Most likely the offset of the first element.
-        """
-        raise NotImplementedError
-
-    @property
     def bytes(self) -> bytes:
         """
         The bytes of the container.
@@ -102,6 +93,7 @@ class Container(Element, ABC):
         self.__text = None
         self.__clean_text = None
 
+    @property
     def element_count(self) -> int:
         """
         The number of elements in the container.

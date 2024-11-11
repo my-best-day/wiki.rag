@@ -65,13 +65,35 @@ class ExtendedSegment(Container):
 
         return offset
 
+    @property
     def element_count(self) -> int:
         """
         The number of elements in the extended segment.
         """
-        count = 1 if self.segment.element_count() > 0 else 0
+        count = 1 if self.segment.element_count > 0 else 0
         if self.before_overlap:
             count += 1
         if self.after_overlap:
             count += 1
         return count
+
+    def to_data(self):
+        data = super().to_data()
+        data['segment'] = self.segment.to_data()
+        if self.before_overlap:
+            data['before_overlap'] = self.before_overlap.to_data()
+        if self.after_overlap:
+            data['after_overlap'] = self.after_overlap.to_data()
+        return data
+
+    @classmethod
+    def from_data(cls, data):
+        segment = Segment.from_data(data['segment'])
+        extended_segment = cls(segment)
+        if 'before_overlap' in data:
+            before_overlap = Element.hierarchy_from_data(data['before_overlap'])
+            extended_segment.before_overlap = before_overlap
+        if 'after_overlap' in data:
+            after_overlap = Element.hierarchy_from_data(data['after_overlap'])
+            extended_segment.after_overlap = after_overlap
+        return extended_segment

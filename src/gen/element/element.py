@@ -26,20 +26,19 @@ class Element(ABC):
     __next_index = 0
 
     def __init__(self):
-        self.index = Element.next_index()
+        self.index = Element._next_index()
 
     def __str__(self):
         return f"{self.__class__.__name__} (index={self.index})"
 
     @staticmethod
-    def next_index():
+    def _next_index():
         Element.__next_index += 1
         return Element.__next_index
 
     def to_data(self):
         return {
             'class': self.__class__.__name__,
-            'index': self.index
         }
 
     def to_json(self):
@@ -59,6 +58,10 @@ class Element(ABC):
             if result is not None:
                 return result
         return None
+
+    @classmethod
+    def from_data(cls, data):
+        raise NotImplementedError
 
     @property
     def offset(self) -> int:

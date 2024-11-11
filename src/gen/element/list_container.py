@@ -25,8 +25,28 @@ class ListContainer(Container):
             raise ValueError('no elements in container')
         return self._elements[0].offset
 
+    @property
     def element_count(self) -> int:
         """
         The number of elements in the container.
         """
         return len(self._elements)
+
+    def to_data(self):
+        data = super().to_data()
+        data['elements'] = [element.to_data() for element in self.elements]
+        return data
+
+    @classmethod
+    def from_data(cls, data):
+        elements = []
+        elements_data = data['elements']
+        for element_data in elements_data:
+            element = Element.hierarchy_from_data(element_data)
+            elements.append(element)
+
+        container = cls()
+        for element in elements:
+            container.append_element(element)
+
+        return container
