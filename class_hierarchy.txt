@@ -1,0 +1,102 @@
+Element
+    Section
+        Header
+        Paragraph
+        Fragment
+        Overlap
+    Container
+        Article
+        ExtendedSegment
+        ListContainer
+            Segment
+    Snippet
+        # WIP
+
+
+Element
+    C hierarchy_from_json()
+    C hierarchy_from_data()
+   aC from_data
+
+    - to_data()
+    - to_json()
+
+    a offset
+    a bytes
+    a text
+    a clean_text
+    a byte_length
+    a char_length
+    a clean_length
+
+    - split()
+
+    S normalize_text()
+
+    > Section
+        + append_bytes()
+        + reset()
+
+        - to_data()
+        - from_data() *
+
+        - offset
+        - bytes
+        - text
+        - clean_text
+        - byte_length
+        - char_length
+        - clean_length
+
+        > Header
+            # empty
+        > Paragraph
+            # empty
+        > Fragment
+          + parent_section  # rename parent_element
+
+    > Container
+         a elements
+         a append_element
+
+         + bytes
+         + text
+         + clean_text
+         + byte_length
+         + char_length
+         + clean_length
+         + reset()
+         + element_count
+
+
+        > Article
+            + to_data()
+            + from_data()
+
+            + offset  # header.offset
+            + header
+            + paragraphs
+            + elements  # [header] + paragraphs
+            + append_paragraph()
+            + append_element()    # -> append_paragraph()
+            + element_count
+
+        > ExtendedSegment
+            + before_overlap
+            + segment
+            + after_overlap
+
+            + elements  # before_overlap, segment, after_overlap
+            + append_element()    # segment.append_element(); reset()
+            + offset    # overlap ? overlap.offset : segment.offset
+            + element_count
+
+
+        > ListContainer
+        + elements
+        + append_element()
+        + offset  # element[0].offset
+        + element_count
+
+            > Segment
+                # empty
