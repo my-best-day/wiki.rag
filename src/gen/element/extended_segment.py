@@ -28,10 +28,6 @@ class ExtendedSegment(Container):
     def segment(self) -> Segment:
         return self._segment
 
-    @segment.setter
-    def segment(self, value: Segment) -> None:
-        raise NotImplementedError("Cannot set segment after initialization")
-
     @property
     def after_overlap(self) -> Optional[Element]:
         return self._after_overlap

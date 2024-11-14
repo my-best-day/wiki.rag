@@ -61,9 +61,7 @@ class EncodingUtils:
         returns:
             int: the number of bytes in the character
         """
-        if first_byte & 0x80 == 0x00:
-            num_of_bytes_in_char = 1
-        elif first_byte & 0xE0 == 0xC0:
+        if first_byte & 0xE0 == 0xC0:
             num_of_bytes_in_char = 2
         elif first_byte & 0xF0 == 0xE0:
             num_of_bytes_in_char = 3

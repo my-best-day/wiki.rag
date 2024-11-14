@@ -316,6 +316,94 @@ class TestEncodingUtils(unittest.TestCase):
             index = -7
             EncodingUtils.adjust_split_point(_bytes, index, after, sign_mode=0)
 
+    def test_adjust_split_point_index_not_int(self):
+        _bytes = b'abc'
+        after = False
+
+        index = 'a'
+        with self.assertRaises(TypeError):
+            EncodingUtils.adjust_split_point(_bytes, index, after)  # NOSONAR
+
+    def test_adjust_split_point_various_multi_byte_lengths_before(self):
+        # 1-byte Unicode character
+        b1 = b'\x41'
+        # 2-byte Unicode character
+        b2 = b'\xC3\xA9'
+        # 3-byte Unicode character
+        b3 = b'\xE2\x82\xAC'
+        # 4-byte Unicode character
+        b4 = b'\xF0\x9D\x8C\x86'
+
+        after = False
+
+        chunk = b'a' + b1
+        index = 1
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b'a' + b2
+        index = 2
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b'a' + b3
+        index = 3
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b'a' + b4
+        index = 4
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+    def test_adjust_split_point_various_multi_byte_lengths_after(self):
+        # 1-byte Unicode character
+        b1 = b'\x41'
+        # 2-byte Unicode character
+        b2 = b'\xC3\xA9'
+        # 3-byte Unicode character
+        b3 = b'\xE2\x82\xAC'
+        # 4-byte Unicode character
+        b4 = b'\xF0\x9D\x8C\x86'
+        # bad character
+        bx = b'\x80'
+
+        after = True
+
+        chunk = b1 + b'a'
+        index = 1
+        expected = 1
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b2 + b'a'
+        index = 1
+        expected = 2
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b3
+        index = 1
+        expected = 3
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = b4 + b'a'
+        index = 1
+        expected = 4
+        adjusted = EncodingUtils.adjust_split_point(chunk, index, after)
+        self.assertEqual(adjusted, expected)
+
+        chunk = bx + b'a'
+        index = 1
+        expected = 1
+        with self.assertRaises(ValueError):
+            EncodingUtils.adjust_split_point(chunk, index, after)
+
     def test_at_end_of_string(self):
         _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
         after = False

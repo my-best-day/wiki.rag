@@ -1,3 +1,4 @@
+from ast import Not
 import json
 import unittest
 from gen.element.header import Header
@@ -194,6 +195,9 @@ class TestElement(unittest.TestCase):
         overlap2 = Element.hierarchy_from_data(data)
         self.assertIsInstance(overlap2, Overlap)
         self.assertEqual(overlap2.bytes, b"overlap")
+
+        with self.assertRaises(NotImplementedError):
+            overlap.offset
 
     def test_paragraph(self):
         paragraph = Paragraph(39, b'paragraph')
