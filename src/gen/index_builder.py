@@ -4,6 +4,10 @@ offset in the file (in bytes, suitable for file_handle.seek()), and byte, text, 
 lengths. Byte length is used to read the text from the file and clean-text length to calculate
 segments for encoding / embedding
 
+The implementation is more complicated than it should be because of some
+experiments I did with the Chainable pattern and parallelization. This is
+a learning exercise. The code could be much simpler.
+
 Here we have
 - IndexBuilder: builds the index (articles and paragraphs)
 - IndexValidator: validates the offsets and byte lengths
