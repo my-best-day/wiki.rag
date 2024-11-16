@@ -26,7 +26,7 @@ class ByteReader:
         self.path = path
         self.file = open(path, "rb")
 
-    def read(self, offset: int, size: int) -> bytes:
+    def read_bytes(self, offset: int, size: int) -> bytes:
         """reads the bytes from the file at the given offset"""
         self.file.seek(offset)
         return self.file.read(size)
@@ -52,13 +52,13 @@ class ElementValidator(Handler, Chainable):
         Handler.__init__(self)
         Chainable.__init__(self)
         self.args: argparse.Namespace = args
-        self._reader = None
+        self._byte_reader = None
 
     @property
-    def reader(self) -> ByteReader:
-        if self._reader is None:
-            self._reader = ByteReader(self.args.text)
-        return self._reader
+    def byte_reader(self) -> ByteReader:
+        if self._byte_reader is None:
+            self._byte_reader = ByteReader(self.args.text)
+        return self._byte_reader
 
     def start(self):
         super().start()
@@ -80,7 +80,7 @@ class ElementValidator(Handler, Chainable):
         validates the element by reading the bytes from the file and
         comparing them
         """
-        snippet = self.reader.read(element.offset, len(element.bytes))
+        snippet = self.byte_reader.read_bytes(element.offset, len(element.bytes))
         if snippet != element.bytes:
             caption = element.__class__.__name__
 
@@ -98,9 +98,9 @@ class ElementValidator(Handler, Chainable):
 
     def cleanup(self):
         """not bullet proof, but something is better than nothing"""
-        if self._reader is not None:
-            self._reader.cleanup()
-            self._reader = None
+        if self._byte_reader is not None:
+            self._byte_reader.cleanup()
+            self._byte_reader = None
 
 
 def format_text(bytes: bytes) -> str:
