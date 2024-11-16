@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Tuple, Optional
+from typing import TYPE_CHECKING, Tuple, Optional, List
 import re
 import json
 import unicodedata
@@ -23,23 +23,27 @@ class Element(ABC):
     CLEAN_TEXT_PATTERN = r'[^a-zA-Z0-9\s,.!?\'"-]+'
     CLEAN_TEXT_REGEX = re.compile(CLEAN_TEXT_PATTERN)
 
-    __next_index = 0
+    instances: List['Element'] = []
 
     def __init__(self):
-        self.index = Element._next_index()
+        self.index: int = len(Element.instances)
+        Element.instances.append(self)
 
     def __str__(self):
         return f"{self.__class__.__name__} (index={self.index})"
 
-    @staticmethod
-    def _next_index():
-        Element.__next_index += 1
-        return Element.__next_index
-
     def to_data(self):
+        return self._element_to_data()
+
+    def _element_to_data(self):
         return {
             'class': self.__class__.__name__,
         }
+
+    def to_xdata(self) -> dict:
+        xdata = self._element_to_data()
+        xdata['index'] = self.index
+        return xdata
 
     def to_json(self):
         return json.dumps(self.to_data())
@@ -60,7 +64,20 @@ class Element(ABC):
         return None
 
     @classmethod
+    def hierarchy_from_xdata(cls, data, reader):
+        if data['class'] == cls.__name__:
+            return cls.from_xdata(data, reader)
+        for subclass in cls.__subclasses__():
+            result = subclass.hierarchy_from_xdata(data, reader)
+            if result is not None:
+                return result
+
+    @classmethod
     def from_data(cls, data):
+        raise NotImplementedError
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
         raise NotImplementedError
 
     @property

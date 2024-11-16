@@ -19,8 +19,24 @@ class Fragment(Section):
         data['parent'] = self.parent_section.to_data()
         return data
 
+    def to_xdata(self):
+        xdata = super().to_xdata()
+        xdata['parent'] = self.parent_section.index
+        return xdata
+
     @classmethod
     def from_data(cls, data):
         parent = Element.hierarchy_from_data(data['parent'])
         fragment = cls(parent, data['offset'], data['text'].encode('utf-8'))
+        return fragment
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        parent_index = xdata['parent']
+        parent = Element.instances[parent_index]
+        offset = xdata['offset']
+        start = offset - parent.offset
+        end = start + xdata['length']
+        _bytes = parent.bytes[start:end]
+        fragment = cls(parent, offset, _bytes)
         return fragment

@@ -82,6 +82,15 @@ class ExtendedSegment(Container):
             data['after_overlap'] = self.after_overlap.to_data()
         return data
 
+    def to_xdata(self):
+        xdata = super().to_xdata()
+        xdata['segment'] = self.segment.index
+        if self.before_overlap:
+            xdata['before_overlap'] = self.before_overlap.index
+        if self.after_overlap:
+            xdata['after_overlap'] = self.after_overlap.index
+        return xdata
+
     @classmethod
     def from_data(cls, data):
         segment = Segment.from_data(data['segment'])
@@ -93,3 +102,17 @@ class ExtendedSegment(Container):
             after_overlap = Element.hierarchy_from_data(data['after_overlap'])
             extended_segment.after_overlap = after_overlap
         return extended_segment
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        segment_index = xdata['segment']
+        segment = Element.instances[segment_index]
+        extended_segment = cls(segment)
+        if 'before_overlap' in xdata:
+            before_overlap_index = xdata['before_overlap']
+            before_overlap = Element.instances[before_overlap_index]
+            extended_segment.before_overlap = before_overlap
+        if 'after_overlap' in xdata:
+            after_overlap_index = xdata['after_overlap']
+            after_overlap = Element.instances[after_overlap_index]
+            extended_segment.after_overlap = after_overlap

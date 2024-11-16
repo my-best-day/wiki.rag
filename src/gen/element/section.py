@@ -30,9 +30,23 @@ class Section(Element):
         data['text'] = self.text
         return data
 
+    def to_xdata(self) -> dict:
+        xdata = super().to_xdata()
+        xdata['offset'] = self.offset
+        xdata['length'] = self.byte_length
+        return xdata
+
     @classmethod
     def from_data(cls, data):
         section = cls(data['offset'], data['text'].encode('utf-8'))
+        return section
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        offset = xdata['offset']
+        length = xdata['length']
+        _bytes = byte_reader.read_bytes(offset, length)
+        section = cls(offset, _bytes)
         return section
 
     @property

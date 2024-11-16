@@ -37,12 +37,31 @@ class ListContainer(Container):
         data['elements'] = [element.to_data() for element in self.elements]
         return data
 
+    def to_xdata(self):
+        xdata = super().to_xdata()
+        elements = [element.index for element in self.elements]
+        xdata['elements'] = elements
+        return xdata
+
     @classmethod
     def from_data(cls, data):
         elements = []
         elements_data = data['elements']
         for element_data in elements_data:
             element = Element.hierarchy_from_data(element_data)
+            elements.append(element)
+
+        container = cls()
+        for element in elements:
+            container.append_element(element)
+
+        return container
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        elements = []
+        for element_index in xdata['elements']:
+            element = cls.instances[element_index]
             elements.append(element)
 
         container = cls()

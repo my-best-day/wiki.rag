@@ -1,8 +1,27 @@
-register a reset listener with a contained object so we can reset the container
+saving constructs:
+  save length instead of bytes
+  save ids instead of content of referenced object
+  save referenced objects before referencing to the them
+  save a flat list of objects
+
+  load
+  iterate over a flat list of objects
+  convert offset/length to offset/bytes
+  replace ids with the objects
+  call hierarchy_from_data (or from json - TBD)
+
+
+save(articles):
+  for article in articles:
+      article.to_xdata(context)
 
 
 
-* test first / last extended article_segments
+
+
+? register a reset listener with a contained object so we can reset the container
+
++ test first / last extended article_segments
 + encoding utils -- test sign_mode 0 and -1
 
 1. Min-threshold, soft-max, hard-max, and overlaps.

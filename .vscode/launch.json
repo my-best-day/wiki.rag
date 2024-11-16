@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: build index",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/gen/build_index.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "ignore/wiki.test.tokens",
+                "-pp",
+                "data/test",
+                "-m",
+                "256",
+                "--mode",
+                "inline"
+            ]
+        },
+        {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",

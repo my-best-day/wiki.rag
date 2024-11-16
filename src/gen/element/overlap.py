@@ -19,7 +19,20 @@ class Overlap(Section):
         data['text'] = self.text
         return data
 
+    def to_xdata(self):
+        # FIXME: we need the offset
+        xdata = super(Section, self).to_xdata()
+        xdata['bytes'] = self.bytes
+        return xdata
+
     @classmethod
     def from_data(cls, data):
-        section = cls(data['text'].encode('utf-8'))
-        return section
+        overlap = cls(data['text'].encode('utf-8'))
+        return overlap
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        # FIXME: fix along with to_xdata
+        bytes = xdata['bytes']
+        overlap = cls(bytes)
+        return overlap
