@@ -4,7 +4,6 @@ from gen.element.header import Header
 from gen.element.article import Article
 from gen.element.segment import Segment
 from gen.element.section import Section
-from gen.element.overlap import Overlap
 from gen.element.element import Element
 from gen.element.fragment import Fragment
 from gen.element.paragraph import Paragraph
@@ -189,8 +188,8 @@ class TestElement(unittest.TestCase):
 
         extended_segment = ExtendedSegment(segment1)
         extended_segment.append_element(segment2)
-        extended_segment.before_overlap = Overlap(b"before overlap")
-        extended_segment.after_overlap = Overlap(b"after overlap")
+        extended_segment.before_overlap = Fragment(segment2, 0, b"before overlap")
+        extended_segment.after_overlap = Fragment(segment2, 100, b"after overlap")
 
         data = extended_segment.to_data()
         extended_segment2 = Element.hierarchy_from_data(data)
@@ -245,17 +244,6 @@ class TestElement(unittest.TestCase):
         self.assertEqual(list_container_2b._elements[0].offset, 20)
         self.assertEqual(list_container_2b._elements[1].offset, 40)
         self.assertEqual(list_container_2b._elements[1].bytes, b"section 4")
-
-    def test_overlap(self):
-        overlap = Overlap(b"overlap")
-        data = overlap.to_data()
-
-        overlap2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(overlap2, Overlap)
-        self.assertEqual(overlap2.bytes, b"overlap")
-
-        with self.assertRaises(NotImplementedError):
-            overlap.offset
 
     def test_paragraph(self):
         paragraph = Paragraph(39, b'paragraph')

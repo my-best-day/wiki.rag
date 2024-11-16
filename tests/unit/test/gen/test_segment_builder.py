@@ -2,10 +2,11 @@
 
 import unittest
 from gen.segment_builder import SegmentBuilder
+from gen.element.header import Header
 from gen.element.segment import Segment
 from gen.element.section import Section
 from gen.element.article import Article
-from gen.element.header import Header
+from gen.element.fragment import Fragment
 from gen.element.paragraph import Paragraph
 from gen.element.extended_segment import ExtendedSegment
 
@@ -68,7 +69,12 @@ class TestSegmentBuilder(unittest.TestCase):
         # room is 3 -> before overlap is '901', after overlap is '123'
         self.assertEqual(builder.segments[1].segment.bytes, b'234567890')   # 9
         self.assertEqual(builder.segments[1].before_overlap.bytes, b'901')  # 3
+        self.assertIsInstance(builder.segments[1].after_overlap, Fragment)
+        self.assertEqual(builder.segments[1].before_overlap.offset,
+                         builder.segments[0].segment.offset + 9)
         self.assertEqual(builder.segments[1].after_overlap.bytes, b'123')   # 3
+        self.assertEqual(builder.segments[1].after_overlap.offset,
+                         builder.segments[2].segment.offset)
         self.assertEqual(builder.segments[1].bytes, b'901234567890123')     # 15
 
         # now section is the first one. split it to 'abcd..jkl' and a reminder
