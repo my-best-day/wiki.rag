@@ -116,3 +116,4 @@ class ExtendedSegment(Container):
             after_overlap_index = xdata['after_overlap']
             after_overlap = Element.instances[after_overlap_index]
             extended_segment.after_overlap = after_overlap
+        return extended_segment

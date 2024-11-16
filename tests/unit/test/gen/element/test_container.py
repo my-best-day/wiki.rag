@@ -81,6 +81,32 @@ class TestContainer(unittest.TestCase):
         container.append_element(element2)
         self.assertEqual(container.clean_length, 11)
 
+    def test_abstract_methods(self):
+        class BareContainer(Container):
+            @property
+            def elements(self):
+                return super().elements
+
+            @property
+            def offset(self):
+                return super().offset
+
+            def append_element(self, element):
+                super().append_element(element)
+
+            def element_count(self):
+                return super().element_count
+
+        container = BareContainer()
+        with self.assertRaises(NotImplementedError):
+            container.elements
+        with self.assertRaises(NotImplementedError):
+            container.offset
+        with self.assertRaises(NotImplementedError):
+            container.append_element(None)
+        with self.assertRaises(NotImplementedError):
+            container.element_count()
+
 
 if __name__ == '__main__':
     unittest.main()

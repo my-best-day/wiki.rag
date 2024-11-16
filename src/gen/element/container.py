@@ -98,4 +98,4 @@ class Container(Element, ABC):
         """
         The number of elements in the container.
         """
-        return len(list(self.elements))
+        raise NotImplementedError
