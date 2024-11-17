@@ -156,7 +156,7 @@ class Element(ABC):
         text = text.lower()
         return text
 
-    def split(self, byte_length: int, after_char: bool = False, include_first: bool = True,
+    def split(self, index: int, after_char: bool = False, include_first: bool = True,
               include_remainder: bool = True) -> Tuple[Optional['Fragment'], Optional['Fragment']]:
         """
         Split the element into a first and remainder fragment, adjusting the split point if
@@ -174,7 +174,7 @@ class Element(ABC):
 
         first, remainder = None, None
         # prevent splitting in the middle of a multi-byte character
-        split_point = EncodingUtils.adjust_split_point(self.bytes, byte_length, after_char)
+        split_point = EncodingUtils.adjust_split_point(self.bytes, index, after_char)
 
         if include_first:
             first_bytes = self.bytes[:split_point]
