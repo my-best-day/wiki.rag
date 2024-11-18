@@ -69,8 +69,7 @@ class IndexBuilder(Chainable):
                 else:
                     match = self.PARAGRAPH_REGEX.match(text)
                     if match:
-                        paragraph = Paragraph(offset, match.group(0))
-                        self.articles[-1].append_paragraph(paragraph)
+                        paragraph = Paragraph(offset, match.group(0), self.articles[-1])
                         length = paragraph.byte_length
                         text = text[length:]
                         self.forward(paragraph)
