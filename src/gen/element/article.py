@@ -1,4 +1,3 @@
-import logging
 from gen.element.header import Header
 from gen.element.paragraph import Paragraph
 from gen.element.container import Container
