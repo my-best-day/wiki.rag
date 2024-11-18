@@ -2,6 +2,8 @@ import argparse
 import logging
 import time
 from pathlib import Path
+from gen.element.store import Store
+from gen.element.element import Element
 from gen.index_builder import IndexBuilder
 from gen.element_dumper import ElementDumper
 from gen.element_validator import ElementValidator
@@ -57,6 +59,10 @@ def main(args):
     article_count = len(builder.articles)
     paragraph_count = sum(len(article._paragraphs) for article in builder.articles)
     print(f"Done. {article_count} articles, {paragraph_count} paragraphs")
+
+    element_file_path = Path(args.path_prefix + "_elements.json")
+    element_store = Store()
+    element_store.store_elements(element_file_path, Element.instances)
 
 
 if __name__ == '__main__':
