@@ -20,13 +20,13 @@ class TestSegmentBuilder(unittest.TestCase):
         """three short articles -> three segments"""
 
         article1 = Article(Header(0, b'Article 1'))
-        article1.append_paragraph(Paragraph(article1.header.byte_length, b'Paragraph 1'))
+        Paragraph(article1.header.byte_length, b'Paragraph 1', article1)
 
         article2 = Article(Header(0, b'Article 2'))
-        article2.append_paragraph(Paragraph(article2.header.byte_length, b'Paragraph 2'))
+        Paragraph(article2.header.byte_length, b'Paragraph 2', article2)
 
         article3 = Article(Header(0, b'Article 3'))
-        article3.append_paragraph(Paragraph(article3.header.byte_length, b'Paragraph 3'))
+        Paragraph(article3.header.byte_length, b'Paragraph 3', article3)
 
         articles = [article1, article2, article3]
 
@@ -43,7 +43,7 @@ class TestSegmentBuilder(unittest.TestCase):
         h = b'012345678901234567890123456789'
         p = b'abcdefghijklmnopqrstuvwxyzABCD'
         article = Article(Header(0, h))
-        article.append_paragraph(Paragraph(article.header.byte_length, p))
+        Paragraph(article.header.byte_length, p, article)
 
         max_len = int(len(h) / 1.8)  # 16 is 30 / 1.8
         builder = SegmentBuilder(max_len=max_len, articles=[article])

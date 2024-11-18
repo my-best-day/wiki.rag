@@ -1,3 +1,4 @@
+import logging
 from gen.element.header import Header
 from gen.element.paragraph import Paragraph
 from gen.element.container import Container
@@ -28,23 +29,17 @@ class Article(Container):
     def to_xdata(self) -> int:
         xdata = super().to_xdata()
         xdata['header'] = self.header.index
-        paragraphs = [paragraph.index for paragraph in self.paragraphs]
-        xdata['paragraphs'] = paragraphs
         return xdata
 
     @classmethod
     def from_data(cls, data):
         header = Element.hierarchy_from_data(data['header'])
 
-        paragraphs = []
+        article = cls(header)
+
         paragraphs_data = data['paragraphs']
         for paragraph_data in paragraphs_data:
-            paragraph = Element.hierarchy_from_data(paragraph_data)
-            paragraphs.append(paragraph)
-
-        article = cls(header)
-        for paragraph in paragraphs:
-            article.append_paragraph(paragraph)
+            Element.hierarchy_from_data(paragraph_data)
 
         return article
 
@@ -52,16 +47,7 @@ class Article(Container):
     def from_xdata(cls, xdata, byte_reader):
         header_index = xdata['header']
         header = cls.instances[header_index]
-
-        paragraphs = []
-        for paragraph_index in xdata['paragraphs']:
-            paragraph = cls.instances[paragraph_index]
-            paragraphs.append(paragraph)
-
         article = cls(header)
-        for paragraph in paragraphs:
-            article.append_paragraph(paragraph)
-
         return article
 
     @property
