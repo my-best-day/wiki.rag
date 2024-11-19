@@ -23,10 +23,10 @@
             ]
         },
         {
-            "name": "build_segments",
+            "name": "watch segments",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/gen/build_segments.py",
+            "program": "${workspaceFolder}/src/gen/watch_segments.py",
             "console": "integratedTerminal",
             "args": [
                 "-t",

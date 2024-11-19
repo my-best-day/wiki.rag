@@ -7,7 +7,7 @@ from gen.element.segment import Segment
 from gen.element.extended_segment import ExtendedSegment
 from xutils.iterator_deque import IteratorDeque
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

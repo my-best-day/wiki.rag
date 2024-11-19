@@ -4,31 +4,20 @@ import argparse
 from pathlib import Path
 from gen.element.store import Store
 from gen.element.element import Element
-from gen.element.article import Article
-from gen.segment_builder import SegmentBuilder
+
+__import__("gen.element.article")
+__import__("gen.element.extended_segment")
+__import__("gen.element.fragment")
+__import__("gen.element.list_container")
 
 
 logger = logging.getLogger(__name__)
 
 
-def load_articles(text_path: str, path_prefix: str):
-    store = Store()
-    element_store_path = Path(f"{path_prefix}_elements.json")
-    store.load_elements(Path(text_path), element_store_path)
-    articles = [element for element in Element.instances if isinstance(element, Article)]
-    return articles
-
-
 def main(args):
-    articles = load_articles(args.text, args.path_prefix)
-    print("found articles:", len(articles))
-
-    max_len = args.max_len
-    SegmentBuilder(max_len, articles)
-    # segments created segments = segment_builder.segments
-
     store = Store()
-    store.store_elements(Path(f"{args.path_prefix}_segments.json"), Element.instances)
+    store.load_elements(Path(args.text), Path(f"{args.path_prefix}_segments.json"))
+    print(f"loaded {len(Element.instances)} segments")
 
 
 if __name__ == '__main__':

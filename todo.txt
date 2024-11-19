@@ -1,21 +1,22 @@
-saving constructs:
-  save length instead of bytes
-  save ids instead of content of referenced object
-  save referenced objects before referencing to the them
-  save a flat list of objects
+continue build_segments
 
-  load
-  iterate over a flat list of objects
-  convert offset/length to offset/bytes
-  replace ids with the objects
-  call hierarchy_from_data (or from json - TBD)
++ xdata added
+  saving constructs:
+    save length instead of bytes
+    save ids instead of content of referenced object
+    save referenced objects before referencing to the them
+    save a flat list of objects
 
-
-save(articles):
-  for article in articles:
-      article.to_xdata(context)
+    load
+    iterate over a flat list of objects
+    convert offset/length to offset/bytes
+    replace ids with the objects
+    call hierarchy_from_data (or from json - TBD)
 
 
+  save(articles):
+    for article in articles:
+        article.to_xdata(context)
 
 
 
