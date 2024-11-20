@@ -1,11 +1,12 @@
+from uuid import UUID
 from gen.element.element import Element
 from gen.element.container import Container
 from typing import Iterator, List, Optional
 
 
 class ListContainer(Container):
-    def __init__(self, element: Optional[Element] = None):
-        super().__init__()
+    def __init__(self, element: Optional[Element] = None, uid: Optional[UUID] = None):
+        super().__init__(uid=uid)
         self._elements: List[Element] = []
         if element is not None:
             self.append_element(element)
@@ -32,40 +33,23 @@ class ListContainer(Container):
         """
         return len(self._elements)
 
-    def to_data(self):
-        data = super().to_data()
-        data['elements'] = [element.to_data() for element in self.elements]
-        return data
-
     def to_xdata(self):
         xdata = super().to_xdata()
-        elements = [element.index for element in self.elements]
-        xdata['elements'] = elements
+        element_uids = [str(element.uid) for element in self.elements]
+        xdata['element_uids'] = element_uids
         return xdata
 
     @classmethod
-    def from_data(cls, data):
-        elements = []
-        elements_data = data['elements']
-        for element_data in elements_data:
-            element = Element.hierarchy_from_data(element_data)
-            elements.append(element)
-
-        container = cls()
-        for element in elements:
-            container.append_element(element)
-
-        return container
-
-    @classmethod
     def from_xdata(cls, xdata, byte_reader):
-        elements = []
-        for element_index in xdata['elements']:
-            element = cls.instances[element_index]
-            elements.append(element)
-
-        container = cls()
-        for element in elements:
-            container.append_element(element)
+        uid = UUID(xdata['uid'])
+        container = cls(uid=uid)
 
         return container
+
+    def resolve_dependencies(self, xdata):
+        super().resolve_dependencies(xdata)
+        element_uids = xdata['element_uids']
+        for element_uid in element_uids:
+            element_uid = UUID(element_uid)
+            element = Element.instances[element_uid]
+            self.append_element(element)

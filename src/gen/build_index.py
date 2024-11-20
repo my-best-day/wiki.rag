@@ -43,8 +43,8 @@ def main(args):
     else:
         chainable_validator = validator
 
-    dumper: ElementDumper = ElementDumper()
-    chainable_validator.chain(dumper)
+    # dumper: ElementDumper = ElementDumper()
+    # chainable_validator.chain(dumper)
 
     if args.mode == "queued":
         getattr(chainable_builder, 'start', lambda: None)()
@@ -62,7 +62,7 @@ def main(args):
 
     element_file_path = Path(args.path_prefix + "_elements.json")
     element_store = Store()
-    element_store.store_elements(element_file_path, Element.instances)
+    element_store.store_elements(element_file_path, Element.instances.values())
 
 
 if __name__ == '__main__':

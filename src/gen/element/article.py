@@ -1,53 +1,40 @@
+from uuid import UUID
+from typing import Iterator, Optional, List
 from gen.element.header import Header
 from gen.element.paragraph import Paragraph
 from gen.element.container import Container
 from gen.element.element import Element
-from typing import List, Iterator
 
 
 class Article(Container):
     """
     Article is a container of a header and paragraphs.
     """
-    def __init__(self, header: Header) -> None:
+    def __init__(self, header: Header, uid: Optional[UUID] = None) -> None:
         """
         Create a new article.
         """
         assert isinstance(header, Header), 'header must be a Header'
-        super().__init__()
+        super().__init__(uid=uid)
         self._header: Header = header
         self._paragraphs: List[Paragraph] = []
 
-    def to_data(self):
-        data = super().to_data()
-        data['header'] = self.header.to_data()
-        paragraphs_data = [paragraph.to_data() for paragraph in self.paragraphs]
-        data['paragraphs'] = paragraphs_data
-        return data
-
     def to_xdata(self) -> int:
         xdata = super().to_xdata()
-        xdata['header'] = self.header.index
+        xdata['header_uid'] = str(self.header.uid)
         return xdata
 
     @classmethod
-    def from_data(cls, data):
-        header = Element.hierarchy_from_data(data['header'])
-
-        article = cls(header)
-
-        paragraphs_data = data['paragraphs']
-        for paragraph_data in paragraphs_data:
-            Element.hierarchy_from_data(paragraph_data)
-
-        return article
-
-    @classmethod
     def from_xdata(cls, xdata, byte_reader):
-        header_index = xdata['header']
-        header = cls.instances[header_index]
-        article = cls(header)
+        uid = UUID(xdata['uid'])
+        header_uid = UUID(xdata['header_uid'])
+        header = cls.instances[header_uid]
+        article = cls(header, uid=uid)
         return article
+
+    def resolve_dependencies(self, xdata):
+        # TODO: after we stop having paragraphs calling article.append_paragraph
+        return super().resolve_dependencies(xdata)
 
     @property
     def offset(self) -> int:

@@ -15,7 +15,7 @@ def load_articles(text_path: str, path_prefix: str):
     store = Store()
     element_store_path = Path(f"{path_prefix}_elements.json")
     store.load_elements(Path(text_path), element_store_path)
-    articles = [element for element in Element.instances if isinstance(element, Article)]
+    articles = [element for element in Element.instances.values() if isinstance(element, Article)]
     return articles
 
 
@@ -24,11 +24,12 @@ def main(args):
     print("found articles:", len(articles))
 
     max_len = args.max_len
-    SegmentBuilder(max_len, articles)
+    segment_builder = SegmentBuilder(max_len, articles)
+    print(f"Built {len(segment_builder.segments)} segments")
     # segments created segments = segment_builder.segments
 
     store = Store()
-    store.store_elements(Path(f"{args.path_prefix}_segments.json"), Element.instances)
+    store.store_elements(Path(f"{args.path_prefix}_segments.json"), Element.instances.values())
 
 
 if __name__ == '__main__':

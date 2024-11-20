@@ -28,10 +28,10 @@ class TestStore(unittest.TestCase):
         self.store.load_elements_from_handle(test_byte_reader, handle)
 
         self.assertEqual(len(Element.instances), 1)
-        self.assertIsInstance(Element.instances[0], Section)
-        self.assertEqual(Element.instances[0].index, 0)
-        self.assertEqual(Element.instances[0].offset, section.offset)
-        self.assertEqual(Element.instances[0].bytes, section.bytes)
+        self.assertIsInstance(Element.instances[section.uid], Section)
+        section2 = Element.instances[section.uid]
+        self.assertEqual(section2.offset, section.offset)
+        self.assertEqual(section2.bytes, section.bytes)
 
     def test_write_and_load_multiple(self):
         sec1 = Section(0, b"section 1")
@@ -60,7 +60,7 @@ class TestStore(unittest.TestCase):
         extended_segment.after_overlap = fragment2
 
         handle = StringIO()
-        self.store.write_elements_to_handle(handle, Element.instances)
+        self.store.write_elements_to_handle(handle, Element.instances.values())
 
         test_byte_reader = TestByteReader(_bytes)
         Element.instances.clear()
@@ -104,7 +104,7 @@ class TestStore(unittest.TestCase):
 
         Element.instances.clear()
         self.store.load_elements(text_file_path, element_store_path)
-        section2 = Element.instances[0]
+        section2 = Element.instances[section.uid]
 
         self.assertEqual(len(Element.instances), 1)
         self.assertIsInstance(section2, Section)

@@ -1,3 +1,5 @@
+from typing import Optional
+from uuid import UUID
 from gen.element.element import Element
 
 
@@ -11,8 +13,8 @@ class Section(Element):
     The other properties are derived.
     """
 
-    def __init__(self, offset: int, _bytes: bytes) -> None:
-        super().__init__()
+    def __init__(self, offset: int, _bytes: bytes, uid: Optional[UUID] = None) -> None:
+        super().__init__(uid=uid)
 
         assert isinstance(_bytes, bytes), f'bytes must be a bytes object (got {type(_bytes)})'
         assert is_positive_number(offset), f'offset must be a positive number (got {type(offset)})'
@@ -24,12 +26,6 @@ class Section(Element):
         self.__text = None
         self.__clean_text = None
 
-    def to_data(self):
-        data = super().to_data()
-        data['offset'] = self.offset
-        data['text'] = self.text
-        return data
-
     def to_xdata(self) -> dict:
         xdata = super().to_xdata()
         xdata['offset'] = self.offset
@@ -37,16 +33,12 @@ class Section(Element):
         return xdata
 
     @classmethod
-    def from_data(cls, data):
-        section = cls(data['offset'], data['text'].encode('utf-8'))
-        return section
-
-    @classmethod
     def from_xdata(cls, xdata, byte_reader):
+        uid = UUID(xdata['uid'])
         offset = xdata['offset']
         length = xdata['length']
         _bytes = byte_reader.read_bytes(offset, length)
-        section = cls(offset, _bytes)
+        section = cls(offset, _bytes, uid=uid)
         return section
 
     @property

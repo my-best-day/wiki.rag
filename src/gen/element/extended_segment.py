@@ -1,15 +1,16 @@
+from uuid import UUID
 from typing import Iterator, Optional
-from gen.element.container import Container
 from gen.element.element import Element
 from gen.element.segment import Segment
+from gen.element.container import Container
 
 
 class ExtendedSegment(Container):
     """
     ExtendedSegment is a container that contains a segment and (optional) overlaps.
     """
-    def __init__(self, segment: Segment) -> None:
-        super().__init__()
+    def __init__(self, segment: Segment, uid: Optional[UUID] = None) -> None:
+        super().__init__(uid=uid)
         self._before_overlap: Optional[Element] = None
         # most likely we will segment.segment = segment. init _segment to None
         self._segment: Segment = segment
@@ -73,47 +74,32 @@ class ExtendedSegment(Container):
             count += 1
         return count
 
-    def to_data(self):
-        data = super().to_data()
-        data['segment'] = self.segment.to_data()
-        if self.before_overlap:
-            data['before_overlap'] = self.before_overlap.to_data()
-        if self.after_overlap:
-            data['after_overlap'] = self.after_overlap.to_data()
-        return data
-
     def to_xdata(self):
         xdata = super().to_xdata()
-        xdata['segment'] = self.segment.index
+        xdata['segment_uid'] = str(self.segment.uid)
         if self.before_overlap:
-            xdata['before_overlap'] = self.before_overlap.index
+            xdata['before_overlap_uid'] = str(self.before_overlap.uid)
         if self.after_overlap:
-            xdata['after_overlap'] = self.after_overlap.index
+            xdata['after_overlap_uid'] = str(self.after_overlap.uid)
         return xdata
 
     @classmethod
-    def from_data(cls, data):
-        segment = Segment.from_data(data['segment'])
-        extended_segment = cls(segment)
-        if 'before_overlap' in data:
-            before_overlap = Element.hierarchy_from_data(data['before_overlap'])
-            extended_segment.before_overlap = before_overlap
-        if 'after_overlap' in data:
-            after_overlap = Element.hierarchy_from_data(data['after_overlap'])
-            extended_segment.after_overlap = after_overlap
+    def from_xdata(cls, xdata, byte_reader):
+        uid = UUID(xdata['uid'])
+        segment_uid = UUID(xdata['segment_uid'])
+        segment = Element.instances[segment_uid]
+        extended_segment = cls(segment, uid=uid)
         return extended_segment
 
-    @classmethod
-    def from_xdata(cls, xdata, byte_reader):
-        segment_index = xdata['segment']
-        segment = Element.instances[segment_index]
-        extended_segment = cls(segment)
-        if 'before_overlap' in xdata:
-            before_overlap_index = xdata['before_overlap']
-            before_overlap = Element.instances[before_overlap_index]
-            extended_segment.before_overlap = before_overlap
-        if 'after_overlap' in xdata:
-            after_overlap_index = xdata['after_overlap']
-            after_overlap = Element.instances[after_overlap_index]
-            extended_segment.after_overlap = after_overlap
-        return extended_segment
+    def resolve_dependencies(self, xdata):
+        super().resolve_dependencies(xdata)
+
+        if 'before_overlap_uid' in xdata:
+            before_overlap_uid = UUID(xdata['before_overlap_uid'])
+            before_overlap = Element.instances[before_overlap_uid]
+            self.before_overlap = before_overlap
+
+        if 'after_overlap_uid' in xdata:
+            after_overlap_uid = UUID(xdata['after_overlap_uid'])
+            after_overlap = Element.instances[after_overlap_uid]
+            self.after_overlap = after_overlap

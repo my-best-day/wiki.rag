@@ -1,5 +1,6 @@
+from uuid import UUID
 from abc import ABC, abstractmethod
-from typing import Iterator, Union
+from typing import Iterator, Union, Optional
 from gen.element.element import Element
 
 
@@ -7,8 +8,8 @@ class Container(Element, ABC):
     """
     A Container is an element that contains (group) other elements.
     """
-    def __init__(self):
-        Element.__init__(self)
+    def __init__(self, uid: Optional[UUID] = None) -> None:
+        Element.__init__(self, uid=uid)
         ABC.__init__(self)
         # for caching, see reset()
         self.__bytes: Union[bytes, None] = None

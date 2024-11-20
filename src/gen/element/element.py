@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Tuple, Optional, List
+from typing import TYPE_CHECKING, Tuple, Optional, Dict
 import re
-import json
 import unicodedata
 from abc import ABC
+from uuid import UUID, uuid4
 from xutils.encoding_utils import EncodingUtils
 
 if TYPE_CHECKING:
@@ -23,45 +23,30 @@ class Element(ABC):
     CLEAN_TEXT_PATTERN = r'[^a-zA-Z0-9\s,.!?\'"-]+'
     CLEAN_TEXT_REGEX = re.compile(CLEAN_TEXT_PATTERN)
 
-    instances: List['Element'] = []
+    instances: Dict[UUID, 'Element'] = {}
+    DELAY = uuid4()
 
-    def __init__(self):
-        self.index: int = len(Element.instances)
-        Element.instances.append(self)
+    def __init__(self, uid: Optional[UUID] = None):
+        should_delay = uid is Element.DELAY
+        if uid is None or uid is Element.DELAY:
+            uid = uuid4()
+        self.uid = uid
+        if not should_delay:
+            Element.instances[uid] = self
+
+    def register_object(self):
+        if self.uid not in Element.instances:
+            Element.instances[self.uid] = self
 
     def __str__(self):
-        return f"{self.__class__.__name__} (index={self.index})"
-
-    def to_data(self):
-        return self._element_to_data()
-
-    def _element_to_data(self):
-        return {
-            'class': self.__class__.__name__,
-        }
+        return f"{self.__class__.__name__} (uid={self.uid})"
 
     def to_xdata(self) -> dict:
-        xdata = self._element_to_data()
-        xdata['index'] = self.index
+        xdata = {
+            'class': self.__class__.__name__,
+            'uid': str(self.uid)
+        }
         return xdata
-
-    def to_json(self):
-        return json.dumps(self.to_data())
-
-    @classmethod
-    def hierarchy_from_json(cls, json_string):
-        data = json.loads(json_string)
-        return cls.hierarchy_from_data(data)
-
-    @classmethod
-    def hierarchy_from_data(cls, data):
-        if data['class'] == cls.__name__:
-            return cls.from_data(data)
-        for subclass in cls.__subclasses__():
-            result = subclass.hierarchy_from_data(data)
-            if result is not None:
-                return result
-        return None
 
     @classmethod
     def hierarchy_from_xdata(cls, data, reader):
@@ -73,12 +58,12 @@ class Element(ABC):
                 return result
 
     @classmethod
-    def from_data(cls, data):
-        raise NotImplementedError
-
-    @classmethod
     def from_xdata(cls, xdata, byte_reader):
         raise NotImplementedError
+
+    def resolve_dependencies(self, xdata):
+        """resolved references to other elements"""
+        pass
 
     @property
     def offset(self) -> int:

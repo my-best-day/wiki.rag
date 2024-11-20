@@ -2,6 +2,7 @@
 Multi-purpose store for elements and segments.
 """
 import json
+from uuid import UUID
 from pathlib import Path
 from gen.element.element import Element
 from xutils.byte_reader import ByteReader
@@ -37,6 +38,7 @@ class Store:
 
     def load_elements_from_handle(self, byte_reader, file) -> None:
         assert len(Element.instances) == 0, "Store already contains elements"
+        xdata_list = []
         for line in file:
             json_strings = line.split('\n')
             for json_string in json_strings:
@@ -44,3 +46,7 @@ class Store:
                     continue
                 xdata = json.loads(json_string)
                 Element.hierarchy_from_xdata(xdata, byte_reader)
+                xdata_list.append(xdata)
+        for xdata in xdata_list:
+            uid = UUID(xdata['uid'])
+            Element.instances[uid].resolve_dependencies

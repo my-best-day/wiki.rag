@@ -3,7 +3,7 @@ Element
         Header
         Paragraph
         Fragment
-        Overlap
+
     Container
         Article
         ExtendedSegment

@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 from gen.element.store import Store
 from gen.element.element import Element
+from gen.element.segment import Segment
+from gen.element.extended_segment import ExtendedSegment
 
 __import__("gen.element.article")
 __import__("gen.element.extended_segment")
@@ -17,7 +19,14 @@ logger = logging.getLogger(__name__)
 def main(args):
     store = Store()
     store.load_elements(Path(args.text), Path(f"{args.path_prefix}_segments.json"))
-    print(f"loaded {len(Element.instances)} segments")
+    print(f"loaded {len(Element.instances)} elements")
+    # count elements that are instanceof Segment
+    segments = [element for element in Element.instances.values()
+                if isinstance(element, Segment)]
+    print(f"found {len(segments)} segments")
+    extended_segments = [element for element in Element.instances.values()
+                         if isinstance(element, ExtendedSegment)]
+    print(f"found {len(extended_segments)} extended segments")
 
 
 if __name__ == '__main__':

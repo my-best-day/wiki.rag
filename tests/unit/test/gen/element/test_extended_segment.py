@@ -1,6 +1,7 @@
 import unittest
 from gen.element.segment import Segment
 from gen.element.section import Section
+from gen.element.fragment import Fragment
 from gen.element.extended_segment import ExtendedSegment
 from .common_container_tests import common_container_tests
 
@@ -33,7 +34,9 @@ class TestExtendedSegment(unittest.TestCase):
 
     def test_elements_with_overlaps(self):
         elements = list(self.ext_segment.elements)
+        self.assertIsInstance(elements[0], Fragment)
         self.assertEqual(elements[0], self.before_overlap)
+        self.assertIsInstance(elements[-1], Fragment)
         self.assertEqual(elements[-1], self.after_overlap)
         self.assertEqual(len(elements), 3)
 

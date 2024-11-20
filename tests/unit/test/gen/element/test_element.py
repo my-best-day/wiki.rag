@@ -1,6 +1,8 @@
-import json
 import unittest
+from uuid import UUID
 from io import StringIO
+
+from sympy import sec
 from gen.element.store import Store
 from gen.element.header import Header
 from gen.element.article import Article
@@ -85,63 +87,22 @@ class TestElement(unittest.TestCase):
 
     def test_str_lol(self):
         element = Section(0, b"")
-        self.assertEqual(str(element), f"Section (index={element.index})")
-
-    def test_to_data(self):
-        element = Section(15, b"hello")
-        expected = {'class': 'Section', 'offset': 15, 'text': 'hello'}
-        self.assertEqual(element.to_data(), expected)
-
-        element = Section(27, b"world")
-        expected = {'class': 'Section', 'offset': 27, 'text': 'world'}
-        self.assertEqual(element.to_data(), expected)
+        self.assertEqual(str(element), f"Section (uid={element.uid})")
 
     def test_to_xdata(self):
         element = Section(15, b"hello")
         expected = {'class': 'Section',
-                    'index': element.index,
+                    'uid': str(element.uid),
                     'offset': 15,
                     'length': element.byte_length}
         self.assertEqual(element.to_xdata(), expected)
 
         element = Section(27, b"world")
         expected = {'class': 'Section',
-                    'index': element.index,
+                    'uid': str(element.uid),
                     'offset': 27,
                     'length': element.byte_length}
         self.assertEqual(element.to_xdata(), expected)
-
-    def test_to_json(self):
-        element = Section(15, b"hello")
-        expected = {'class': 'Section', 'offset': 15, 'text': 'hello'}
-        expected_json_string = json.dumps(expected)
-        self.assertEqual(element.to_json(), expected_json_string)
-
-        element = Section(27, b"world")
-        expected = {'class': 'Section', 'offset': 27, 'text': 'world'}
-        expected_json_string = json.dumps(expected)
-        self.assertEqual(element.to_json(), expected_json_string)
-
-    def test_hierarchy_from_data(self):
-        data = {'class': 'Section', 'offset': 15, 'text': 'hello'}
-        element = Element.hierarchy_from_data(data)
-        self.assertIsInstance(element, Section)
-        self.assertEqual(element.offset, 15)
-        self.assertEqual(element.bytes, b'hello')
-
-    def test_hierarchy_from_data_article(self):
-        article = Article(Header(39, b'header'))
-        Paragraph(40, b'paragraph 1', article)
-        Paragraph(60, b'paragraph 2', article)
-
-        data = article.to_data()
-        Element.instances.clear()
-        article2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(article2, Article)
-        self.assertEqual(article2.header.bytes, b'header')
-        self.assertEqual(len(article2._paragraphs), 2)
-        self.assertEqual(article2._paragraphs[0].bytes, b'paragraph 1')
-        self.assertEqual(article2._paragraphs[1].bytes, b'paragraph 2')
 
     def test_hierarchy_from_xdata(self):
         element = Section(15, b"hello")
@@ -166,7 +127,7 @@ class TestElement(unittest.TestCase):
 
         element_json_buffer = StringIO()
         store = Store()
-        store.write_elements_to_handle(element_json_buffer, Element.instances)
+        store.write_elements_to_handle(element_json_buffer, Element.instances.values())
         _bytes = b' ' * 40 + header.bytes + paragraph1.bytes + paragraph2.bytes
         text_reader = TestByteReader(_bytes)
 
@@ -174,7 +135,7 @@ class TestElement(unittest.TestCase):
         element_json_buffer.seek(0)
         store.load_elements_from_handle(text_reader, element_json_buffer)
 
-        article2 = Element.instances[article.index]
+        article2 = Element.instances[article.uid]
         self.assertIsInstance(article2, Article)
         self.assertEqual(article2.header.bytes, b'header')
         self.assertEqual(len(article2._paragraphs), 2)
@@ -182,27 +143,49 @@ class TestElement(unittest.TestCase):
         self.assertEqual(article2._paragraphs[1].bytes, paragraph2.bytes)
 
     def test_extended_segment(self):
-        segment1 = Segment(Section(0, b"section 1"))
-        segment1.append_element(Section(10, b"section 2"))
+        sec0 = Section(0, b"before overlap")
+        sec1 = Section(sec0.offset + sec0.byte_length, b"section 1")
+        sec2 = Section(sec1.offset + sec1.byte_length, b"section 2")
+        sec3 = Section(sec2.offset + sec2.byte_length, b"section 3")
+        sec4 = Section(sec3.offset + sec3.byte_length, b"section 4")
+        sec5 = Section(sec4.offset + sec4.byte_length, b"after overlap")
 
-        segment2 = Segment(Section(20, b"section 3"))
-        segment2.append_element(Section(40, b"section 4"))
+        segment1 = Segment(sec1)
+        segment1.append_element(sec2)
+
+        segment2 = Segment(sec3)
+        segment2.append_element(sec4)
 
         extended_segment = ExtendedSegment(segment1)
         extended_segment.append_element(segment2)
-        extended_segment.before_overlap = Fragment(segment2, 0, b"before overlap")
-        extended_segment.after_overlap = Fragment(segment2, 100, b"after overlap")
+        extended_segment.before_overlap = sec0
+        extended_segment.after_overlap = sec5
 
-        data = extended_segment.to_data()
-        extended_segment2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(extended_segment2, ExtendedSegment)
-        self.assertEqual(extended_segment2.before_overlap.bytes, b"before overlap")
-        self.assertEqual(extended_segment2.segment.bytes, b"section 1section 2section 3section 4")
-        self.assertEqual(extended_segment2.after_overlap.bytes, b"after overlap")
+        xdata_list = []
+        for segment in [segment1, segment2]:
+            for element in segment.elements:
+                xdata_list.append(element.to_xdata())
 
-        xdata = extended_segment.to_xdata()
+        xdata_list.extend([
+            extended_segment.segment.to_xdata(),
+            extended_segment.to_xdata(),
+            extended_segment.before_overlap.to_xdata(),
+            extended_segment.after_overlap.to_xdata()
+        ])
         byte_reader = TestByteReader.from_element(extended_segment)
-        extended_segment2 = Element.hierarchy_from_xdata(xdata, byte_reader)
+
+        Element.instances.clear()
+
+        objects = []
+        for xdata in xdata_list:
+            obj = Element.hierarchy_from_xdata(xdata, byte_reader)
+            objects.append(obj)
+        for xdata in xdata_list:
+            uid = UUID(xdata['uid'])
+            Element.instances[uid].resolve_dependencies(xdata)
+
+        extended_segment2 = objects[6]
+
         self.assertIsInstance(extended_segment2, ExtendedSegment)
         self.assertEqual(extended_segment2.before_overlap.bytes, b"before overlap")
         self.assertEqual(extended_segment2.segment.bytes, b"section 1section 2section 3section 4")
@@ -211,13 +194,6 @@ class TestElement(unittest.TestCase):
     def test_fragment(self):
         section = Section(0, b"hello world")
         fragment = Fragment(section, 6, b"world")
-        data = fragment.to_data()
-
-        fragment2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(fragment2, Fragment)
-        self.assertEqual(fragment2.offset, 6)
-        self.assertEqual(fragment2.bytes, b"world")
-        self.assertIsInstance(fragment2.parent_section, Section)
 
         xdata = fragment.to_xdata()
         byte_reader = TestByteReader.from_element(section)
@@ -225,16 +201,10 @@ class TestElement(unittest.TestCase):
         self.assertIsInstance(fragment2, Fragment)
         self.assertEqual(fragment2.offset, 6)
         self.assertEqual(fragment2.bytes, b"world")
-        self.assertIsInstance(fragment2.parent_section, Section)
+        self.assertIsInstance(fragment2.parent, Section)
 
     def test_header(self):
         header = Header(39, b'header')
-        data = header.to_data()
-
-        header2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(header2, Header)
-        self.assertEqual(header2.offset, 39)
-        self.assertEqual(header2.bytes, b'header')
 
         xdata = header.to_xdata()
         byte_reader = TestByteReader.from_element(header)
@@ -244,62 +214,55 @@ class TestElement(unittest.TestCase):
         self.assertEqual(header2.bytes, b'header')
 
     def test_list_container(self):
-        list_container_1a = ListContainer(Section(0, b"section 1"))
-        list_container_1a.append_element(Section(10, b"section 2"))
+        sec1 = Section(0, b"section 1")
+        sec2 = Section(sec1.offset + sec1.byte_length, b"section 2")  # 9
+        sec3 = Section(sec2.offset + sec2.byte_length, b"section 3")  # 18
+        sec4 = Section(sec3.offset + sec3.byte_length, b"section 4")  # 27
+
+        list_container_1a = ListContainer(sec1)
+        list_container_1a.append_element(sec2)
 
         list_container_1b = ListContainer()
-        list_container_1b.append_element(Section(20, b"section 3"))
-        list_container_1b.append_element(Section(40, b"section 4"))
+        list_container_1b.append_element(sec3)
+        list_container_1b.append_element(sec4)
 
-        data_a = list_container_1a.to_data()
-        data_b = list_container_1b.to_data()
+        _bytes = b''
+        xdata_list = []
+        for list_container in [list_container_1a, list_container_1b]:
+            for element in list_container.elements:
+                xdata_list.append(element.to_xdata())
+            xdata_list.append(list_container.to_xdata())
+            _bytes += list_container.bytes
 
-        list_container_2a = Element.hierarchy_from_data(data_a)
+        byte_reader = TestByteReader(_bytes)
+
+        Element.instances.clear()
+
+        objects = [Element.hierarchy_from_xdata(xdata, byte_reader) for xdata in xdata_list]
+        for xdata in xdata_list:
+            uid = UUID(xdata['uid'])
+            Element.instances[uid].resolve_dependencies(xdata)
+
+        list_container_2a = objects[2]
         self.assertIsInstance(list_container_2a, ListContainer)
         self.assertEqual(list_container_2a.element_count, 2)
         self.assertEqual(list_container_2a.offset, 0)
         self.assertEqual(list_container_2a._elements[0].offset, 0)
-        self.assertEqual(list_container_2a._elements[1].offset, 10)
+        self.assertEqual(list_container_2a._elements[1].offset, 9)
         self.assertEqual(list_container_2a._elements[1].bytes, b"section 2")
 
-        list_container_2b = Element.hierarchy_from_data(data_b)
+        list_container_2b = objects[5]
         self.assertIsInstance(list_container_2b, ListContainer)
         self.assertEqual(list_container_2b.element_count, 2)
-        self.assertEqual(list_container_2b.offset, 20)
-        self.assertEqual(list_container_2b._elements[0].offset, 20)
-        self.assertEqual(list_container_2b._elements[1].offset, 40)
-        self.assertEqual(list_container_2b._elements[1].bytes, b"section 4")
-
-        xdata = list_container_1a.to_xdata()
-        byte_reader = TestByteReader.from_element(list_container_1a)
-        list_container_2a = Element.hierarchy_from_xdata(xdata, byte_reader)
-        self.assertIsInstance(list_container_2a, ListContainer)
-        self.assertEqual(list_container_2a.element_count, 2)
-        self.assertEqual(list_container_2a.offset, 0)
-        self.assertEqual(list_container_2a._elements[0].offset, 0)
-        self.assertEqual(list_container_2a._elements[1].offset, 10)
-        self.assertEqual(list_container_2a._elements[1].bytes, b"section 2")
-
-        xdata = list_container_1b.to_xdata()
-        byte_reader = TestByteReader.from_element(list_container_1b)
-        list_container_2b = Element.hierarchy_from_xdata(xdata, byte_reader)
-        self.assertIsInstance(list_container_2b, ListContainer)
-        self.assertEqual(list_container_2b.element_count, 2)
-        self.assertEqual(list_container_2b.offset, 20)
-        self.assertEqual(list_container_2b._elements[0].offset, 20)
-        self.assertEqual(list_container_2b._elements[1].offset, 40)
+        self.assertEqual(list_container_2b.offset, 18)
+        self.assertEqual(list_container_2b._elements[0].offset, 18)
+        self.assertEqual(list_container_2b._elements[1].offset, 27)
         self.assertEqual(list_container_2b._elements[1].bytes, b"section 4")
 
     def test_paragraph(self):
         header = Header(30, b'header')
         article = Article(header)
         paragraph = Paragraph(39, b'paragraph', article)
-        data = paragraph.to_data()
-
-        paragraph2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(paragraph2, Paragraph)
-        self.assertEqual(paragraph2.offset, 39)
-        self.assertEqual(paragraph2.bytes, b'paragraph')
 
         xdata = paragraph.to_xdata()
         byte_reader = TestByteReader.from_element(paragraph)
@@ -310,12 +273,6 @@ class TestElement(unittest.TestCase):
 
     def test_section(self):
         section = Section(39, b'section')
-        data = section.to_data()
-
-        section2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(section2, Section)
-        self.assertEqual(section2.offset, 39)
-        self.assertEqual(section2.bytes, b'section')
 
         xdata = section.to_xdata()
         byte_reader = TestByteReader.from_element(section)
@@ -325,43 +282,33 @@ class TestElement(unittest.TestCase):
         self.assertEqual(section2.bytes, b'section')
 
     def test_segment(self):
-        segment = Segment(Section(39, b'section'))
+        sec1 = Section(39, b'section')
+        segment = Segment(sec1)
         segment.append_element
-        data = segment.to_data()
 
-        segment2 = Element.hierarchy_from_data(data)
-        self.assertIsInstance(segment2, Segment)
-        self.assertEqual(segment2.offset, 39)
-        self.assertEqual(segment2.bytes, b'section')
-
-        xdata = segment.to_xdata()
+        xdata_list = [
+            sec1.to_xdata(),
+            segment.to_xdata()
+        ]
         byte_reader = TestByteReader.from_element(segment)
-        segment2 = Element.hierarchy_from_xdata(xdata, byte_reader)
+
+        Element.instances.clear()
+
+        objects = []
+        for xdata in xdata_list:
+            obj = Element.hierarchy_from_xdata(xdata, byte_reader)
+            objects.append(obj)
+        for xdata in xdata_list:
+            uid = UUID(xdata['uid'])
+            Element.instances[uid].resolve_dependencies(xdata)
+
+        segment2 = objects[1]
         self.assertIsInstance(segment2, Segment)
         self.assertEqual(segment2.offset, 39)
         self.assertEqual(segment2.bytes, b'section')
-
-    def test_json(self):
-        element = Section(15, b"hello")
-        expected = {'class': 'Section', 'offset': 15, 'text': 'hello'}
-        expected_json_string = json.dumps(expected)
-        self.assertEqual(element.to_json(), expected_json_string)
-
-        element = Section(27, b"world")
-        expected = {'class': 'Section', 'offset': 27, 'text': 'world'}
-        expected_json_string = json.dumps(expected)
-        self.assertEqual(element.to_json(), expected_json_string)
-
-        element2 = Element.hierarchy_from_json(expected_json_string)
-        self.assertIsInstance(element2, Section)
-        self.assertEqual(element2.offset, 27)
-        self.assertEqual(element2.bytes, b'world')
 
     def test_abstract_element(self):
         element = Element()
-
-        with self.assertRaises(NotImplementedError):
-            Element.from_data({})
 
         with self.assertRaises(NotImplementedError):
             element.offset
