@@ -2,7 +2,6 @@ import argparse
 import unittest
 from unittest.mock import Mock
 
-from attr import validate
 from gen.element.section import Section
 from gen.element_validator import ElementValidator
 # relative import
