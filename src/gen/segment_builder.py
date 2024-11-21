@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 from gen.element.element import Element
 from gen.element.section import Section
 from gen.element.article import Article
@@ -193,8 +193,10 @@ class SegmentBuilder:
             self.set_overlaps(self.max_len, prev_segment, target_segment, None)
 
     @staticmethod
-    def set_overlaps(max_len: int, prev_segment: ExtendedSegment, target_segment: ExtendedSegment,
-                     next_segment: ExtendedSegment) -> None:
+    def set_overlaps(max_len: int,
+                     prev_segment: Union[ExtendedSegment, None],
+                     target_segment: ExtendedSegment,
+                     next_segment: Union[ExtendedSegment, None]) -> None:
         """
         * we have three segments: previous, current, next
         * each segment is supposed to have at least 0.1 * max_len room for each overlap
