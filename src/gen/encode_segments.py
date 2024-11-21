@@ -89,8 +89,6 @@ if __name__ == '__main__':
     parser.add_argument("-bs", "--batch-size", type=int, help="Batch size")
     parser.add_argument("-bl", "--buffer-length", type=int, help="Buffer length")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
-    parser.add_argument("--mode", type=str, choices=["inline", "queued", "queued_threaded"],
-                        help="Mode: inline, queued, queued_threaded")
     args = parser.parse_args()
 
     if args.debug:
@@ -114,9 +112,6 @@ if __name__ == '__main__':
 
     if args.buffer_length is None:
         parser.error("Please provide the buffer length")
-
-    if args.mode is None:
-        parser.error("Please provide the mode")
 
     main(args)
     logger.info(f"Elapsed time: {time.time() - t0:.2f} seconds")

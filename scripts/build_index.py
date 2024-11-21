@@ -5,56 +5,24 @@ from pathlib import Path
 from gen.element.store import Store
 from gen.element.element import Element
 from gen.index_builder import IndexBuilder
-from gen.element_dumper import ElementDumper
 from gen.element_validator import ElementValidator
-from plumbing.queued_handler import QueuedHandler, JsonQueuedHandler, \
-    BatchedQueuedHandler, JBQueuedHandler
+
+from helpers.element_dumper import ElementDumper
 
 
 logger = logging.getLogger(__name__)
 
 
 def main(args):
-    # Chain: builder -> chainable_builder -> validator -> chainable_validator -> dumper
-
-    choice = 3
-    if choice == 1:
-        queued_handler_class = JsonQueuedHandler
-    elif choice == 2:
-        queued_handler_class = BatchedQueuedHandler
-    elif choice == 3:
-        queued_handler_class = JBQueuedHandler
-    else:
-        queued_handler_class = QueuedHandler
-
     builder: IndexBuilder = IndexBuilder(args)
-    if args.mode == "queued":
-        chainable_builder = queued_handler_class("builder -> validator")
-        builder.chain(chainable_builder)
-    else:
-        chainable_builder = builder
 
     validator: ElementValidator = ElementValidator(args)
-    chainable_builder.chain(validator)
-
-    if args.mode == "queued":
-        chainable_validator = queued_handler_class("validator -> dumper")
-        validator.chain(chainable_validator)
-    else:
-        chainable_validator = validator
+    builder.chain(validator)
 
     dumper: ElementDumper = ElementDumper(False)
-    chainable_validator.chain(dumper)
-
-    if args.mode == "queued":
-        getattr(chainable_builder, 'start', lambda: None)()
-        getattr(chainable_validator, 'start', lambda: None)()
+    validator.chain(dumper)
 
     builder.build()
-
-    if args.mode == "queued":
-        getattr(chainable_builder, 'stop', lambda: None)()
-        getattr(chainable_validator, 'stop', lambda: None)()
 
     article_count = len(builder.articles)
     paragraph_count = sum(len(article._paragraphs) for article in builder.articles)
@@ -74,8 +42,6 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--text", type=str, help="Path to the text file")
     parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
-    parser.add_argument("--mode", type=str, choices=["inline", "queued", "queued_threaded"],
-                        help="Mode: inline, queued, queued_threaded")
     args = parser.parse_args()
 
     if args.debug:
@@ -90,9 +56,6 @@ if __name__ == '__main__':
 
     if args.path_prefix is None:
         parser.error("Please provide the path prefix")
-
-    if args.mode is None:
-        parser.error("Please provide the mode")
 
     main(args)
     logger.info(f"Elapsed time: {time.time() - t0:.2f} seconds")

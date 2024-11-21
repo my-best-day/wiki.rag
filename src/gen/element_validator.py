@@ -41,7 +41,8 @@ class ElementValidator(Handler, Chainable):
         return self._byte_reader
 
     def start(self):
-        super().start()
+        raise NotImplementedError("start method is not implemented")
+        # super().start()
 
     def handle(self, element: Element):
         """

@@ -41,8 +41,6 @@ if __name__ == '__main__':
     parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
     parser.add_argument("-m", "--max-len", type=int, help="Maximum segment length")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
-    parser.add_argument("--mode", type=str, choices=["inline", "queued", "queued_threaded"],
-                        help="Mode: inline, queued, queued_threaded")
     args = parser.parse_args()
 
     if args.debug:
@@ -60,9 +58,6 @@ if __name__ == '__main__':
 
     if args.max_len is None:
         parser.error("Please provide the maximum segment length")
-
-    if args.mode is None:
-        parser.error("Please provide the mode")
 
     main(args)
     logger.info(f"Elapsed time: {time.time() - t0:.2f} seconds")
