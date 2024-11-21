@@ -9,6 +9,7 @@ Earlier attempts were in character / clean-text space and fail miserably.
 """
 import logging
 import argparse
+from typing import Union
 from plumbing.handler import Handler
 from gen.element.element import Element
 from plumbing.chainable import Chainable
@@ -70,7 +71,7 @@ class ElementValidator(Handler, Chainable):
                              f"Snippet: <<<{format_text(snippet)}>>>")
         self.forward(element)
 
-    def forward(self, element: Element):
+    def forward(self, element: Union[Element, None]):
         """
         Implements the Chainable interface. Forwards the element to the
         next handler.

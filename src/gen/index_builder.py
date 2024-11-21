@@ -16,13 +16,14 @@ Here we have
 import re
 import argparse
 import logging
-from typing import Generator, List
+from typing import Generator, List, Union
 from gen.element.chunk import Chunk
 from gen.element.header import Header
-from gen.element.article import Article
 from gen.element.section import Section
-from gen.element.paragraph import Paragraph
+from gen.element.element import Element
+from gen.element.article import Article
 from plumbing.chainable import Chainable
+from gen.element.paragraph import Paragraph
 from xutils.encoding_utils import EncodingUtils
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class IndexBuilder(Chainable):
         self.args: argparse.Namespace = args
         self.articles: List[Article] = []
 
-    def forward(self, element: Section):
+    def forward(self, element: Union[Element, None]):
         super().forward(element)
 
     def build(self):
