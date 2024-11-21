@@ -120,7 +120,7 @@ class SegmentBuilder:
         max_len = self.max_len
 
         result = True
-        if section.byte_length < 0.8 * max_len:
+        if section.byte_length <= 0.8 * max_len:
             logger.debug("section is short enough, not splitting")
             result = False
         else:
@@ -131,6 +131,7 @@ class SegmentBuilder:
                 split_at = int(section.byte_length / 2)
                 logger.debug("section is medium, splitting at %d", split_at)
             else:
+                logger.warning("sec length: %d, max_len: %d", section.byte_length, max_len)
                 assert False, "should never get here"
 
             lead, remainder = section.split(split_at)

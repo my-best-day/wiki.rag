@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 def main(args):
     store = Store()
-    store.load_elements(Path(args.text), Path(f"{args.path_prefix}_segments.json"))
+    text_path = Path(args.text)
+    segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
+    store.load_elements(text_path, segment_path)
     print(f"loaded {len(Element.instances)} elements")
     # count elements that are instanceof Segment
     segments = [element for element in Element.instances.values()

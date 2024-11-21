@@ -4,7 +4,14 @@ from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
+
+# max-token * raw2cln * tok2char * char2byte -> max-byte
+# 8192 tokens -> 256 * 1.05 * 3.9 * 1.05 ~> 35223
+
 CONFIG_1 = {"id": "nomic-ai/nomic-embed-text-v1.5", "max_len": 8192, "default": True}
+
+# max-token * raw2cln * tok2char * char2byte -> max-byte
+# 256 tokens -> 256 * 1.05 * 3.9 * 1.05 -> 1100
 CONFIG_2 = {"id": "all-MiniLM-L6-v2", "max_len": 256}
 CONFIG = CONFIG_2
 

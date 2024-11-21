@@ -15,12 +15,14 @@ def format_text(bytes: bytes) -> str:
 
 
 class ElementDumper(Handler):
-    def __init__(self):
+    def __init__(self, active: bool = True):
         super().__init__()
+        self.active = active
 
     def handle(self, element: Element):
         if element is not None:
-            self.dump(element)
+            if self.active:
+                self.dump(element)
         else:
             logger.info("Received poison pill")
 

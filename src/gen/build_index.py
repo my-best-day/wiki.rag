@@ -43,8 +43,8 @@ def main(args):
     else:
         chainable_validator = validator
 
-    # dumper: ElementDumper = ElementDumper()
-    # chainable_validator.chain(dumper)
+    dumper: ElementDumper = ElementDumper(False)
+    chainable_validator.chain(dumper)
 
     if args.mode == "queued":
         getattr(chainable_builder, 'start', lambda: None)()
@@ -73,7 +73,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Show random paragraphs from a JSON file.")
     parser.add_argument("-t", "--text", type=str, help="Path to the text file")
     parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
-    parser.add_argument("-m", "--max-len", type=int, help="Maximum segment length")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
     parser.add_argument("--mode", type=str, choices=["inline", "queued", "queued_threaded"],
                         help="Mode: inline, queued, queued_threaded")
@@ -91,9 +90,6 @@ if __name__ == '__main__':
 
     if args.path_prefix is None:
         parser.error("Please provide the path prefix")
-
-    if args.max_len is None:
-        parser.error("Please provide the maximum segment length")
 
     if args.mode is None:
         parser.error("Please provide the mode")

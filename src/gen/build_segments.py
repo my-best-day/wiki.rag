@@ -28,8 +28,9 @@ def main(args):
     print(f"Built {len(segment_builder.segments)} segments")
     # segments created segments = segment_builder.segments
 
+    segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
     store = Store()
-    store.store_elements(Path(f"{args.path_prefix}_segments.json"), Element.instances.values())
+    store.store_elements(segment_path, Element.instances.values())
 
 
 if __name__ == '__main__':

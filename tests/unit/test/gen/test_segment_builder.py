@@ -10,6 +10,8 @@ from gen.element.fragment import Fragment
 from gen.element.paragraph import Paragraph
 from gen.element.extended_segment import ExtendedSegment
 
+# TODO: add test for section which is 0.8 of the max_len
+
 
 class TestSegmentBuilder(unittest.TestCase):
 
