@@ -10,10 +10,10 @@ class TestByteReader(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open)
     def test_byte_reader(self, mock_open):
         text_file = BytesIO(
-            b'0123456789' +
-            b'abcdefghij' +
-            b'!@#$%^&*()' +
-            b'\x41\xC3\xA9\xE2\x82\xAC')
+            b'0123456789'
+            + b'abcdefghij'
+            + b'!@#$%^&*()'
+            + b'\x41\xC3\xA9\xE2\x82\xAC')
         mock_open.return_value = text_file
 
         path = Path("/dev/null")
