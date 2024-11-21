@@ -1,4 +1,15 @@
-continue build_segments
+
+2024-11-20
+
+- check coverage, add unit tests
+- make encode_segment incremental
+
++ encode segments, store embeddings
++ switched to UUIDs and resolve_dependencies
+
+
+2024-11-19
++ continue build_segments
 
 + xdata added
   saving constructs:
