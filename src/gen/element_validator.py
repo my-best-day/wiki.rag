@@ -41,11 +41,7 @@ class ElementValidator(Handler, Chainable):
             self._byte_reader = ByteReader(self.args.text)
         return self._byte_reader
 
-    def start(self):
-        raise NotImplementedError("start method is not implemented")
-        # super().start()
-
-    def handle(self, element: Element):
+    def handle(self, element: Union[Element, None]):
         """
         Implements the Handler interface.
         Validates the element until a poison pill is received.
