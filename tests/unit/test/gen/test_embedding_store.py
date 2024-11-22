@@ -254,3 +254,7 @@ class TestEmbeddingStore(unittest.TestCase):
         store = EmbeddingStore(path)
         with patch.object(Path, "exists", return_value=False):
             self.assertFalse(store.does_store_exist())
+
+
+if __name__ == "__main__":
+    unittest.main()
