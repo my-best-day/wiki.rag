@@ -95,7 +95,7 @@ class IndexBuilder(Chainable):
 
         return remainder
 
-    def handle_header(self, offset: int, matched_bytes: bytes) -> None
+    def handle_header(self, offset: int, matched_bytes: bytes) -> None:
         """
         Create a new Article.
 
