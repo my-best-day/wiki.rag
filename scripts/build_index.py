@@ -22,7 +22,7 @@ def main(args):
     dumper: ElementDumper = ElementDumper(False)
     validator.chain(dumper)
 
-    builder.build()
+    builder.build_index()
 
     article_count = len(builder.articles)
     paragraph_count = sum(len(article._paragraphs) for article in builder.articles)

@@ -9,17 +9,13 @@
             "name": "Python Debugger: build index",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/gen/build_index.py",
+            "program": "${workspaceFolder}/scripts/build_index.py",
             "console": "integratedTerminal",
             "args": [
                 "-t",
                 "ignore/wiki.test.tokens",
                 "-pp",
                 "data/test",
-                "-m",
-                "256",
-                "--mode",
-                "inline"
             ]
         },
         {
