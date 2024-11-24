@@ -16,11 +16,11 @@ Here we have
 import re
 import argparse
 import logging
-from typing import Generator, List, Union
+from typing import Generator, List
+
 from gen.element.chunk import Chunk
 from gen.element.header import Header
 from gen.element.section import Section
-from gen.element.element import Element
 from gen.element.article import Article
 from plumbing.chainable import Chainable
 from gen.element.paragraph import Paragraph
@@ -45,42 +45,73 @@ class IndexBuilder(Chainable):
         self.args: argparse.Namespace = args
         self.articles: List[Article] = []
 
-    def forward(self, element: Union[Element, None]):
-        super().forward(element)
+    def build_index(self):
+        """
+        Build the index of articles and paragraphs.
 
-    def build(self):
+        Read the text file in chunks and process each chunk to extract
+        articles and paragraphs.
+
+        Remainder - the text belongs to the next chunk is passed from chunk to the next.
+        """
         remainder = b""
         for chunk in self.read_chunks():
             if remainder:
                 chunk.prepend_bytes(remainder)
                 remainder = b""
-
-            offset = chunk.offset
-            text = chunk.bytes
-            while text:
-                match = self.ARTICLE_HEADER_REGEX.match(text)
-                if match:
-                    header = Header(offset, match.group(0))
-                    article = Article(header)
-                    self.articles.append(article)
-                    length = header.byte_length
-                    text = text[length:]
-                    self.forward(header)
-
-                else:
-                    match = self.PARAGRAPH_REGEX.match(text)
-                    if match:
-                        paragraph = Paragraph(offset, match.group(0), self.articles[-1])
-                        length = paragraph.byte_length
-                        text = text[length:]
-                        self.forward(paragraph)
-
-                    else:
-                        remainder = text
-                        text = b""
-                offset += length
+            remainder = self.process_chunk(chunk)
 
         self.forward(None)
+
+    def process_chunk(self, chunk: Chunk):
+        """
+        Process a chunk of text to extract articles and paragraphs.
+
+        Capture headers and paragraphs until the end of the chunk.
+        Return the remainder of the text that belongs to the next chunk.
+        """
+        remainder = b""
+        offset = chunk.offset
+        _bytes = chunk.bytes
+        while _bytes:
+            match = self.ARTICLE_HEADER_REGEX.match(_bytes)
+            if match:
+                matched = match.group(0)
+                length = len(matched)
+                self.handle_header(offset, matched)
+            else:
+                match = self.PARAGRAPH_REGEX.match(_bytes)
+                if match:
+                    matched = match.group(0)
+                    length = len(matched)
+                    self.handle_paragraph(offset, matched)
+                else:
+                    length = 0
+                    remainder = _bytes
+                    break
+            if length:
+                _bytes = _bytes[length:]
+                offset += length
+
+        return remainder
+
+    def handle_header(self, offset: int, matched_bytes: bytes) -> None
+        """
+        Create a new Article.
+
+        A new Header means a new Article.
+        """
+        header = Header(offset, matched_bytes)
+        article = Article(header)
+        self.articles.append(article)
+        self.forward(header)
+
+    def handle_paragraph(self, offset, matched_bytes):
+        """
+        create a new paragraph.
+        """
+        paragraph = Paragraph(offset, matched_bytes, self.articles[-1])
+        self.forward(paragraph)
 
     def read_chunks(self) -> Generator[Section, None, None]:
         with open(self.args.text, "rb") as inp:
