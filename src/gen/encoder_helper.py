@@ -1,0 +1,14 @@
+import threading
+
+
+def background_load():
+    try:
+        from sentence_transformers import SentenceTransformer  # noqa
+        # Perform any additional operations if needed
+    except Exception as e:
+        # Log the exception or handle it as needed
+        print(f"*** *** *** *** *** Background load failed: {e}")
+
+
+load_thread = threading.Thread(target=background_load, daemon=True)
+load_thread.start()
