@@ -56,6 +56,11 @@ class SegmentBuilder:
             self._segmentize_article(article)
             # AI: do we want to reset_article after each article or before it?
             self._reset_article()
+        # delete the last segment
+        last_extended_segment = self.segment
+        logger.warn("deleting segment %s", last_extended_segment.segment.uid)
+        del Element.instances[last_extended_segment.segment.uid]
+        del Element.instances[last_extended_segment.uid]
 
     def _segmentize_article(self, article: Article) -> None:
         """
@@ -102,6 +107,7 @@ class SegmentBuilder:
 
         logger.debug("close last segment")
         self.close_last_segment()
+
         self.segments.extend(self.article_segments)
 
     def _is_first_section(self) -> bool:
