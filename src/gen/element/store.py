@@ -49,4 +49,4 @@ class Store:
                 xdata_list.append(xdata)
         for xdata in xdata_list:
             uid = UUID(xdata['uid'])
-            Element.instances[uid].resolve_dependencies
+            Element.instances[uid].resolve_dependencies(xdata)
