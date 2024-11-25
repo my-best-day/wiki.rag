@@ -10,16 +10,14 @@ Earlier attempts were in character / clean-text space and fail miserably.
 import logging
 import argparse
 from typing import Union
-from plumbing.handler import Handler
 from gen.element.element import Element
-from plumbing.chainable import Chainable
 from xutils.byte_reader import ByteReader
 
 
 logger = logging.getLogger(__name__)
 
 
-class ElementValidator(Handler, Chainable):
+class ElementValidator:
     """
     The ElementValidator validates that the offset and the length of the element
     matches the actual bytes in the file. It reads the bytes from the file and
@@ -30,8 +28,6 @@ class ElementValidator(Handler, Chainable):
     Earlier attempts were in character / clean-text space and fail miserably.
     """
     def __init__(self, args: argparse.Namespace):
-        Handler.__init__(self)
-        Chainable.__init__(self)
         self.args: argparse.Namespace = args
         self._byte_reader = None
 
@@ -41,17 +37,22 @@ class ElementValidator(Handler, Chainable):
             self._byte_reader = ByteReader(self.args.text)
         return self._byte_reader
 
+    def validate_elements(self, elements: list):
+        """
+        Validates the elements until a poison pill is received.
+        """
+        for element in elements:
+            self.handle(element)
+        self.handle(None)
+
     def handle(self, element: Union[Element, None]):
         """
-        Implements the Handler interface.
         Validates the element until a poison pill is received.
         """
         if element is not None:
             self.validate_element(element)
         else:
-            logger.info("Received poison pill, forwarding None")
             self.cleanup()
-            self.forward(None)
 
     def validate_element(self, element: Element):
         """
@@ -65,14 +66,6 @@ class ElementValidator(Handler, Chainable):
             raise ValueError(f"snippet does not match section at offset {element.offset}:\n"
                              f"{caption}: <<<{format_text(element.bytes)}>>>\n"
                              f"Snippet: <<<{format_text(snippet)}>>>")
-        self.forward(element)
-
-    def forward(self, element: Union[Element, None]):
-        """
-        Implements the Chainable interface. Forwards the element to the
-        next handler.
-        """
-        super().forward(element)
 
     def cleanup(self):
         """not bullet proof, but something is better than nothing"""

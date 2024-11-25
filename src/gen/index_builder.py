@@ -22,14 +22,13 @@ from gen.element.chunk import Chunk
 from gen.element.header import Header
 from gen.element.section import Section
 from gen.element.article import Article
-from plumbing.chainable import Chainable
 from gen.element.paragraph import Paragraph
 from xutils.encoding_utils import EncodingUtils
 
 logger = logging.getLogger(__name__)
 
 
-class IndexBuilder(Chainable):
+class IndexBuilder:
     CHUNK_SIZE_BYTES = 2 ** 15  # 32KB
 
     # looks for lines that looks like ' = Heading 1 = '
@@ -60,8 +59,6 @@ class IndexBuilder(Chainable):
                 chunk.prepend_bytes(remainder)
                 remainder = b""
             remainder = self.process_chunk(chunk)
-
-        self.forward(None)
 
     def process_chunk(self, chunk: Chunk):
         """
@@ -104,14 +101,12 @@ class IndexBuilder(Chainable):
         header = Header(offset, matched_bytes)
         article = Article(header)
         self.articles.append(article)
-        self.forward(header)
 
     def handle_paragraph(self, offset, matched_bytes):
         """
         create a new paragraph.
         """
-        paragraph = Paragraph(offset, matched_bytes, self.articles[-1])
-        self.forward(paragraph)
+        Paragraph(offset, matched_bytes, self.articles[-1])
 
     def read_chunks(self) -> Generator[Section, None, None]:
         with open(self.args.text, "rb") as inp:

@@ -2,7 +2,7 @@ import unittest
 from io import BytesIO
 from pathlib import Path
 from xutils.byte_reader import ByteReader
-from unittest.mock import mock_open, patch
+from unittest.mock import mock_open, patch, Mock
 
 
 class TestByteReader(unittest.TestCase):
@@ -36,10 +36,14 @@ class TestByteReader(unittest.TestCase):
 
     def test_cleanup(self):
         path = Path("/dev/null")
-
+        mock_file = Mock()
         byte_reader = ByteReader(path)
+        byte_reader._file = mock_file
         byte_reader.cleanup()
         byte_reader.cleanup()
+
+        mock_file.close.assert_called_once()
+        self.assertIsNone(byte_reader._file)
 
 
 if __name__ == '__main__':

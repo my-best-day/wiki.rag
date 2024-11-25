@@ -24,42 +24,37 @@ class TestElementValidator(unittest.TestCase):
         validator = ElementValidator(self.args)
         validator.validate_element = Mock()
         validator.cleanup = Mock()
-        validator.forward = Mock()
 
         section = Section(0, b'0123456789')
         validator.handle(section)
         validator.validate_element.assert_called_once_with(section)
         validator.cleanup.assert_not_called()
-        validator.forward.assert_not_called()
 
         validator.validate_element.reset_mock()
         validator.handle(None)
         validator.validate_element.assert_not_called()
         validator.cleanup.assert_called_once()
-        validator.forward.assert_called_once_with(None)
 
     def test_validate_element(self):
         byte_reader = TestByteReader(b'0123456789')
         section = Section(3, b'3456789')
         validator = ElementValidator(self.args)
         validator._byte_reader = byte_reader
-        validator.forward = Mock()
         validator.validate_element(section)
-        validator.forward.assert_called_once_with(section)
 
         # use very long bytes to test format_text
         section = Section(3, b'abcdefghij' * 50)
-        validator.forward.reset_mock()
         with self.assertRaises(ValueError):
             validator.validate_element(section)
 
-    def test_forward(self):
+    def test_validate_elements(self):
+        byte_reader = TestByteReader(b'0123456789')
+        section1 = Section(3, b'3456789')
+        section2 = Section(3, b'abcdefghij' * 50)
         validator = ElementValidator(self.args)
-
-        next_handler = Mock()
-        validator.chain(next_handler)
-        validator.forward(self)
-        next_handler.handle.assert_called_once_with(self)
+        validator._byte_reader = byte_reader
+        with self.assertRaises(ValueError):
+            validator.validate_elements([section1, section2])
 
     def test_cleanup(self):
         validator = ElementValidator(self.args)

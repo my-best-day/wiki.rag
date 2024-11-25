@@ -18,8 +18,6 @@ class Paragraph(Section):
 
     def to_xdata(self) -> dict:
         xdata = super().to_xdata()
-        if self.article.uid not in Element.instances:
-            self.article.to_xdata()
         xdata['article_uid'] = str(self.article.uid)
         return xdata
 

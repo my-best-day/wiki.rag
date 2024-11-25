@@ -57,8 +57,7 @@ class TestIndexBuilder(unittest.TestCase):
         mock_handle_paragraph.assert_any_call(26, b'Paragraph 2\n')
         self.assertEqual(out_remainder, b'Para')
 
-    @patch('gen.index_builder.IndexBuilder.forward')
-    def test_handle_header(self, mock_forward):
+    def test_handle_header(self):
         # an article is created with the header
         # forward is called with the header
         builder = IndexBuilder(Mock())
@@ -70,10 +69,8 @@ class TestIndexBuilder(unittest.TestCase):
         self.assertEqual(builder.articles[0].header.bytes, b' = Header 1 =\n')
         self.assertEqual(builder.articles[0].offset, 12)
         self.assertEqual(builder.articles[0].bytes, b' = Header 1 =\n')
-        mock_forward.assert_called_once_with(builder.articles[0].header)
 
-    @patch('gen.index_builder.IndexBuilder.forward')
-    def test_handle_paragraph(self, mock_forward):
+    def test_handle_paragraph(self):
         # test that paragraph is created, associated with an article
         # for the article
         builder = IndexBuilder(Mock())
@@ -83,7 +80,6 @@ class TestIndexBuilder(unittest.TestCase):
         self.assertEqual(builder.articles[0]._paragraphs[0].offset, 26)
         self.assertEqual(builder.articles[0]._paragraphs[0].bytes, b'Paragraph X\n')
         self.assertEqual(builder.articles[0]._paragraphs[0].article, builder.articles[0])
-        mock_forward.assert_called_once_with(builder.articles[0]._paragraphs[0])
 
     @patch("builtins.open", new_callable=mock_open)
     def test_read_chunks(self, mock_open_func):

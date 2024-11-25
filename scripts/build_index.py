@@ -7,8 +7,6 @@ from gen.element.element import Element
 from gen.index_builder import IndexBuilder
 from gen.element_validator import ElementValidator
 
-from helpers.element_dumper import ElementDumper
-
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +15,7 @@ def main(args):
     builder: IndexBuilder = IndexBuilder(args)
 
     validator: ElementValidator = ElementValidator(args)
-    builder.chain(validator)
-
-    dumper: ElementDumper = ElementDumper(False)
-    validator.chain(dumper)
+    validator.validate_elements(Element.instances.values())
 
     builder.build_index()
 

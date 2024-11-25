@@ -1,5 +1,4 @@
 import logging
-from plumbing.handler import Handler
 from gen.element.element import Element
 
 
@@ -14,7 +13,7 @@ def format_text(bytes: bytes) -> str:
     return text
 
 
-class ElementDumper(Handler):
+class ElementDumper:
     def __init__(self, active: bool = True):
         super().__init__()
         self.active = active

@@ -2,7 +2,6 @@ import unittest
 from uuid import UUID
 from io import StringIO
 
-from sympy import sec
 from gen.element.store import Store
 from gen.element.header import Header
 from gen.element.article import Article
