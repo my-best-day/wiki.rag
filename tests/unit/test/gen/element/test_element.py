@@ -283,7 +283,6 @@ class TestElement(unittest.TestCase):
     def test_segment(self):
         sec1 = Section(39, b'section')
         segment = Segment(sec1)
-        segment.append_element
 
         xdata_list = [
             sec1.to_xdata(),
