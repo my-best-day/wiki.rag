@@ -1,8 +1,17 @@
 
+2024-11-25
+
+- simple search by segment
+- search by article
+- RAG
+
++ added incremental
++ coverage 98%
+
 2024-11-20
 
-- check coverage, add unit tests
-- make encode_segment incremental
++ check coverage, add unit tests
++ make encode_segment incremental
 
 + encode segments, store embeddings
 + switched to UUIDs and resolve_dependencies
