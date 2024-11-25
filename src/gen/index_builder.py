@@ -136,7 +136,6 @@ class IndexBuilder(Chainable):
                     buffer = b''
                     text = chunk
                 else:
-                    print(f"adjusting chunk at {offset + adjusted} (offset: {offset})")
                     text = chunk[:adjusted]
                     buffer = chunk[adjusted:]
 

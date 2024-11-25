@@ -27,7 +27,6 @@ class TestCleanFileLock:
     instances = []
 
     def __init__(self, *args, **kwargs):
-        print(f"TestCleanFileLock initialized with args: {args}, kwargs: {kwargs}")
         self.args = args
         self.kwargs = kwargs
         self.enter_call_count = 0
@@ -35,13 +34,11 @@ class TestCleanFileLock:
         TestCleanFileLock.instances.append(self)
 
     def __enter__(self):
-        print("TestCleanFileLock acquired")
         self.enter_call_count += 1
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.exit_call_count += 1
-        print("TestCleanFileLock released")
 
 
 class TestEmbeddingStore(unittest.TestCase):

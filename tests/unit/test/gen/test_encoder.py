@@ -8,14 +8,12 @@ class TestEncoder(unittest.TestCase):
     def test_init(self):
         batch_size = 31
         mock_model = Mock()
-        max_len = 128
-        with patch.object(Encoder, "get_model", return_value=(mock_model, max_len)):
+        with patch.object(Encoder, "get_model", return_value=mock_model):
             encoder = Encoder(batch_size)
 
             self.assertEqual(encoder.config, encoder_configs['small'])
             self.assertEqual(encoder.batch_size, batch_size)
             self.assertEqual(encoder.model, mock_model)
-            self.assertEqual(encoder.max_len, max_len)
 
     def test_encode(self):
         batch_size = 31
@@ -23,9 +21,8 @@ class TestEncoder(unittest.TestCase):
         mock_result = Mock()
         mock_model = MagicMock()
         mock_model.encode = MagicMock(return_value=mock_result)
-        max_len = 128
 
-        with patch.object(Encoder, "get_model", return_value=(mock_model, max_len)):
+        with patch.object(Encoder, "get_model", return_value=mock_model):
             encoder = Encoder(batch_size)
             result = encoder.encode(sentences)
 
@@ -38,11 +35,26 @@ class TestEncoder(unittest.TestCase):
         mock_model = Mock()
         batch_size = 31
         encoder = Encoder(batch_size)
-        with patch("gen.encoder.SentenceTransformer", return_value=mock_model):
-            model, max_len = encoder.get_model()
+        with patch.object(encoder, "_get_model", return_value=mock_model):
+            model = encoder.get_model()
 
             self.assertEqual(model, mock_model)
-            self.assertEqual(max_len, 256)
+
+    def test_protected_get_model(self):
+        model_id = "model_id"
+        device = "device"
+        mock_model = Mock()
+        encoder = Encoder(31)
+        with patch("gen.encoder.SentenceTransformer") as mock_generator:
+            mock_generator.return_value = mock_model
+            model = encoder._get_model(model_id, device)
+
+            self.assertEqual(model, mock_model)
+            mock_generator.assert_called_once_with(
+                model_name_or_path=model_id,
+                device=device,
+                trust_remote_code=True
+            )
 
     def test_get_device(self):
         with patch("torch.cuda.is_available", return_value=True):

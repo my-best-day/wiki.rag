@@ -19,22 +19,32 @@ class Encoder:
     def __init__(self, batch_size: int, config_id: str = "small"):
         self.config = encoder_configs[config_id]
         self.batch_size = batch_size
-        self.model, self.max_len = self.get_model()
+        self._model = None
 
     def encode(self, sentences):
         return self.model.encode(sentences, batch_size=self.batch_size)
 
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = self.get_model()
+        return self._model
+
     def get_model(self):
         device = self.get_device()
         model_id = self.config["model_id"]
-        max_len = self.config["max_len"]
 
+        model = self._get_model(model_id, device)
+
+        return model
+
+    def _get_model(self, model_id, device):
         model = SentenceTransformer(
             model_name_or_path=model_id,
             device=device,
             trust_remote_code=True,
         )
-        return model, max_len
+        return model
 
     @staticmethod
     def get_device():
