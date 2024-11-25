@@ -15,6 +15,7 @@ class Fragment(Section):
         xdata = super().to_xdata()
         xdata['parent_uid'] = str(self.parent.uid)
         start = self.offset - self.parent.offset
+        # start and end of the fragment in the parent section
         xdata['start'] = self.offset - self.parent.offset
         xdata['end'] = start + xdata['length']
         return xdata
