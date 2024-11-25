@@ -1,6 +1,6 @@
-import torch
 import logging
-from sentence_transformers import SentenceTransformer
+
+__import__("gen.encoder_helper")
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,13 @@ class Encoder:
         return self._model
 
     def get_model(self):
-        device = self.get_device()
         model_id = self.config["model_id"]
-
-        model = self._get_model(model_id, device)
-
+        model = self._get_model(model_id)
         return model
 
-    def _get_model(self, model_id, device):
+    def _get_model(self, model_id):
+        from sentence_transformers import SentenceTransformer
+        device = self.get_device()
         model = SentenceTransformer(
             model_name_or_path=model_id,
             device=device,
@@ -48,5 +47,6 @@ class Encoder:
 
     @staticmethod
     def get_device():
+        import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
         return device
