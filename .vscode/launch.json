@@ -6,7 +6,7 @@
     "configurations": [
 
         {
-            "name": "Python Debugger: build index",
+            "name": "Debug: build index",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/build_index.py",
@@ -16,6 +16,55 @@
                 "ignore/wiki.test.tokens",
                 "-pp",
                 "data/test",
+            ]
+        },
+        {
+            "name": "Debug: build seg",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/build_segments.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "ignore/wiki.test.tokens",
+                "-pp",
+                "data/test",
+                "-m",
+                "1100",
+            ]
+        },
+        {
+            "name": "Debug: encode seg",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/encode_segments.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "ignore/wiki.test.tokens",
+                "-pp",
+                "data/test",
+                "-m",
+                "1100",
+                "-bs",  // batch size
+                "50",
+                "-bl",  // buffer length, write every so often
+                "80"
+            ]
+        },
+        {
+            "name": "Debug: lookup",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/lookup.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "ignore/wiki.test.tokens",
+                "-pp",
+                "data/test",
+                "-m",
+                "1100",
             ]
         },
         {
@@ -30,9 +79,7 @@
                 "-pp",
                 "data/test",
                 "-m",
-                "256",
-                "--mode",
-                "inline"
+                "1100",
             ]
         },
         {
