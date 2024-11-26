@@ -14,9 +14,12 @@ from gen.element.extended_segment import ExtendedSegment
 
 
 class TestSegmentBuilder(unittest.TestCase):
+    header = Header(0, b'')
+    article = Article(header)
 
-    def _create(self, byte_length: int, _bytes: bytes) -> ExtendedSegment:
-        return ExtendedSegment(Segment(Section(byte_length, _bytes)))
+    def _create(self, byte_length: int, _bytes: bytes,
+                article: Article = article) -> ExtendedSegment:
+        return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def test_basic(self):
         """three short articles -> three segments"""

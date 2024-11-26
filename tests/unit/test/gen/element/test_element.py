@@ -149,10 +149,13 @@ class TestElement(unittest.TestCase):
         sec4 = Section(sec3.offset + sec3.byte_length, b"section 4")
         sec5 = Section(sec4.offset + sec4.byte_length, b"after overlap")
 
-        segment1 = Segment(sec1)
+        header = Header(0, b'')
+        article = Article(header)
+
+        segment1 = Segment(article, sec1)
         segment1.append_element(sec2)
 
-        segment2 = Segment(sec3)
+        segment2 = Segment(article, sec3)
         segment2.append_element(sec4)
 
         extended_segment = ExtendedSegment(segment1)
@@ -161,6 +164,8 @@ class TestElement(unittest.TestCase):
         extended_segment.after_overlap = sec5
 
         xdata_list = []
+        xdata_list.append(header.to_xdata())
+        xdata_list.append(article.to_xdata())
         for segment in [segment1, segment2]:
             for element in segment.elements:
                 xdata_list.append(element.to_xdata())
@@ -183,7 +188,7 @@ class TestElement(unittest.TestCase):
             uid = UUID(xdata['uid'])
             Element.instances[uid].resolve_dependencies(xdata)
 
-        extended_segment2 = objects[6]
+        extended_segment2 = objects[8]
 
         self.assertIsInstance(extended_segment2, ExtendedSegment)
         self.assertEqual(extended_segment2.before_overlap.bytes, b"before overlap")
@@ -281,10 +286,14 @@ class TestElement(unittest.TestCase):
         self.assertEqual(section2.bytes, b'section')
 
     def test_segment(self):
+        header = Header(0, b'')
+        article = Article(header)
         sec1 = Section(39, b'section')
-        segment = Segment(sec1)
+        segment = Segment(article, sec1)
 
         xdata_list = [
+            header.to_xdata(),
+            article.to_xdata(),
             sec1.to_xdata(),
             segment.to_xdata()
         ]
@@ -300,7 +309,7 @@ class TestElement(unittest.TestCase):
             uid = UUID(xdata['uid'])
             Element.instances[uid].resolve_dependencies(xdata)
 
-        segment2 = objects[1]
+        segment2 = objects[3]
         self.assertIsInstance(segment2, Segment)
         self.assertEqual(segment2.offset, 39)
         self.assertEqual(segment2.bytes, b'section')

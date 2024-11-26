@@ -1,6 +1,8 @@
 import unittest
+from gen.element.header import Header
 from gen.element.segment import Segment
 from gen.element.section import Section
+from gen.element.article import Article
 from gen.element.fragment import Fragment
 from gen.element.extended_segment import ExtendedSegment
 from .common_container_tests import common_container_tests
@@ -17,7 +19,10 @@ class TestExtendedSegment(unittest.TestCase):
         after_overlap, _ = after_section.split(23)
         self.after_overlap = after_overlap
 
-        self.ext_segment: ExtendedSegment = ExtendedSegment(Segment(self.section1))
+        header = Header(offset=0, _bytes=b'header')
+        article = Article(header)
+
+        self.ext_segment: ExtendedSegment = ExtendedSegment(Segment(article, self.section1))
         self.ext_segment.before_overlap = self.before_overlap
         self.ext_segment.append_element(self.section2)
         self.ext_segment.after_overlap = self.after_overlap
@@ -25,7 +30,7 @@ class TestExtendedSegment(unittest.TestCase):
         self.elements = [self.before_overlap, self.section1, self.section2, self.after_overlap]
 
         self.ext_segment_no_before_overlap: ExtendedSegment = \
-            ExtendedSegment(Segment(self.section1))
+            ExtendedSegment(Segment(article, self.section1))
         self.ext_segment_no_before_overlap.append_element(self.section2)
 
     def test_common(self):

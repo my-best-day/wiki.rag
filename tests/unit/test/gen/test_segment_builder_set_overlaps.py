@@ -1,16 +1,21 @@
 # cSpell:disable
 
 import unittest
-from gen.segment_builder import SegmentBuilder
+from gen.element.header import Header
+from gen.element.article import Article
 from gen.element.segment import Segment
 from gen.element.section import Section
 from gen.element.extended_segment import ExtendedSegment
+from gen.segment_builder import SegmentBuilder
 
 
 class TestSegmentBuilderSetOverlaps(unittest.TestCase):
+    header = Header(0, b'')
+    article = Article(header)
 
-    def _create(self, byte_length: int, _bytes: bytes) -> ExtendedSegment:
-        return ExtendedSegment(Segment(Section(byte_length, _bytes)))
+    def _create(self, byte_length: int, _bytes: bytes,
+                article: Article = article) -> ExtendedSegment:
+        return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def test_set_overlaps_enough_room(self):
         prev_sec = self._create(0, b'0123456789')

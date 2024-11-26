@@ -74,6 +74,10 @@ class ExtendedSegment(Container):
             count += 1
         return count
 
+    @property
+    def article(self):
+        return self.segment.article
+
     def to_xdata(self):
         xdata = super().to_xdata()
         xdata['segment_uid'] = str(self.segment.uid)

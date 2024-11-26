@@ -4,6 +4,8 @@ from io import StringIO, BytesIO
 from unittest.mock import mock_open, patch
 
 from gen.element.store import Store
+from gen.element.header import Header
+from gen.element.article import Article
 from gen.element.element import Element
 from gen.element.section import Section
 from gen.element.segment import Segment
@@ -46,13 +48,16 @@ class TestStore(unittest.TestCase):
         _, fragment1 = sec2.split(-4, after_char=True, include_first=False, include_remainder=True)
         fragment2, _ = sec5.split(4, after_char=True, include_first=True, include_remainder=False)
 
-        segment1 = Segment(sec1)
+        header = Header(0, b'')
+        article = Article(header)
+
+        segment1 = Segment(article, sec1)
         segment1.append_element(sec2)
 
-        segment2 = Segment(sec3)
+        segment2 = Segment(article, sec3)
         segment2.append_element(sec4)
 
-        segment3 = Segment(sec5)
+        segment3 = Segment(article, sec5)
         segment3.append_element(sec6)
 
         extended_segment = ExtendedSegment(segment2)
