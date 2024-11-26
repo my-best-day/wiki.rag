@@ -1,3 +1,4 @@
+import os
 import threading
 
 
@@ -10,5 +11,6 @@ def background_load():
         print(f"*** *** *** *** *** Background load failed: {e}")
 
 
-load_thread = threading.Thread(target=background_load, daemon=True)
-load_thread.start()
+if not os.getenv("UNIT_TESTING"):
+    load_thread = threading.Thread(target=background_load, daemon=True)
+    load_thread.start()

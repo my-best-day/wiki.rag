@@ -1,7 +1,5 @@
 import sys
-import time
 import unittest
-from unittest import mock
 from unittest.mock import Mock, MagicMock, patch
 from gen.encoder import Encoder, encoder_configs
 
@@ -44,14 +42,17 @@ class TestEncoder(unittest.TestCase):
             self.assertEqual(model, mock_model)
 
     @patch.dict("sys.modules", {"sentence_transformers": MagicMock()})
-    @patch("torch.cuda.is_available", return_value=True)
-    def test_protected_get_model(self, mock_cuda):
-        t0 = time.time()
+    @patch.dict("sys.modules", {"torch": MagicMock()})
+    def test_protected_get_model(self):
+        mock_torch = sys.modules["torch"]
+        mock_cuda = MagicMock
+        mock_cuda.is_available = MagicMock(return_value=True)
+        mock_torch.cuda = mock_cuda
+
         mock_model = Mock()
         mock_sentence_transformer = MagicMock(return_value=mock_model)
         mock_sentence_transformers = sys.modules["sentence_transformers"]
         mock_sentence_transformers.SentenceTransformer = mock_sentence_transformer
-        mock
 
         model_id = "model_id"
 
@@ -64,17 +65,21 @@ class TestEncoder(unittest.TestCase):
             device='cuda',
             trust_remote_code=True
         )
-        t1 = time.time()
-        print(f"Time to test protected get model: {(t1 - t0):.3f} sec")
 
+    @patch.dict("sys.modules", {"torch": MagicMock()})
     def test_get_device(self):
-        with patch("torch.cuda.is_available", return_value=True):
-            device = Encoder.get_device()
-            self.assertEqual(device, "cuda")
+        mock_torch = sys.modules["torch"]
+        mock_cuda = MagicMock
+        mock_cuda.is_available = MagicMock(return_value=True)
+        mock_torch.cuda = mock_cuda
+        # with patch("torch.cuda.is_available", return_value=True):
+        device = Encoder.get_device()
+        self.assertEqual(device, "cuda")
 
-        with patch("torch.cuda.is_available", return_value=False):
-            device = Encoder.get_device()
-            self.assertEqual(device, "cpu")
+        mock_cuda.is_available = MagicMock(return_value=False)
+        # with patch("torch.cuda.is_available", return_value=False):
+        device = Encoder.get_device()
+        self.assertEqual(device, "cpu")
 
 
 if __name__ == '__main__':

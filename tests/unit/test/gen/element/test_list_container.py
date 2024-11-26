@@ -87,12 +87,6 @@ class TestListContainer(unittest.TestCase):
         self.assertEqual(self.container.text, 'hello <<sweet>> world')
         self.assertEqual(self.container.clean_text, 'hello sweet world')
 
-    # def test_prepend_and_reset(self):
-    #     self.sections[0].prepend_bytes(b'hey$$$ ')
-    #     self.assertEqual(self.container.offset, self.sections[0].offset)
-    #     self.assertEqual(self.container.text, 'hey$$$ helloworld')
-    #     self.assertEqual(self.container.clean_text, 'hey helloworld')
-
     def test_elements_property_returns_iterator(self):
         self.assertIsInstance(self.container.elements, Iterator)
 
