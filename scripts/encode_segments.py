@@ -33,7 +33,7 @@ class SegmentEncoder:
             embedding_store_path.unlink()
 
     @property
-    def segments(self):
+    def extended_segments(self):
         store = Store()
         text_file_path = Path(args.text)
         segment_file_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
@@ -43,29 +43,32 @@ class SegmentEncoder:
         return extended_segments
 
     @property
-    def segments_to_encode(self):
+    def extended_segments_to_encode(self):
         assert self.args.max_items >= 0, "max_items must be non-negative"
 
-        all_segments = self.segments
+        all_extended_segments = self.extended_segments
 
         count = 0
         if self.args.incremental:
             count = self.embedding_store.get_count()
-            segments = all_segments[count:]
+            extended_segments = all_extended_segments[count:]
         else:
-            segments = all_segments
+            extended_segments = all_extended_segments
 
         if self.args.max_items > 0:
-            segments = segments[:self.args.max_items]
+            extended_segments = extended_segments[:self.args.max_items]
 
-        msg = f"{len(all_segments)} total segments, {count} processed, {len(segments)} pending"
+        msg = (
+            f"{len(all_extended_segments)} total ext segments, {count} processed, "
+            f"{len(extended_segments)} pending"
+        )
         logger.info(msg)
 
-        return segments
+        return extended_segments
 
     def encode_segments(self):
-        segments = self.segments_to_encode
-        if not segments:
+        extended_segments = self.extended_segments_to_encode
+        if not extended_segments:
             logger.info("No segments to encode")
             return
 
@@ -73,8 +76,8 @@ class SegmentEncoder:
         buffer_length = self.args.buffer_length
         uids_buffer = []
         embedding_buffer = []
-        for i in range(0, len(segments), batch_size):
-            batch = segments[i:i + batch_size]
+        for i in range(0, len(extended_segments), batch_size):
+            batch = extended_segments[i:i + batch_size]
             batch_text = [segment.text for segment in batch]
             batch_uids = [segment.uid for segment in batch]
             batch_embeddings = self.encode(batch_text)
@@ -87,7 +90,7 @@ class SegmentEncoder:
 
             # Process the batch here
             current_batch = i // batch_size + 1
-            total_batches = (len(segments) + batch_size - 1) // batch_size
+            total_batches = (len(extended_segments) + batch_size - 1) // batch_size
             logger.info(f"Processing batch {current_batch} / {total_batches}")
 
         if uids_buffer:
