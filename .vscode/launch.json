@@ -19,7 +19,7 @@
             ]
         },
         {
-            "name": "Debug: build seg",
+            "name": "Debug: BUILD SEG",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/build_segments.py",
@@ -31,6 +31,22 @@
                 "data/test",
                 "-m",
                 "1100",
+            ]
+        },
+        {
+            "name": "Debug: WATCH seg",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/watch_segments.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "ignore/wiki.test.tokens",
+                "-pp",
+                "data/test",
+                "-m",
+                "1100",
+                "--verbose"
             ]
         },
         {

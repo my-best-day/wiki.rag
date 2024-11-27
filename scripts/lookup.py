@@ -1,4 +1,5 @@
 import sys
+import time
 import logging
 import argparse
 import numpy as np
@@ -73,22 +74,30 @@ class LookupCLI:
             if query.lower() in ("exit", "quit"):
                 break
 
-            # [(segment uid, similarity score),...]
+            t0 = time.time()
             nearest_segments: List[Tuple[UUID, float]] = \
                 self.k_nearest_segments.find_k_nearest_segments(query, self.args.k)
+            elapsed = time.time() - t0
 
-            self.display_nearest_segments(query, nearest_segments)
+            self.display_nearest_segments(query, nearest_segments, elapsed)
 
-    def display_nearest_segments(self, query, nearest_segments):
+    def display_nearest_segments(self, query, nearest_segments, elapsed):
 
+        print("\n\n\n\n")
         print("Nearest Segments ", ">>>> " * 10)
-        print("QUERY: ", query)
-        print("---- " * 10)
+        print("Nearest Segments ", ">>>> " * 10)
+        print("QUERY:", query)
+        print(f"{len(query)}, {elapsed:.4f}s" + "---- " * 10)
         for i, (uid, score) in enumerate(nearest_segments):
             segment = self.get_segment(uid)
+
+            text = segment.before_overlap.text if segment.before_overlap else ""
+            text += "][" + segment.segment.text + "]["
+            text += segment.after_overlap.text if segment.after_overlap else ""
+
             print(f"{i + 1}. Segment ID: {uid}, Score: {score:.4f}, "
                   f"(off: {segment.offset}, len: {len(segment.text)})")
-            print(segment.text)
+            print(text)
             print("<--- " * 10, "\n")
 
     @property
