@@ -25,27 +25,42 @@ def main(args):
     # count elements that are instanceof Segment
     segments = [element for element in Element.instances.values()
                 if isinstance(element, Segment)]
-    print(f"FOUND {len(segments)} segments")
-    if args.verbose:
-        if len(segments) <= 10:
-            show = segments
-        else:
-            show = segments[:5] + segments[-5:]
-        for segment in show:
-            print(f"SEGMENT: {segment.uid}", end=" ")
-            sample = f"'{segment.text[:30]}...{segment.text[-30:]}'"
-            print(f"[{segment.offset}, {segment.byte_length}] : {sample}")
+
     extended_segments = [element for element in Element.instances.values()
                          if isinstance(element, ExtendedSegment)]
+
+    print(f"FOUND {len(segments)} segments")
     print(f"FOUND {len(extended_segments)} extended segments")
+
     if args.verbose:
-        if len(extended_segments) <= 10:
+        n = args.number
+        m = n // 2
+        if n < 0 or len(extended_segments) <= n:
             show = extended_segments
         else:
-            show = extended_segments[:5] + extended_segments[-5:]
-        for extended_segment in show:
-            sample = f"'{extended_segment.text[:30]}...{extended_segment.text[-30:]}'"
-            print(f"[{extended_segment.offset}, {extended_segment.byte_length}] : {sample}")
+            show = extended_segments[:m] + extended_segments[-m:]
+
+        for i, xseg in enumerate(show):
+            sample = (
+                f">{get_sample(xseg.before_overlap, 30).rjust(33)}<--"
+                f"{get_sample(xseg.segment, 60).ljust(63)}--> "
+                f"{get_sample(xseg.after_overlap, 30).ljust(33)}<"
+            )
+            print(f"{i:2d}, {xseg.offset:8d}, {xseg.byte_length:4d}, {sample}"
+                  f" ({xseg.uid})")
+
+
+def get_sample(element, room):
+    if element is None:
+        result = "NONE"
+    else:
+        text = element.text.replace("\n", "\\n")
+        if len(text) <= room:
+            result = text
+        else:
+            rom = room // 2
+            result = f"{text[:rom]}...{text[-rom:]}"
+    return result
 
 
 if __name__ == '__main__':
@@ -58,6 +73,7 @@ if __name__ == '__main__':
     parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
     parser.add_argument("-m", "--max-len", type=int, help="Maximum segment length")
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose mode")
+    parser.add_argument("-n", "--number", type=int, default=10, help="Number of samples to show")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
     args = parser.parse_args()
 
