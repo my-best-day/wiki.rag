@@ -32,6 +32,7 @@ def main(args):
     print(f"FOUND {len(segments)} segments")
     print(f"FOUND {len(extended_segments)} extended segments")
 
+    last_article_id = None
     if args.verbose:
         n = args.number
         m = n // 2
@@ -41,6 +42,11 @@ def main(args):
             show = extended_segments[:m] + extended_segments[-m:]
 
         for i, xseg in enumerate(show):
+            article = xseg.article
+            if article.uid != last_article_id:
+                print(f"ARTICLE: {article.header.text.strip()} ({article.uid})")
+                last_article_id = article.uid
+
             sample = (
                 f">{get_sample(xseg.before_overlap, 30).rjust(33)}<--"
                 f"{get_sample(xseg.segment, 60).ljust(63)}--> "
