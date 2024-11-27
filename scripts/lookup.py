@@ -86,8 +86,6 @@ class LookupCLI:
         print("---- " * 10)
         for i, (uid, score) in enumerate(nearest_segments):
             segment = self.get_segment(uid)
-            print(f"UID: {uid}, Score: {score}")
-            print(segment.text)
             print(f"{i + 1}. Segment ID: {uid}, Score: {score:.4f}, "
                   f"(off: {segment.offset}, len: {len(segment.text)})")
             print(segment.text)
