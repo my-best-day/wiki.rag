@@ -1,9 +1,15 @@
 
 2024-11-25
 
-- simple search by segment
+- create a simple Web UI
++ simple search by segment
 - search by article
+  + rudimentary
+  - extend
 - RAG
+- improve segmentation:
+  - if current segment doesn't have room for the next section but it is
+    mostly empty, split the next section and fill up the segment
 
 + added incremental
 + coverage 98%
@@ -228,3 +234,6 @@ def main():
 
 - main gets input from user, calls the lookup service, prints results
 - lookup reads segments and embeddings, performs the lookup and returns results
+
+
+#####################################################

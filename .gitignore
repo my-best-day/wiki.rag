@@ -16,6 +16,7 @@ local_config.ini
 # must end with / to avoid ignoring files with the same prefix
 # anywhere in the directory tree
 venv/
+test_venv/
 tmp/
 /movies
 /instacart
