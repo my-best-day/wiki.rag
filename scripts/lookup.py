@@ -12,8 +12,8 @@ from gen.search.k_nearest_finder import KNearestFinder
 class LookupCLI:
     def __init__(self, args):
         self.args = args
-        self.stores = Stores(args)
-        self.k_nearest_finder = KNearestFinder(args, self.stores)
+        self.stores = Stores(args.text, args.path_prefix, args.max_len)
+        self.k_nearest_finder = KNearestFinder(self.stores)
         self._extended_segment_map = None
         self._article_map = None
 

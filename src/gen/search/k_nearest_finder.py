@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 import pandas as pd
 from uuid import UUID
@@ -11,12 +10,8 @@ from gen.encoder import Encoder
 from gen.search.stores import Stores
 
 
-# TODO: don't use args here
-
-
 class KNearestFinder:
-    def __init__(self, args: argparse.Namespace, stores: Stores):
-        self.args = args
+    def __init__(self, stores: Stores):
         self.stores = stores
         self.encoder = Encoder(1)
 

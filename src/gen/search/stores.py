@@ -2,7 +2,6 @@
 Sugar for loading and accessing the stores.
 Consider refactoring this to make reduce duplication.
 """
-import argparse
 from uuid import UUID
 from pathlib import Path
 from typing import List, Tuple
@@ -16,12 +15,12 @@ from gen.element.element import Element
 from gen.element.article import Article
 from gen.element.extended_segment import ExtendedSegment
 
-# TODO: don't use args here
-
 
 class Stores:
-    def __init__(self, args):
-        self.args: argparse.Namespace = args
+    def __init__(self, text_file_path: str, path_prefix: str, max_len: int):
+        self.text_file_path = text_file_path
+        self.path_prefix = path_prefix
+        self.max_len = max_len
 
         self._segments_loaded = False
 
@@ -33,9 +32,8 @@ class Stores:
 
     def _load_segments(self):
         if not self._segments_loaded:
-            args = self.args
-            segment_file_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
-            text_file_path = Path(args.text)
+            segment_file_path = Path(f"{self.path_prefix}_{self.max_len}_segments.json")
+            text_file_path = Path(self.text_file_path)
             segment_store = Store()
             segment_store.load_elements(text_file_path, segment_file_path)
             self._segments_loaded = True
@@ -43,8 +41,7 @@ class Stores:
     @property
     def embeddings(self) -> Tuple[List[UUID], NDArray]:
         if self._embeddings is None:
-            args = self.args
-            embedding_store_path = Path(f"{args.path_prefix}_{args.max_len}_embeddings.npz")
+            embedding_store_path = Path(f"{self.path_prefix}_{self.max_len}_embeddings.npz")
             embedding_store = EmbeddingStore(embedding_store_path)
             self._uids, self._embeddings = embedding_store.load_embeddings()
         return self._uids, self._embeddings
