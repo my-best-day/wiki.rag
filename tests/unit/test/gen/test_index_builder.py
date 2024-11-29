@@ -1,9 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch, mock_open
-from gen.element.chunk import Chunk
 from gen.element.header import Header
 from gen.element.article import Article
-from gen.index_builder import IndexBuilder
+from gen.index_builder import IndexBuilder, Chunk
 
 
 class TestIndexBuilder(unittest.TestCase):
