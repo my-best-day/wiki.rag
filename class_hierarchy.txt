@@ -9,8 +9,6 @@ Element
         ExtendedSegment
         ListContainer
             Segment
-    Snippet
-        # WIP
 
 
 Element

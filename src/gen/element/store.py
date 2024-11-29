@@ -8,6 +8,18 @@ from gen.element.element import Element
 from xutils.byte_reader import ByteReader
 
 
+__import__("gen.element.element")
+__import__("gen.element.section")
+__import__("gen.element.header")
+__import__("gen.element.paragraph")
+__import__("gen.element.fragment")
+__import__("gen.element.container")
+__import__("gen.element.article")
+__import__("gen.element.extended_segment")
+__import__("gen.element.list_container")
+__import__("gen.element.segment")
+
+
 class Store:
     _buffer_size = 100
 
@@ -32,6 +44,8 @@ class Store:
 
     def load_elements(self, text_file_path: Path,
                       element_store_path: Path) -> None:
+        if len(Element.instances) > 0:
+            raise AssertionError("Store already contains elements")
         byte_reader = ByteReader(text_file_path)
         with open(element_store_path, 'r') as file:
             self.load_elements_from_handle(byte_reader, file)
