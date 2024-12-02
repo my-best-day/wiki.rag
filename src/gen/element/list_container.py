@@ -4,6 +4,9 @@ from gen.element.container import Container
 from typing import Iterator, List, Optional
 
 
+# TODO: make this generic so we can have ListContainer[Element] and ListContainer[Paragraph]
+
+
 class ListContainer(Container):
     def __init__(self, element: Optional[Element] = None, uid: Optional[UUID] = None):
         super().__init__(uid=uid)

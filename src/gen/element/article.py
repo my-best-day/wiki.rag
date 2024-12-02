@@ -1,6 +1,7 @@
 from uuid import UUID
-from typing import Iterator, Optional, List
+from typing import Iterator, Optional
 from gen.element.header import Header
+from gen.element.list_container import ListContainer
 from gen.element.paragraph import Paragraph
 from gen.element.container import Container
 from gen.element.element import Element
@@ -17,24 +18,7 @@ class Article(Container):
         assert isinstance(header, Header), 'header must be a Header'
         super().__init__(uid=uid)
         self._header: Header = header
-        self._paragraphs: List[Paragraph] = []
-
-    def to_xdata(self) -> int:
-        xdata = super().to_xdata()
-        xdata['header_uid'] = str(self.header.uid)
-        return xdata
-
-    @classmethod
-    def from_xdata(cls, xdata, byte_reader):
-        uid = UUID(xdata['uid'])
-        header_uid = UUID(xdata['header_uid'])
-        header = cls.instances[header_uid]
-        article = cls(header, uid=uid)
-        return article
-
-    def resolve_dependencies(self, xdata):
-        # TODO: after we stop having paragraphs calling article.append_paragraph
-        return super().resolve_dependencies(xdata)
+        self._body = ListContainer()
 
     @property
     def offset(self) -> int:
@@ -55,7 +39,7 @@ class Article(Container):
         """
         Iterate over the paragraphs in the article.
         """
-        yield from self._paragraphs
+        yield from self._body.elements
 
     @property
     def elements(self) -> Iterator[Element]:
@@ -64,7 +48,7 @@ class Article(Container):
         Elements are the header and paragraphs.
         """
         yield self._header
-        yield from self._paragraphs
+        yield from self._body.elements
 
     def append_paragraph(self, paragraph: Paragraph) -> None:
         """
@@ -73,7 +57,7 @@ class Article(Container):
         assert isinstance(paragraph, Paragraph), 'paragraph must be an Paragraph '
         f'(got {type(paragraph)})'
 
-        self._paragraphs.append(paragraph)
+        self._body.append_element(paragraph)
 
     def append_element(self, element: Element) -> None:
         """
@@ -82,8 +66,29 @@ class Article(Container):
         self.append_paragraph(element)
 
     @property
+    def paragraph_count(self) -> int:
+        """
+        The number of paragraphs in the article.
+        """
+        return self._body.element_count
+
+    @property
     def element_count(self) -> int:
         """
         The number of elements in the article.
         """
-        return len(self._paragraphs) + 1
+        return self._body.element_count + 1
+
+    def to_xdata(self) -> int:
+        xdata = super().to_xdata()
+        xdata['header_uid'] = str(self.header.uid)
+        xdata['body_uid'] = str(self._body.uid)
+        return xdata
+
+    @classmethod
+    def from_xdata(cls, xdata, byte_reader):
+        uid = UUID(xdata['uid'])
+        header_uid = UUID(xdata['header_uid'])
+        header = cls.instances[header_uid]
+        article = cls(header, uid=uid)
+        return article

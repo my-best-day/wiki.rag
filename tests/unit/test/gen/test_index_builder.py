@@ -75,10 +75,12 @@ class TestIndexBuilder(unittest.TestCase):
         builder = IndexBuilder(Mock())
         builder.articles.append(Article(Header(12, b' = Header 1 =\n')))
         builder.handle_paragraph(26, b'Paragraph X\n')
-        self.assertEqual(len(builder.articles[0]._paragraphs), 1)
-        self.assertEqual(builder.articles[0]._paragraphs[0].offset, 26)
-        self.assertEqual(builder.articles[0]._paragraphs[0].bytes, b'Paragraph X\n')
-        self.assertEqual(builder.articles[0]._paragraphs[0].article, builder.articles[0])
+        article0 = builder.articles[0]
+        self.assertEqual(article0.paragraph_count, 1)
+        paragraph0 = list(article0.paragraphs)[0]
+        self.assertEqual(paragraph0.offset, 26)
+        self.assertEqual(paragraph0.bytes, b'Paragraph X\n')
+        self.assertEqual(paragraph0.article, article0)
 
     @patch("builtins.open", new_callable=mock_open)
     def test_read_chunks(self, mock_open_func):

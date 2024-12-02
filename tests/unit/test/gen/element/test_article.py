@@ -23,9 +23,10 @@ class TestArticle(unittest.TestCase):
 
     def test_constructor(self):
         self.assertEqual(self.article.header, self.elements[0])
-        self.assertEqual(len(self.article._paragraphs), 2)
-        self.assertEqual(self.article._paragraphs[0], self.elements[1])
-        self.assertEqual(self.article._paragraphs[1], self.elements[2])
+        self.assertEqual(self.article.paragraph_count, 2)
+        paragraphs = list(self.article.paragraphs)
+        self.assertEqual(paragraphs[0], self.elements[1])
+        self.assertEqual(paragraphs[1], self.elements[2])
 
     def test_elements_and_append_element(self):
         self.assertEqual(list(self.article.elements), self.elements)

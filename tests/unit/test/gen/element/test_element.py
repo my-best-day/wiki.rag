@@ -122,7 +122,7 @@ class TestElement(unittest.TestCase):
         paragraph1 = Paragraph(header_end, b'paragraph 1', article)
         paragraph1_end = paragraph1.offset + paragraph1.byte_length
         paragraph2 = Paragraph(paragraph1_end, b'paragraph 2', article)
-        self.assertEqual(len(article._paragraphs), 2)
+        self.assertEqual(article.paragraph_count, 2)
 
         element_json_buffer = StringIO()
         store = Store()
@@ -137,9 +137,10 @@ class TestElement(unittest.TestCase):
         article2 = Element.instances[article.uid]
         self.assertIsInstance(article2, Article)
         self.assertEqual(article2.header.bytes, b'header')
-        self.assertEqual(len(article2._paragraphs), 2)
-        self.assertEqual(article2._paragraphs[0].bytes, paragraph1.bytes)
-        self.assertEqual(article2._paragraphs[1].bytes, paragraph2.bytes)
+        self.assertEqual(article2.paragraph_count, 2)
+        paragraphs = list(article2.paragraphs)
+        self.assertEqual(paragraphs[0].bytes, paragraph1.bytes)
+        self.assertEqual(paragraphs[1].bytes, paragraph2.bytes)
 
     def test_extended_segment(self):
         sec0 = Section(0, b"before overlap")
