@@ -20,7 +20,7 @@ def main(args):
     builder.build_index()
 
     article_count = len(builder.articles)
-    paragraph_count = sum(len(article._paragraphs) for article in builder.articles)
+    paragraph_count = sum(article.paragraph_count for article in builder.articles)
     print(f"Done. {article_count} articles, {paragraph_count} paragraphs")
 
     element_file_path = Path(args.path_prefix + "_elements.json")
