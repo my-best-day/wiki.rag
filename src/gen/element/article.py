@@ -18,7 +18,7 @@ class Article(Container):
         assert isinstance(header, Header), 'header must be a Header'
         super().__init__(uid=uid)
         self._header: Header = header
-        self._body = ListContainer()
+        self.body = ListContainer()
 
     @property
     def offset(self) -> int:
@@ -39,7 +39,7 @@ class Article(Container):
         """
         Iterate over the paragraphs in the article.
         """
-        yield from self._body.elements
+        yield from self.body.elements
 
     @property
     def elements(self) -> Iterator[Element]:
@@ -48,7 +48,7 @@ class Article(Container):
         Elements are the header and paragraphs.
         """
         yield self._header
-        yield from self._body.elements
+        yield from self.body.elements
 
     def append_paragraph(self, paragraph: Paragraph) -> None:
         """
@@ -57,7 +57,7 @@ class Article(Container):
         assert isinstance(paragraph, Paragraph), 'paragraph must be an Paragraph '
         f'(got {type(paragraph)})'
 
-        self._body.append_element(paragraph)
+        self.body.append_element(paragraph)
 
     def append_element(self, element: Element) -> None:
         """
@@ -70,19 +70,19 @@ class Article(Container):
         """
         The number of paragraphs in the article.
         """
-        return self._body.element_count
+        return self.body.element_count
 
     @property
     def element_count(self) -> int:
         """
         The number of elements in the article.
         """
-        return self._body.element_count + 1
+        return self.body.element_count + 1
 
     def to_xdata(self) -> int:
         xdata = super().to_xdata()
         xdata['header_uid'] = str(self.header.uid)
-        xdata['body_uid'] = str(self._body.uid)
+        xdata['body_uid'] = str(self.body.uid)
         return xdata
 
     @classmethod

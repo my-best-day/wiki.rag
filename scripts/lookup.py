@@ -14,6 +14,7 @@ class LookupCLI:
         self.args = args
         self.stores = Stores(args.text, args.path_prefix, args.max_len)
         self.k_nearest_finder = KNearestFinder(self.stores)
+        self.stores.background_load()
         self._extended_segment_map = None
         self._article_map = None
 

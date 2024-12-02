@@ -28,6 +28,8 @@ class KNearestFinder:
             self._embedding_matrix = np.stack(embeddings)
         return self._uids, self._embedding_matrix
 
+    # TODO: add threshold ... include k results, m results with
+    # similarity greater than threshold
     def find_k_nearest_segments(self, query: str, k: int) -> List[Tuple[UUID, float]]:
         """
         Find the K-nearest segments based on cosine similarity.
@@ -73,6 +75,6 @@ class KNearestFinder:
         })
         agg_df = df.groupby('art_id').agg({'similarity': 'max'}).reset_index()
         sorted_df = agg_df.sort_values(by='similarity', ascending=False)
-        top_k_article_similarities = sorted_df.head(k)
+        top_k_article_similarities = sorted_df.head(k).values.tolist()
 
         return top_k_article_similarities

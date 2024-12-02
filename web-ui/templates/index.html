@@ -9,26 +9,46 @@
 </head>
 <body>
     <div class="container">
-        <form method="POST" action="/search">
-            <label for="query">Search Query:</label>
-            <textarea id="query" name="query" placeholder="Enter your search query here..."></textarea>
-            <div class="button-group">
-                <button type="reset" class="btn-clear">Clear</button>
-                <button type="submit" class="btn-submit">Search</button>
-            </div>
-        </form>
+        <section class="search-container">
+            <form method="POST" action="/search" class="search-form">
+                <label for="query">Search Query:</label>
+                <textarea id="query" name="query" placeholder="Enter your search query here...">{{
+                    query | default('war and peace') }}</textarea>
+                <div class="button-group">
+                    <button type="reset" class="btn-clear">Clear</button>
+                    <button type="submit" class="btn-submit">Search</button>
+                </div>
+            </form>
+        </section>
 
-    {% if results %}
-    <section class="result-container">
-        <h3>Search Results for "{{ query }}":</h3>
-        <ul>
+        {% if query %}
+        <div class="query-info">
+            Query: "{{ query }}" | Elapsed Time: {{ elapsed_time }}s
+        </div>
+        {% endif %}
+
+        {% if results %}
+        <section class="result-container">
+            <h3>Search Results:</h3>
             {% for result in results %}
-                <li>{{ result.text }}</li>
+            <div class="article">
+                <div class="article-header">
+                    {{ result.article.header.text | clean_header }}
+                </div>
+                <div class="article-stats">
+                    Offset: {{ result.article.offset }} |
+                    Length: {{ result.article.char_length }} |
+                    Similarity: {{ result.similarity | round(3) }}
+                </div>
+                <div class="article-body">
+                    {{ result.article.body.text }}
+                </div>
+            </div>
             {% endfor %}
-        </ul>
-    </section>
-    {% endif %}
-</div> <!-- container -->
-
+        </section>
+        {% else %}
+        <p>No results found.</p>
+        {% endif %}
+    </div> <!-- container -->
 </body>
 </html>
