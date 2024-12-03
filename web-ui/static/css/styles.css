@@ -58,6 +58,16 @@ textarea {
     display: flex;
     justify-content: space-between;
 }
+.button-group > div {
+    display: flex;
+    gap: 10px; /* Add space between the two clear buttons */
+    padding: 0;
+}
+.expand-collapse-buttons > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -127,6 +137,20 @@ textarea:focus, button:focus {
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.btn-toggle {
+    background: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.btn-toggle:hover {
+    background: #1976D2;
 }
 .article-stats {
     font-size: 0.9em;
@@ -142,4 +166,22 @@ textarea:focus, button:focus {
     background: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 5px;
+    display: block; /* Default state is expanded */
+}
+
+.expand-collapse-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+.btn-expand-all, .btn-collapse-all {
+    background: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+.btn-expand-all:hover, .btn-collapse-all:hover {
+    background: #1976D2;
 }

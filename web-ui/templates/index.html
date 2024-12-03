@@ -10,10 +10,9 @@
 <body>
     <div class="container">
         <section class="search-container">
-            <form method="POST" action="/search" class="search-form">
+            <form method="POST" action="/search" class="search-form" id="search-form">
                 <label for="query">Search Query:</label>
-                <textarea id="query" name="query" placeholder="Enter your search query here...">{{
-                    query | default('war and peace') }}</textarea>
+                <textarea id="query" name="query" placeholder="Enter your search query here...">{{ query }}</textarea>
                 <div>
                     <label for="k">Show:</label>
                     <input type="number" id="k" name="k" value="{{ k | default(5) }}" min="1">
@@ -23,8 +22,19 @@
                     <input type="number" id="max" name="max" value="{{ max | default(10) }}" min="1">
                 </div>
                 <div class="button-group">
-                    <button type="reset" class="btn-clear">Clear</button>
+                    <div class="clear-button-group">
+                        <button type="button" class="btn-clear-query" onclick="document.getElementById('query').value=''">Clear Query</button>
+                        <button type="reset" class="btn-clear" form="search-form">Clear</button>
+                        <button type="sample" class="btn-sample"
+                            onclick="document.getElementById('query').value='war and peace'">Sample Query</button>
+                    </div>
                     <button type="submit" class="btn-submit">Search</button>
+                </div>
+                <div class="expand-collapse-buttons">
+                    <div>
+                        <button type="button" class="btn-expand-all" onclick="expandAllArticles()">Expand All</button>
+                        <button type="button" class="btn-collapse-all" onclick="collapseAllArticles()">Collapse All</button>
+                    </div>
                 </div>
             </form>
         </section>
@@ -45,6 +55,7 @@
             <div class="article">
                 <div class="article-header">
                     {{ result.article.header.text | clean_header }}
+                    <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
                 </div>
                 <div class="article-stats">
                     Offset: {{ result.article.offset }} |
@@ -61,5 +72,27 @@
         <p>No results found.</p>
         {% endif %}
     </div> <!-- container -->
+    <script>
+        function toggleArticleBody(button) {
+            const articleBody = button.parentElement.nextElementSibling.nextElementSibling;
+            if (articleBody.style.display === "none") {
+                articleBody.style.display = "block";
+                button.textContent = "Collapse";
+            } else {
+                articleBody.style.display = "none";
+                button.textContent = "Expand";
+            }
+        }
+
+        function expandAllArticles() {
+            document.querySelectorAll('.article-body').forEach(body => body.style.display = 'block');
+            document.querySelectorAll('.btn-toggle').forEach(button => button.textContent = 'Collapse');
+        }
+
+        function collapseAllArticles() {
+            document.querySelectorAll('.article-body').forEach(body => body.style.display = 'none');
+            document.querySelectorAll('.btn-toggle').forEach(button => button.textContent = 'Expand');
+        }
+    </script>
 </body>
 </html>

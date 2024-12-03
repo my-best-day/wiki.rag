@@ -74,7 +74,7 @@ class KNearestFinder:
             'art_id': article_ids,
             'similarity': similarities
         })
-        agg_df = df.groupby('art_id').agg({'similarity': 'mean'}).reset_index()
+        agg_df = df.groupby('art_id').agg({'similarity': 'max'}).reset_index()
         sorted_df = agg_df.sort_values(by='similarity', ascending=False)
         passing_df = sorted_df[sorted_df['similarity'] > threshold]
         if len(passing_df) > k:

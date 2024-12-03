@@ -29,7 +29,7 @@ def clean_header(text):
 
 
 # config = Config('ignore/wiki.test.tokens', 'data/test', 1100)  # NOSONAR
-config = Config('ignore/wiki.train.tokens', 'data/train', 35200)
+config = Config('ignore/wiki.train.tokens', 'data/train', 35200)  # NOSONAR
 
 stores = Stores(config.text_file_path, config.path_prefix, config.max_len)
 finder = KNearestFinder(stores)
