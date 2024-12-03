@@ -1,6 +1,7 @@
 import re
 import time
 import logging
+import datetime
 from dataclasses import dataclass
 from fastapi import FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
@@ -28,7 +29,7 @@ def clean_header(text):
 
 
 # config = Config('ignore/wiki.test.tokens', 'data/test', 1100)  # NOSONAR
-config = Config('ignore/wiki.train.tokens', 'data/train', 1100)
+config = Config('ignore/wiki.train.tokens', 'data/train', 35200)
 
 stores = Stores(config.text_file_path, config.path_prefix, config.max_len)
 finder = KNearestFinder(stores)
@@ -77,5 +78,6 @@ async def search(request: Request, query: str = Form(...), k: int = Form(5),
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "query": query, "results": results,
-         "elapsed": elapsed, "k": k, "threshold": threshold, "max": max},
+         "elapsed": elapsed, "k": k, "threshold": threshold, "max": max,
+         "now": datetime.datetime.now()},
     )

@@ -31,6 +31,7 @@
 
         {% if query %}
         <div class="query-info">
+            Current Time: {{ now.strftime('%H:%M:%S') if now else 'N/A' }} |
             {{ elapsed | default(0.0) | round(3) }} sec |
             {{ results | length }} results |
             Query: "{{ query }}"
