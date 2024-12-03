@@ -1,7 +1,7 @@
 import sys
 import unittest
 from unittest.mock import Mock, MagicMock, patch
-from gen.encoder import Encoder, encoder_configs
+from gen.encoder import Encoder
 
 
 class TestEncoder(unittest.TestCase):
@@ -12,7 +12,6 @@ class TestEncoder(unittest.TestCase):
         with patch.object(Encoder, "get_model", return_value=mock_model):
             encoder = Encoder(batch_size)
 
-            self.assertEqual(encoder.config, encoder_configs['small'])
             self.assertEqual(encoder.batch_size, batch_size)
             self.assertEqual(encoder.model, mock_model)
 
