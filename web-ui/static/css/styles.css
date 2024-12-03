@@ -14,7 +14,13 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
 }
-/* Ensure search form styles are applied */
+.search-container div {
+   padding: 5px 0;
+}
+.search-container input {
+    margin-right: 20px;
+    text-align: right;
+}
 .search-form {
     width: 80%;
     display: flex;

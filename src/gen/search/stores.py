@@ -40,8 +40,11 @@ class Stores:
         def load():
             logging.basicConfig(level=logging.INFO)
             with self._lock:
+                logger.info("Loading segments and embeddings in the background.")
                 self._load_segments()
+                logger.info("Segments loaded.")
                 self._load_embeddings()
+                logger.info("Embeddings loaded.")
 
         thread = Thread(target=load)
         thread.start()

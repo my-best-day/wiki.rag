@@ -51,7 +51,8 @@ class KNearestFinder:
         top_k_segment_similarities = [(uids[i], similarities[i]) for i in top_k_indices]
         return top_k_segment_similarities
 
-    def find_k_nearest_articles(self, query: str, k: int) -> List[Tuple[UUID, float]]:
+    def find_k_nearest_articles(self, query: str, k: int, threshold: float,
+                                max: int) -> List[Tuple[UUID, float]]:
         """
         Find the K-nearest articles based on cosine similarity.
         :return: List of tuples (article_id, similarity_score) for K-nearest neighbors.
@@ -75,6 +76,10 @@ class KNearestFinder:
         })
         agg_df = df.groupby('art_id').agg({'similarity': 'max'}).reset_index()
         sorted_df = agg_df.sort_values(by='similarity', ascending=False)
-        top_k_article_similarities = sorted_df.head(k).values.tolist()
+        passing_df = sorted_df[sorted_df['similarity'] > threshold]
+        if len(passing_df) > k:
+            top_k_article_similarities = passing_df.head(max).values.tolist()
+        else:
+            top_k_article_similarities = sorted_df.head(k).values.tolist()
 
         return top_k_article_similarities

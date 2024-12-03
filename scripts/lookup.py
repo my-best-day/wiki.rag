@@ -47,11 +47,11 @@ class LookupCLI:
                 break
 
             t0 = time.time()
-            nearest_articles_df: List[Tuple[UUID, float]] = \
-                self.k_nearest_finder.find_k_nearest_articles(query, self.args.k)
+            top_k_article_similarities: List[Tuple[UUID, float]] = \
+                self.k_nearest_finder.find_k_nearest_articles(query, self.args.k, 0.36, 10)
             elapsed = time.time() - t0
 
-            self.display_nearest_articles(query, nearest_articles_df, elapsed)
+            self.display_nearest_articles(query, top_k_article_similarities, elapsed)
 
     def display_nearest_segments(self, query, nearest_segments, elapsed):
 
@@ -73,13 +73,13 @@ class LookupCLI:
             print(text)
             print("<--- " * 10, "\n")
 
-    def display_nearest_articles(self, query, nearest_articles_df, elapsed):
+    def display_nearest_articles(self, query, top_k_article_similarities, elapsed):
         print("\n\n\n\n")
         print("Nearest Articles ", ">>>> " * 10)
         print("Nearest Articles ", ">>>> " * 10)
         print("QUERY:", query)
         print(f"query length: {len(query)}, {elapsed:.4f}s" + "---- " * 10)
-        for i, (uid, score) in enumerate(nearest_articles_df[['art_id', 'similarity']].values):
+        for i, (uid, score) in enumerate(top_k_article_similarities):
             article = self.get_article(uid)
             print(f"{i + 1}. Article ID: {uid}, Score: {score:.4f}, "
                   f"(off: {article.offset}, len: {len(article.text)})")

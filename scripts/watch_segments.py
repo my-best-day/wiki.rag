@@ -20,8 +20,11 @@ def main(args):
     store = Store()
     text_path = Path(args.text)
     segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
+    t0 = time.time()
     store.load_elements(text_path, segment_path)
-    print(f"loaded {len(Element.instances)} elements")
+    t1 = time.time()
+    elapsed = t1 - t0
+    print(f"loaded {len(Element.instances)} elements in {elapsed:.2f} seconds")
     # count elements that are instanceof Segment
     segments = [element for element in Element.instances.values()
                 if isinstance(element, Segment)]
