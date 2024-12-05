@@ -9,8 +9,6 @@ if TYPE_CHECKING:
     from gen.element.fragment import Fragment
 
 
-# FIXME: get rid of DELAY
-
 class Element(ABC):
     """
     Element is an abstract base class for all elements. An element provides these properties:
@@ -29,16 +27,10 @@ class Element(ABC):
     DELAY = uuid4()
 
     def __init__(self, uid: Optional[UUID] = None):
-        should_delay = uid is Element.DELAY
         if uid is None or uid is Element.DELAY:
             uid = uuid4()
         self.uid = uid
-        if not should_delay:
-            Element.instances[uid] = self
-
-    def register_object(self):
-        if self.uid not in Element.instances:
-            Element.instances[self.uid] = self
+        Element.instances[uid] = self
 
     def __str__(self):
         return f"{self.__class__.__name__} (uid={self.uid})"

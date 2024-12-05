@@ -109,8 +109,9 @@ class SegmentBuilder:
             elif section.byte_length > 0.8 * max_len:
                 split_at = int(section.byte_length / 2)
             else:
-                logger.warning("sec length: %d, max_len: %d", section.byte_length, max_len)
-                assert False, "should never get here"
+                logger.warning("sec length: %d, max_len: %d",
+                               section.byte_length, max_len)  # pragma: no cover
+                assert False, "should never get here"         # pragma: no cover
 
             lead, remainder = section.split(split_at)
             self.article_sections.appendleft(remainder)

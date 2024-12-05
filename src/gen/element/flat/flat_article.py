@@ -44,7 +44,7 @@ class FlatArticle(Element):
         return header_text
 
     @property
-    def _header_text_length(self):
+    def _header_char_length(self):
         return len(self._header_text)
 
     @property
@@ -60,7 +60,7 @@ class FlatArticle(Element):
         return body_text
 
     @property
-    def _body_text_length(self):
+    def _body_char_length(self):
         return len(self._body_text)
 
     @property

@@ -2,7 +2,11 @@ import unittest
 from typing import Iterator
 from gen.element.paragraph import Paragraph
 from gen.element.article import Article
+from gen.element.flat.flat_article import FlatArticle
 from gen.element.header import Header
+from gen.element.element import Element
+
+from .byte_reader_tst import TestByteReader
 
 
 class TestArticle(unittest.TestCase):
@@ -10,8 +14,8 @@ class TestArticle(unittest.TestCase):
     def setUp(self):
         header = Header(17, b'hello')
         self.article = Article(header)
-        paragraph1 = Paragraph(23, b'world', self.article)
-        paragraph2 = Paragraph(31, b'dear', self.article)
+        paragraph1 = Paragraph(22, b'world', self.article)
+        paragraph2 = Paragraph(30, b'dear', self.article)
         self.elements = [header, paragraph1, paragraph2]
 
         _bytes = b'h\xc3\xa9llo!'
@@ -27,6 +31,7 @@ class TestArticle(unittest.TestCase):
         paragraphs = list(self.article.paragraphs)
         self.assertEqual(paragraphs[0], self.elements[1])
         self.assertEqual(paragraphs[1], self.elements[2])
+        self.assertEqual(self.article.element_count, 3)
 
     def test_elements_and_append_element(self):
         self.assertEqual(list(self.article.elements), self.elements)
@@ -106,6 +111,40 @@ class TestArticle(unittest.TestCase):
         self.assertEqual(self.article.bytes, b'modifiedworlddear')
         self.assertEqual(self.article.text, 'modifiedworlddear')
         self.assertEqual(self.article.clean_text, 'modifiedworlddear')
+
+    def test_to_flat_article(self):
+        flat_article = self.article.to_flat_article()
+        test_byte_reader = TestByteReader.from_element(self.article)
+        flat_article._byte_reader = test_byte_reader
+        self.assertEqual(flat_article.uid, self.article.uid)
+        self.assertEqual(flat_article.offset, self.article.offset)
+        self.assertEqual(flat_article.bytes, self.article.bytes)
+        self.assertEqual(flat_article.text, self.article.text)
+        self.assertEqual(flat_article.clean_text, self.article.clean_text)
+        self.assertEqual(flat_article.byte_length, self.article.byte_length)
+        self.assertEqual(flat_article.char_length, self.article.char_length)
+        self.assertEqual(flat_article.clean_length, self.article.clean_length)
+
+        self.assertEqual(flat_article.header.text, self.article.header.text)
+        self.assertEqual(flat_article.header.offset, self.article.header.offset)
+        self.assertEqual(flat_article.header.byte_length, self.article.header.byte_length)
+        self.assertEqual(flat_article.header.char_length, self.article.header.char_length)
+
+        self.assertEqual(flat_article.body.text, self.article.body.text)
+        self.assertEqual(flat_article.body.offset, self.article.body.offset)
+        self.assertEqual(flat_article.body.byte_length, self.article.body.byte_length)
+        self.assertEqual(flat_article.body.char_length, self.article.body.char_length)
+
+        xdata = flat_article.to_xdata()
+        Element.instances.clear()
+        flat_article = FlatArticle.from_xdata(xdata, test_byte_reader)
+        self.assertEqual(flat_article.uid, self.article.uid)
+
+        self.assertEqual(flat_article.header.offset, self.article.header.offset)
+        self.assertEqual(flat_article.header.byte_length, self.article.header.byte_length)
+
+        self.assertEqual(flat_article.body.offset, self.article.body.offset)
+        self.assertEqual(flat_article.body.byte_length, self.article.body.byte_length)
 
 
 if __name__ == '__main__':

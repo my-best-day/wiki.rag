@@ -49,6 +49,18 @@ class TestElementValidator(unittest.TestCase):
 
     def test_validate_elements(self):
         byte_reader = TestByteReader(b'0123456789')
+        section = Section(3, b'3456789')
+        validator = ElementValidator(self.args)
+        validator._byte_reader = byte_reader
+        validator.handle = Mock()
+        validator.validate_elements([section])
+        # validate handles was called twice, once with section and once with None
+        self.assertEqual(validator.handle.call_count, 2)
+        validator.handle.assert_any_call(section)
+        validator.handle.assert_any_call(None)
+
+    def test_validate_elements_negative(self):
+        byte_reader = TestByteReader(b'0123456789')
         section1 = Section(3, b'3456789')
         section2 = Section(3, b'abcdefghij' * 50)
         validator = ElementValidator(self.args)

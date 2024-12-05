@@ -319,6 +319,9 @@ class TestElement(unittest.TestCase):
         element = Element()
 
         with self.assertRaises(NotImplementedError):
+            element.from_xdata(None, None)
+
+        with self.assertRaises(NotImplementedError):
             element.offset
 
         with self.assertRaises(NotImplementedError):
