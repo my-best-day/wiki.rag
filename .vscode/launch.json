@@ -87,13 +87,13 @@
             "name": "watch segments",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/gen/watch_segments.py",
+            "program": "${workspaceFolder}/scripts/watch_segments.py",
             "console": "integratedTerminal",
             "args": [
                 "-t",
-                "ignore/wiki.test.tokens",
+                "ignore/wiki.tiny.tokens",
                 "-pp",
-                "data/test",
+                "data/tiny",
                 "-m",
                 "1100",
             ]

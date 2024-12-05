@@ -1,10 +1,12 @@
 from uuid import UUID
 from typing import Iterator, Optional
+
 from gen.element.header import Header
-from gen.element.list_container import ListContainer
+from gen.element.element import Element
 from gen.element.paragraph import Paragraph
 from gen.element.container import Container
-from gen.element.element import Element
+from gen.element.list_container import ListContainer
+from gen.element.flat.flat_article import FlatArticle
 
 
 class Article(Container):
@@ -84,6 +86,19 @@ class Article(Container):
         xdata['header_uid'] = str(self.header.uid)
         xdata['body_uid'] = str(self.body.uid)
         return xdata
+
+    def to_flat_article(self):
+        """
+        Convert the article to a flat article.
+        """
+        return FlatArticle(
+            uid=self.uid,
+            header_offset=self.header.offset,
+            header_byte_length=self.header.byte_length,
+            body_offset=self.body.offset,
+            body_byte_length=self.body.byte_length,
+            byte_reader=None
+        )
 
     @classmethod
     def from_xdata(cls, xdata, byte_reader):

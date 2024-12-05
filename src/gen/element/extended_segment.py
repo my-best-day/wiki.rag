@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Iterator, Optional
 from gen.element.element import Element
+from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 from gen.element.segment import Segment
 from gen.element.container import Container
 
@@ -86,6 +87,9 @@ class ExtendedSegment(Container):
         if self.after_overlap:
             xdata['after_overlap_uid'] = str(self.after_overlap.uid)
         return xdata
+
+    def to_flat_extended_segment(self):
+        return FlatExtendedSegment(self.uid, self.article.uid, self.offset, self.byte_length, None)
 
     @classmethod
     def from_xdata(cls, xdata, byte_reader):

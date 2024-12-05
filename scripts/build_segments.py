@@ -2,6 +2,8 @@ import time
 import logging
 import argparse
 from pathlib import Path
+from typing import List
+from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 from gen.element.store import Store
 from gen.element.element import Element
 from gen.element.article import Article
@@ -31,6 +33,17 @@ def main(args):
     segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
     store = Store()
     store.store_elements(segment_path, Element.instances.values())
+
+    flat_extended_segments: List[FlatExtendedSegment] = \
+        [ext_seg.to_flat_extended_segment() for ext_seg in segment_builder.segments]
+    flat_segment_path = Path(f"{args.path_prefix}_{args.max_len}_flat_segments.json")
+    store.store_elements(flat_segment_path, flat_extended_segments)
+
+    flat_article_list: List[Article] = \
+        [article.to_flat_article() for article in Element.instances.values()
+         if isinstance(article, Article)]
+    flat_article_path = Path(f"{args.path_prefix}_flat_articles.json")
+    store.store_elements(flat_article_path, flat_article_list)
 
 
 if __name__ == '__main__':

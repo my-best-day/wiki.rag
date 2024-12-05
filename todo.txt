@@ -1,11 +1,27 @@
+2024-12-04
+2024-12-03
+
+- fix encoding, need to use prompt with task: search_document:, search_query:
+- try medium size segmentation, large segments don't work well with short queries
+- increase overlaps from 10% to 15%
+- flat segment / article file, during search there is no need for all fine objects
+  - flat ext segments: article, offset, length
+  - flat article: header section(offset, length), body section(offset, length)
+- lazy loading of articles
+- preserve segment index / weight ...
+- look into the enhancement of avoiding tiny segments, see below
+- more central config
+  - aggregation type
+  - big / small config
+- get rid of delay in element
 
 2024-11-25
 
-- create a simple Web UI
++ create a simple Web UI
 + simple search by segment
-- search by article
++ search by article
   + rudimentary
-  - extend
+  ? extend
 - RAG
 - improve segmentation:
   - if current segment doesn't have room for the next section but it is
