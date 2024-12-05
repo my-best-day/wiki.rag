@@ -23,6 +23,9 @@ __import__("gen.element.segment")
 class Store:
     _buffer_size = 100
 
+    def __init__(self, single_store: bool = True) -> None:
+        self.single_store = single_store
+
     def store_elements(self, path: Path, elements: list[Element]) -> None:
         """
         Store elements in the store.
@@ -44,14 +47,13 @@ class Store:
 
     def load_elements(self, text_file_path: Path,
                       element_store_path: Path) -> None:
-        if len(Element.instances) > 0:
-            raise AssertionError("Store already contains elements")
         byte_reader = ByteReader(text_file_path)
         with open(element_store_path, 'r') as file:
             self.load_elements_from_handle(byte_reader, file)
 
     def load_elements_from_handle(self, byte_reader, file) -> None:
-        assert len(Element.instances) == 0, "Store already contains elements"
+        if self.single_store:
+            assert len(Element.instances) == 0, "Store already contains elements"
         xdata_list = []
         for line in file:
             json_strings = line.split('\n')
