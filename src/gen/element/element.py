@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from gen.element.fragment import Fragment
 
 
+# FIXME: get rid of DELAY
+
 class Element(ABC):
     """
     Element is an abstract base class for all elements. An element provides these properties:
