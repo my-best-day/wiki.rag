@@ -110,13 +110,6 @@ class TestStores(unittest.TestCase):
                 segment = Segment(article, section, 'seg_uid')
                 extended_segment = ExtendedSegment(segment, 'extended_segment_uid')
 
-                Element.instances.update({
-                    header.uid: header,
-                    article.uid: article,
-                    segment.uid: segment,
-                    extended_segment.uid: extended_segment
-                })
-
                 extended_segments = stores.extended_segments
 
                 mock_rlock_instance = mock_rlock.return_value
@@ -143,15 +136,7 @@ class TestStores(unittest.TestCase):
                 section = Section(20, b'section', 'section_uid')
                 article = Article(header, 'article_uid')
                 segment = Segment(article, section, 'seg_uid')
-                extended_segment = ExtendedSegment(segment, 'extended_segment_uid')
-
-                # FIXME: this is not needed, rid of it
-                Element.instances.update({
-                    header.uid: header,
-                    article.uid: article,
-                    segment.uid: segment,
-                    extended_segment.uid: extended_segment
-                })
+                ExtendedSegment(segment, 'extended_segment_uid')
 
                 articles = stores.articles
 
