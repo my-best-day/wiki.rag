@@ -8,13 +8,18 @@ from gen.element.section import Section
 from gen.element.extended_segment import ExtendedSegment
 from gen.segment_builder import SegmentBuilder
 
+marker = "no article"
+
 
 class TestSegmentBuilderSetOverlaps(unittest.TestCase):
-    header = Header(0, b'')
-    article = Article(header)
+    def setUp(self):
+        header = Header(0, b'')
+        self.article = Article(header)
 
     def _create(self, byte_length: int, _bytes: bytes,
-                article: Article = article) -> ExtendedSegment:
+                article: Article = marker) -> ExtendedSegment:
+        if article is marker:
+            article = self.article
         return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def test_set_overlaps_enough_room(self):

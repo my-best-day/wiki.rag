@@ -56,11 +56,6 @@ class Stores:
         if not self._segments_loaded:
             segment_file_path = Path(f"{self.path_prefix}_{self.max_len}_segments.json")
             text_file_path = Path(self.text_file_path)
-            # log CWD, segment_file_path, text_file_path:
-            logger.info(f"Current working directory: {Path.cwd()}")
-            logger.info(f"segment_file_path: {segment_file_path}")
-            logger.info(f"text_file_path: {text_file_path}")
-            print("HELLO ------- CWD: ", Path.cwd())
             segment_store = Store()
             segment_store.load_elements(text_file_path, segment_file_path)
             self._segments_loaded = True

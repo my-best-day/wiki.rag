@@ -24,10 +24,9 @@ class Element(ABC):
     CLEAN_TEXT_REGEX = re.compile(CLEAN_TEXT_PATTERN)
 
     instances: Dict[UUID, 'Element'] = {}
-    DELAY = uuid4()
 
     def __init__(self, uid: Optional[UUID] = None):
-        if uid is None or uid is Element.DELAY:
+        if uid is None:
             uid = uuid4()
         self.uid = uid
         Element.instances[uid] = self

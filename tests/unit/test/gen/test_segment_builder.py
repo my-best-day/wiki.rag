@@ -12,13 +12,20 @@ from gen.element.extended_segment import ExtendedSegment
 
 # TODO: add test for section which is 0.8 of the max_len
 
+marker = "no article"
+
 
 class TestSegmentBuilder(unittest.TestCase):
-    header = Header(0, b'')
-    article = Article(header)
+
+    def setUp(self):
+        self.header = Header(0, b'')
+        self.article = Article(self.header)
+        return super().setUp()
 
     def _create(self, byte_length: int, _bytes: bytes,
-                article: Article = article) -> ExtendedSegment:
+                article: Article = marker) -> ExtendedSegment:
+        if article is marker:
+            article = self.article
         return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def test_basic(self):
