@@ -86,7 +86,7 @@ class TestStores(unittest.TestCase):
 
                 stores._uids = ['uids']
                 stores._embeddings = ['embeddings']
-                uids, embeddings = stores.embeddings
+                uids, embeddings = stores.uids_and_embeddings
 
                 mock_rlock_instance = mock_rlock.return_value
                 expected_calls = [call.__enter__(), call.__exit__(None, None, None)]

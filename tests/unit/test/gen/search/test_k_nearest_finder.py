@@ -20,7 +20,7 @@ class TestKNearestFinder(unittest.TestCase):
         embeddings = np.array([[1, 2, 3], [4, 5, 6]])
 
         mock_stores_instance = MagicMock()
-        mock_stores_instance.embeddings = (uids, embeddings)
+        mock_stores_instance.uids_and_embeddings = (uids, embeddings)
         mock_stores.return_value = mock_stores_instance
 
         k_nearest_finder = KNearestFinder(mock_stores_instance)

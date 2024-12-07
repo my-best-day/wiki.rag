@@ -21,7 +21,7 @@ class KNearestFinder:
     @property
     def uids_and_embeddings(self):
         if self._uids is None or self._embeddings is None:
-            self._uids, self._embeddings = self.stores.embeddings
+            self._uids, self._embeddings = self.stores.uids_and_embeddings
         return self._uids, self._embeddings
 
     # TODO: add threshold ... include k results, m results with

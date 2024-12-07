@@ -70,7 +70,7 @@ class Stores:
             self._uids, self._embeddings = embedding_store.load_embeddings()
 
     @property
-    def embeddings(self) -> Tuple[List[UUID], NDArray]:
+    def uids_and_embeddings(self) -> Tuple[List[UUID], NDArray]:
         with self._lock:
             self._load_embeddings()
             return self._uids, self._embeddings
