@@ -16,17 +16,13 @@ class KNearestFinder:
         self.encoder = Encoder(1)
 
         self._uids = None
-        self._embedding_matrix = None
+        self._embeddings = None
 
     @property
-    def embedding_matrix(self):
-        if self._embedding_matrix is None:
-            uids, embeddings = self.stores.embeddings
-            if len(embeddings) == 0:
-                raise ValueError("No embeddings found in the store.")
-            self._uids = uids
-            self._embedding_matrix = np.stack(embeddings)
-        return self._uids, self._embedding_matrix
+    def uids_and_embeddings(self):
+        if self._uids is None or self._embeddings is None:
+            self._uids, self._embeddings = self.stores.embeddings
+        return self._uids, self._embeddings
 
     # TODO: add threshold ... include k results, m results with
     # similarity greater than threshold
@@ -35,13 +31,13 @@ class KNearestFinder:
         Find the K-nearest segments based on cosine similarity.
         :return: List of tuples (segment_id, similarity_score) for K-nearest neighbors.
         """
-        uids, embedding_matrix = self.embedding_matrix
+        uids, embeddings = self.uids_and_embeddings
 
         # Encode the input sentence using the encoder
         query_embedding = self.encoder.encode([query])
 
         # Compute cosine similarity between the query and stored embeddings
-        similarities = 1 - cdist(query_embedding, embedding_matrix, metric='cosine')
+        similarities = 1 - cdist(query_embedding, embeddings, metric='cosine')
         similarities = similarities.flatten()
 
         # Find the top K most similar embeddings
@@ -57,13 +53,13 @@ class KNearestFinder:
         Find the K-nearest articles based on cosine similarity.
         :return: List of tuples (article_id, similarity_score) for K-nearest neighbors.
         """
-        uids, embedding_matrix = self.embedding_matrix
+        uids, embeddings = self.uids_and_embeddings
 
         # Encode the input sentence using the encoder
         query_embedding = self.encoder.encode([query])
 
         # Compute cosine similarity between the query and stored embeddings
-        similarities = 1 - cdist(query_embedding, embedding_matrix, metric='cosine')
+        similarities = 1 - cdist(query_embedding, embeddings, metric='cosine')
         similarities = similarities.flatten()
 
         article_ids = self.stores.get_embeddings_article_ids()
