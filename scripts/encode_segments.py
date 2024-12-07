@@ -80,7 +80,7 @@ class SegmentEncoder:
             batch = extended_segments[i:i + batch_size]
             batch_text = [segment.text for segment in batch]
             batch_uids = [segment.uid for segment in batch]
-            batch_embeddings = self.encode(batch_text)
+            batch_embeddings = self.encode_search_sentences(batch_text)
             uids_buffer.extend(batch_uids)
             embedding_buffer.extend(batch_embeddings)
             if len(uids_buffer) >= buffer_length:
@@ -96,7 +96,9 @@ class SegmentEncoder:
         if uids_buffer:
             self.persist_embeddings(uids_buffer, embedding_buffer)
 
-    def encode(self, sentences):
+    def encode_search_sentences(self, sentences):
+        # prepend "search_document: " to each sentence
+        sentences = [f"search_document: {sentence}" for sentence in sentences]
         result = self.encoder.encode(sentences)
         return result
 

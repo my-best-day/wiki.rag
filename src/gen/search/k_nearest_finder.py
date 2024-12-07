@@ -34,6 +34,7 @@ class KNearestFinder:
         uids, embeddings = self.uids_and_embeddings
 
         # Encode the input sentence using the encoder
+        query = f"search_query: {query}"
         query_embedding = self.encoder.encode([query])
 
         # Compute cosine similarity between the query and stored embeddings
@@ -56,6 +57,7 @@ class KNearestFinder:
         uids, embeddings = self.uids_and_embeddings
 
         # Encode the input sentence using the encoder
+        query = f"search_query: {query}"
         query_embedding = self.encoder.encode([query])
 
         # Compute cosine similarity between the query and stored embeddings
