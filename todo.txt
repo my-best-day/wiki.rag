@@ -1,16 +1,27 @@
 2024-12-06
+- preserve segment index / weight ...
+- look into the enhancement of avoiding tiny segments, see below
+- more central config
+  - aggregation type
+  - big / small config
++ using flat segments and article during lookup
+- consider takeing path to store from the class
+
+2024-12-06
 + increase unit test coverage
 + fix embedding encoding, need to use prompt with task: search_document:, search_query:
 + try medium size segmentation, large segments don't work well with short queries
-- increase overlaps from 10% to 15%
+/ not now: increase overlaps from 10% to 15%
 - preserve segment index / weight ...
 - look into the enhancement of avoiding tiny segments, see below
 - more central config
   - aggregation type
   - big / small config
 - using flat segments and article during lookup
+- consider takeing path to store from the class
 
-- deal with:
++ notoriously a log statement, doesn't use the warning mechanism, therefore difficult to suppress
+/ deal with:
   huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
   To disable this warning, you can either:
     - Avoid using `tokenizers` before the fork if possible

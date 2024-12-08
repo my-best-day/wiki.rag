@@ -5,6 +5,8 @@ import argparse
 from uuid import UUID
 from pathlib import Path
 from typing import List, Tuple
+from gen.element.element import Element
+# from gen.search.stores_flat import StoresFlat
 from gen.search.stores import Stores
 from gen.search.k_nearest_finder import KNearestFinder
 
@@ -93,18 +95,11 @@ class LookupCLI:
             self._extended_segment_map = {ext_seg.uid: ext_seg for ext_seg in extended_segments}
         return self._extended_segment_map
 
-    @property
-    def article_map(self):
-        if self._article_map is None:
-            articles = self.stores.articles
-            self._article_map = {article.uid: article for article in articles}
-        return self._article_map
-
     def get_extended_segment(self, uid):
         return self.extended_segment_map[uid]
 
     def get_article(self, uid):
-        return self.article_map[uid]
+        return Element.instances[uid]
 
 
 def main(args):

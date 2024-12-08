@@ -1,14 +1,20 @@
 import os
+import time
+import logging
 import threading
+
+logger = logging.getLogger(__name__)
 
 
 def background_load():
+    logging.basicConfig(level=logging.INFO)
     try:
+        t0 = time.time()
         from sentence_transformers import SentenceTransformer  # noqa
-        # Perform any additional operations if needed
+        logger.info("Loaded sentence transformer in the background. (%.3f secs)", time.time() - t0)
     except Exception as e:
         # Log the exception or handle it as needed
-        print(f"*** *** *** *** *** Background load failed: {e}")
+        logger.warning(f"*** *** *** *** *** Background load failed: {e}")
 
 
 if not os.getenv("UNIT_TESTING"):

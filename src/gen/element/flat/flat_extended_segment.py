@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Optional
 from gen.element.element import Element
+from gen.element.flat.flat_article import FlatArticle
 from xutils.byte_reader import ByteReader
 
 
@@ -15,6 +16,10 @@ class FlatExtendedSegment(Element):
 
         # for caching, see reset()
         self._bytes = None
+
+    @property
+    def article(self) -> "FlatArticle":
+        return Element.instances[self.article_uid]
 
     @property
     def offset(self) -> int:
