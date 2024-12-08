@@ -9,7 +9,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from gen.element.article import Article
-# from gen.search.stores import Stores
 from gen.search.stores_flat import StoresFlat as Stores
 
 from gen.search.k_nearest_finder import KNearestFinder

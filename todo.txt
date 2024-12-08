@@ -1,10 +1,20 @@
+2024-12-07
+
+later - preserve segment index / weight ...
++ already working - look into the enhancement of avoiding tiny segments, see below
+later - more central config
+  - aggregation type
+  - big / small config
++ using flat segments and article during lookup
+- consider takeing path to store from the class
+
 2024-12-06
 - preserve segment index / weight ...
 - look into the enhancement of avoiding tiny segments, see below
 - more central config
   - aggregation type
   - big / small config
-+ using flat segments and article during lookup
+- using flat segments and article during lookup
 - consider takeing path to store from the class
 
 2024-12-06

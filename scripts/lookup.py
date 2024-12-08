@@ -6,8 +6,7 @@ from uuid import UUID
 from pathlib import Path
 from typing import List, Tuple
 from gen.element.element import Element
-# from gen.search.stores_flat import StoresFlat
-from gen.search.stores import Stores
+from gen.search.stores_flat import StoresFlat as Stores
 from gen.search.k_nearest_finder import KNearestFinder
 
 

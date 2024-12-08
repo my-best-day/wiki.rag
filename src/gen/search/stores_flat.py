@@ -15,6 +15,7 @@ from gen.embedding_store import EmbeddingStore
 from gen.element.store import Store
 from gen.element.element import Element
 from gen.element.article import Article
+from gen.element.flat.flat_article import FlatArticle
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 
 
@@ -34,7 +35,7 @@ class StoresFlat:
         self._embeddings: Opt[NDArray] = None
 
         self._segments: Opt[List[FlatExtendedSegment]] = None
-        self._articles: Opt[List[Article]] = None
+        self._articles: Opt[List[FlatArticle]] = None
 
         self._store = Store(single_store=False)
         self._lock = RLock()
@@ -44,23 +45,27 @@ class StoresFlat:
             logging.basicConfig(level=logging.INFO)
             with self._lock:
                 logger.info("Loading segments and embeddings in the background.")
+
                 t0 = time.time()
-                self._load_articles()
+                # non-flat articles are loaded along with the segments
+                self._load_flat_articles()
                 t1 = time.time()
                 logger.info(f"Articles loaded ({t1 - t0:.3f} secs).")
-                t0 = t1
-                self._load_segments()
+
+                t0 = time.time()
+                self._load_flat_segments()
                 t1 = time.time()
                 logger.info(f"Segments loaded ({t1 - t0:.3f} secs).")
-                t0 = t1
+
+                t0 = time.time()
                 self._load_embeddings()
                 t1 = time.time()
                 logger.info(f"Embeddings loaded ({t1 - t0:.3f} secs).")
 
-        thread = Thread(target=load)
+        thread = Thread(target=load, daemon=True)
         thread.start()
 
-    def _load_articles(self):
+    def _load_flat_articles(self):
         """
         Caller is responsible for locking.s
         """
@@ -70,7 +75,7 @@ class StoresFlat:
             self._store.load_elements(text_file_path, flat_article_file_path)
             self._articles_loaded = True
 
-    def _load_segments(self):
+    def _load_flat_segments(self):
         """
         Caller is responsible for locking.s
         """
@@ -79,11 +84,6 @@ class StoresFlat:
             text_file_path = Path(self.text_file_path)
             self._store.load_elements(text_file_path, flat_segment_file_path)
             self._segments_loaded = True
-
-    def _load_flat_articles(self):
-        text_path = Path(self.text_file_path)
-        flat_article_store_path = Path(f"{self.path_prefix}_flat_articles.json")
-        self._store.load_elements(Path(text_path), flat_article_store_path)
 
     def _load_embeddings(self):
         """
@@ -104,7 +104,7 @@ class StoresFlat:
     def extended_segments(self) -> Store:
         with self._lock:
             if self._segments is None:
-                self._load_segments()
+                self._load_flat_segments()
                 segments = [element for element in Element.instances.values()
                             if isinstance(element, FlatExtendedSegment)]
                 self._segments = segments
@@ -112,26 +112,15 @@ class StoresFlat:
 
     @property
     def articles(self) -> List[Article]:
-        return self.flat_articles
-        # with self._lock:
-        #     if self._articles is None:
-        #         self._load_segments()
-        #         articles = [element for element in Element.instances.values()
-        #                     if isinstance(element, Article)]
-        #         self._articles = articles
-        # return self._articles
-
-    @property
-    def flat_articles(self) -> List[Article]:
         with self._lock:
             if self._articles is None:
                 self._load_flat_articles()
                 articles = [element for element in Element.instances.values()
-                            if isinstance(element, Article)]
+                            if isinstance(element, FlatArticle)]
                 self._articles = articles
         return self._articles
 
-    def get_article(self, uid: UUID) -> Article:
+    def get_article(self, uid: UUID) -> FlatArticle:
         article = Element.instances.get(uid)
         return article
 
