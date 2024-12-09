@@ -24,8 +24,10 @@ body {
 .search-form {
     width: 80%;
     display: flex;
-    flex-direction: column; /* Fix alignment of elements inside the form */
-    margin-bottom: 50px; /* Adds spacing below the form */
+    flex-direction: column;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #aaf;
 }
 textarea {
     width: 100%;
@@ -54,13 +56,20 @@ textarea {
         padding: 10px;
     }
 }
+.env-info {
+    font-family: monospace;
+    font-size: 80%;
+    color: #aaf;
+    margin: 0;
+    padding-bottom: 10px;
+}
 .button-group {
     display: flex;
     justify-content: space-between;
 }
 .button-group > div {
     display: flex;
-    gap: 10px; /* Add space between the two clear buttons */
+    gap: 10px;
     padding: 0;
 }
 .expand-collapse-buttons > div {
@@ -69,11 +78,14 @@ textarea {
     gap: 10px;
 }
 button {
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 5px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+.btn-submit {
+    font-size: 16px;
+    padding: 10px 20px;
 }
 button:disabled {
     cursor: default;
@@ -97,7 +109,6 @@ textarea:focus, button:focus {
     outline: 2px solid #4CAF50;
     outline-offset: 2px;
 }
-
 .result-container {
     margin-top: 30px;
     padding: 15px;
@@ -152,6 +163,20 @@ textarea:focus, button:focus {
 .btn-toggle:hover {
     background: #1976D2;
 }
+.result-filtering {
+    margin: 10px 0;
+    font-size: 12px;
+    color: #aaf;
+}
+.result-filtering label {
+    font-weight: lighter;
+}
+.result-filtering input {
+    border: 1px solid #ddf;
+    font-size: 12px;
+    color: #aaf;
+}
+
 .article-stats {
     font-size: 0.9em;
     color: #666;
@@ -168,18 +193,19 @@ textarea:focus, button:focus {
     border-radius: 5px;
     display: block; /* Default state is expanded */
 }
-
 .expand-collapse-buttons {
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: -50px;
 }
 .btn-expand-all, .btn-collapse-all {
     background: #2196F3;
     color: #fff;
     border: none;
     border-radius: 4px;
-    padding: 10px 20px;
+    font-size: 12px;
+    padding: 6px 12px;
     cursor: pointer;
 }
 .btn-expand-all:hover, .btn-collapse-all:hover {

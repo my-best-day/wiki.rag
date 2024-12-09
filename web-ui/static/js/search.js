@@ -5,10 +5,10 @@ function clearQuery() {
 }
 
 function clearQueryAndReset() {
-    // Clear the query first
-    clearQuery();
-    // Then trigger the form reset
+    // trigger the form reset
     document.getElementById('search-form').reset();
+    // then clear the query
+    clearQuery();
 }
 
 // Functions related to article body toggling
