@@ -195,7 +195,6 @@ textarea:focus, button:focus {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: -50px;
 }
 .btn-expand-all, .btn-collapse-all {
     background: #2196F3;

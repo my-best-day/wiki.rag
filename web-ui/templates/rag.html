@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A simple search application built with FastAPI.">
+    <meta name="description" content="A simple RAG application built with FastAPI.">
     <title>Search App</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div class="container">
         <section class="search-container">
-            <form method="POST" action="/search" class="search-form" id="search-form">
-                <label for="query">Search Query:</label>
-                <textarea id="query" name="query" placeholder="Enter your search query here...">{{ query }}</textarea>
+            <form method="POST" action="/rag" class="search-form" id="search-form">
+                <label for="query">RAG Query:</label>
+                <textarea id="query" name="query" placeholder="Enter your rag query here...">{{ query }}</textarea>
                 <div class="button-group">
-                    <button type="submit" class="btn-submit">Search</button>
+                    <button type="submit" class="btn-submit">RAG!</button>
                     <div class="clear-button-group">
                         <button type="button" class="btn-clear-query" onclick="clearQuery()">Clear Query</button>
                         <button type="button" class="btn-clear" onclick="clearQueryAndReset()">Clear</button>
@@ -44,35 +44,36 @@
         <div class="query-info">
             Time: {{ now.strftime('%H:%M:%S') if now else 'N/A' }} |
             {{ elapsed | default(0.0) | round(3) }} sec |
-            {{ results | length }} results |
+            {{ (prompt_length / 4.5) | round }} tokens - input |
+            {{ (results | length / 4.5) | round }} tokens - output |
             Query: "{{ query }}"
         </div>
         {% endif %}
 
         {% if results %}
         <section class="result-container">
-            <h3>Search Results:</h3>
-            {% for result in results %}
-            <div class="article">
-                <div class="article-header">
-                    {{ result.article.header.text | clean_header }}
-                    <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
-                </div>
-                <div class="article-stats">
-                    Offset: {{ result.article.offset }} |
-                    Length: {{ result.article.char_length }} |
-                    Similarity: {{ result.similarity | round(3) }}
-                </div>
-                <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
-                    {{ result.article.body.text }}
-                </div>
+            <div id="markdown-content" style="display: none;">
+                {{ results }}
             </div>
-            {% endfor %}
+            <div id="html-output"></div>
         </section>
         {% else %}
         <p>No results found.</p>
         {% endif %}
     </div> <!-- container -->
     <script src="/static/js/search.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <script>
+        // Get Markdown content from the hidden div
+        const markdownContent = document.getElementById('markdown-content').textContent;
+
+        // Initialize Showdown.js
+        const converter = new showdown.Converter();
+
+        // Convert Markdown to HTML
+        const htmlContent = converter.makeHtml(markdownContent);
+
+        // Insert HTML into the output div
+        document.getElementById('html-output').innerHTML = htmlContent;
+    </script></body>
 </html>

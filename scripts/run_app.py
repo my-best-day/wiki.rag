@@ -4,6 +4,7 @@ import uvicorn
 import configparser
 from web.app_config import AppConfig
 from web.search_app import create_search_app
+from web.rag_app import create_rag_app
 
 
 def setup_logging():
@@ -36,11 +37,17 @@ def get_search_app() -> uvicorn.Server:
     return search_app
 
 
-def main():
-    search_app = create_search_app()
-    uvicorn.run(search_app, host="127.0.0.1", port=8000, reload=True)
+def get_rag_app() -> uvicorn.Server:
+    app_config = load_app_config()
+    rag_app = create_rag_app(app_config)
+    return rag_app
 
 
-if __name__ == "__main__":
-    setup_logging()
-    main()
+# def main():
+#     app = create_rag_app()
+#     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+
+
+# if __name__ == "__main__":
+#     setup_logging()
+#     main()
