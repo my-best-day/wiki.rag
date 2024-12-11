@@ -14,7 +14,7 @@ from gen.element.article import Article
 from gen.search.stores_flat import StoresFlat as Stores
 
 from gen.search.k_nearest_finder import KNearestFinder
-
+from xutils.timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +66,15 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
 
         t0 = time.time()
         article_id_similarity_tuple_list = \
-            finder.find_k_nearest_articles(query, k=k, threshold=threshold, max=max)
+            finder.find_k_nearest_articles2_plx(query, k=k, threshold=threshold, max_results=max)
         elapsed = time.time() - t0
         logger.info(f"Found {len(article_id_similarity_tuple_list)} results")
 
-        results = []
-        for article_id, similarity in article_id_similarity_tuple_list:
-            article = stores.get_article(article_id)
-            results.append(ArticleResult(similarity, article))
+        async with Timer("get articles"):
+            results = []
+            for article_id, similarity in article_id_similarity_tuple_list:
+                article = stores.get_article(article_id)
+                results.append(ArticleResult(similarity, article))
 
         text_file_name = os.path.basename(app_config.text_file_path)
 

@@ -34,6 +34,7 @@ class Stores:
 
         self._extended_segments: Opt[List[ExtendedSegment]] = None
         self._articles: Opt[List[Article]] = None
+        self._embeddings_article_ids: Opt[List[UUID]] = None
 
         self._lock = RLock()
 
@@ -105,6 +106,7 @@ class Stores:
         return article
 
     def get_embeddings_article_ids(self) -> List[UUID]:
-        extended_segments = self.extended_segments
-        article_ids = [seg.article.uid for seg in extended_segments]
-        return article_ids
+        if self._embeddings_article_ids is None:
+            extended_segments = self.extended_segments
+            self._embeddings_article_ids = [seg.article.uid for seg in extended_segments]
+        return self._embeddings_article_ids

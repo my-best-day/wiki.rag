@@ -1,5 +1,6 @@
 filelock
 pandas
+polars[all]
 numpy
 torch
 sentence_transformers
