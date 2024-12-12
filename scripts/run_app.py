@@ -2,7 +2,7 @@ import os
 import logging
 import uvicorn
 import configparser
-from web.app_config import AppConfig
+from xutils.app_config import AppConfig
 from web.search_app import create_search_app
 from web.rag_app import create_rag_app
 
