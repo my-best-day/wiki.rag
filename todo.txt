@@ -1,3 +1,15 @@
+2024-12-12
+- quantization
+- check similarity
+
+
+2024-12-11
++ reduce dimension
++ create 1500 segments
++ improve performance of k nearest
+  + normalize embeddings before dist
+  + use polar
+
 2024-12-07
 
 later - preserve segment index / weight ...

@@ -26,7 +26,9 @@ def load_app_config(config_file: str = "config.ini") -> AppConfig:
     app_config = AppConfig(
         text_file_path=sec.get("text-file-path"),
         path_prefix=sec.get("path-prefix"),
-        max_len=sec.getint("max-len")
+        max_len=sec.getint("max-len"),
+        target_dim=sec.getint("target-dim"),
+        l2_normalize=sec.getboolean("l2-normalize"),
     )
     return app_config
 

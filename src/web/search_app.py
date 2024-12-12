@@ -38,7 +38,7 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
 
     stores = Stores(app_config.text_file_path, app_config.path_prefix, app_config.max_len)
     stores.background_load()
-    finder = KNearestFinder(stores)
+    finder = KNearestFinder(stores, app_config.target_dim, app_config.l2_normalize)
 
     app.state.config = app_config
     app.state.templates = templates
@@ -66,7 +66,7 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
 
         t0 = time.time()
         article_id_similarity_tuple_list = \
-            finder.find_k_nearest_articles2_plx(query, k=k, threshold=threshold, max_results=max)
+            finder.find_k_nearest_articles(query, k=k, threshold=threshold, max_results=max)
         elapsed = time.time() - t0
         logger.info(f"Found {len(article_id_similarity_tuple_list)} results")
 

@@ -21,14 +21,15 @@ def gpu_process_embeddings(
         target_dim (int): Target dimension for the embeddings.
         batch_size (int): Batch size for processing.
     """
-    logger.info(f"Starting processing with input file: {input_file}, output file: {output_file}, target dim: {target_dim}, batch size: {batch_size}")
+    logger.info("Starting processing with input file: %s, output file: %s, "
+                "target dim: %s, batch size: %s", input_file, output_file, target_dim, batch_size)
 
     # Load existing embeddings
     data = np.load(input_file)
     embeddings = data['embeddings']
 
     if target_dim > embeddings.shape[1]:
-        raise ValueError(f"Target dimension {target_dim} exceeds input dimension {embeddings.shape[1]}")
+        raise ValueError(f"Target dime {target_dim} exceeds input dime {embeddings.shape[1]}")
 
     # Determine device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -108,4 +109,3 @@ if __name__ == '__main__':
         raise ValueError("Batch size must be positive.")
 
     main(args)
-
