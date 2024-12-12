@@ -98,7 +98,7 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument('-o', '--output_file', type=str, help='Output file',
                         required=True)
-    parser.add_argument('-d', '--dim', type=int, choices=[512, 256, 128, 64],
+    parser.add_argument('-d', '--dim', type=int, choices=[768, 512, 256, 128, 64],
                         help='Target dimension', required=True)
     parser.add_argument('-bs', '--batch_size', type=int, help='Batch size',
                         required=True)

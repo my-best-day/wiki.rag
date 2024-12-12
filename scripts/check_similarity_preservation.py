@@ -83,10 +83,44 @@ def compare_embedding_techniques():
     compare_embeddings(original_files, transformed_files)
 
 
+def compare_embeddings_params():
+    max_len = 5000
+
+    originals = [
+        [max_len, 768, "float32"],
+        [max_len, 512, "float32"],
+        [max_len, 256, "float32"],
+        [max_len, 768, "float16"],
+        [max_len, 512, "float16"],
+        [max_len, 256, "float16"],
+        [max_len, 768, "int8"],
+        [max_len, 512, "int8"],
+        [max_len, 256, "int8"],
+    ]
+
+    transformed = originals
+
+    original_files = [store_path("data/train", *params) for params in originals]
+    transformed_files = [store_path("data/train", *params) for params in transformed]
+    compare_embeddings(original_files, transformed_files)
+
+
+def store_path(prefix, max_len, dim, stype):
+    """
+    Generate a path based on the template and parameters
+    Example: store_path("data/train_{max_len}_{dim}_{stype}.npz", 5000, 768, "float16")
+    """
+    type_part = f"_{stype}" if stype != "float32" else ""
+    path = f"{prefix}_{max_len}_{dim}{type_part}.npz"
+    return path
+
+
 if __name__ == "__main__":
     # expect argv to be at least 3
     if len(sys.argv) == 2 and sys.argv[1] == "compare":
         compare_embedding_techniques()
+    elif len(sys.argv) == 2 and sys.argv[1] == "params":
+        compare_embeddings_params()
     elif len(sys.argv) != 3:
         print("Usage: python check_similarity_preservation.py <original_file> <transformed_file>")
         sys.exit(1)
