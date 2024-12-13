@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import logging
 import argparse
 import numpy as np
@@ -12,7 +14,7 @@ def quantize_embeddings(
         output_file: str,
         dim: int,
         stype: TargetStype,
-        l2_normalized: bool,
+        l2_normalize: bool,
         l2_verify: bool) -> None:
 
     logger.info("Morphing embeddings with in file: %s, out file: %s, dim: %s, stype: %s",
@@ -24,9 +26,9 @@ def quantize_embeddings(
     if l2_verify:
         if not EmbeddingUtils.are_l2_normalized(embeddings):
             raise ValueError("Embeddings are not L2 normalized")
-        l2_normalized = True
+        l2_normalize = False
 
-    morphed_embeddings = EmbeddingUtils.morph_embeddings(embeddings, dim, l2_normalized, stype)
+    morphed_embeddings = EmbeddingUtils.morph_embeddings(embeddings, dim, l2_normalize, stype)
 
     np.savez(output_file,
              uids=data['uids'],
