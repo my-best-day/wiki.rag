@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Evaluates similarity preservation of the embeddings.
 """

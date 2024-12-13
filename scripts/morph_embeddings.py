@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output-file', type=str, help='Output file')
     parser.add_argument('-pp', '--prefix', type=str, help='Prefix')
     parser.add_argument('-sd', '--src-dim', type=int, choices=[768, 512, 256, 128, 64],
-                        help='Source dimension')
+                        help='Source dimension (default: target dimension)')
     parser.add_argument('-d', '--dim', type=int, choices=[768, 512, 256, 128, 64],
                         help='Target dimension')
     parser.add_argument('-m', '--max-len', type=int, help='Max length')
@@ -75,6 +75,9 @@ if __name__ == "__main__":
 
             raise ValueError("Either files or (prefix, max_len, source_dim, dim) must be provided")
 
+    if args.src_dim is None:
+        args.src_dim = args.dim
+
     if args.input_file is None:
         args.input_file = f"{args.prefix}_{args.max_len}_{args.src_dim}_embeddings.npz"
 
@@ -87,9 +90,6 @@ if __name__ == "__main__":
 
     if Path(args.output_file).exists() and not args.force:
         parser.error(f"Output file {args.output_file} already exists (use -f to force overwrite)")
-
-    if not args.l2_normalized and not args.l2_verify:
-        parser.error("Quantization only supported for L2 normalized embeddings")
 
     quantize_embeddings(
         args.input_file,
