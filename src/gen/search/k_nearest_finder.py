@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 from xutils.timer import Timer
 
 from gen.encoder import Encoder
+from gen.embedding_utils import EmbeddingUtils
 
 from gen.search.stores import Stores
 
@@ -13,9 +14,14 @@ class KNearestFinder:
     def __init__(
             self, stores: Stores,
             target_dim: Optional[int] = None,
-            l2_normalize: bool = True):
+            l2_normalize: bool = True,
+            target_stype: Optional[str] = None):
         self.stores = stores
-        self.encoder = Encoder(1, target_dim, l2_normalize)
+        self.target_dim = target_dim
+        self.l2_normalize = l2_normalize
+        self.target_stype = target_stype
+
+        self.encoder = Encoder(1)
 
         self._uids = None
         self._embeddings = None
@@ -52,11 +58,16 @@ class KNearestFinder:
 
         # Step 2: Encode, reduced-dim, and normalize the query
         with Timer("encode query"):
-            reduced_normalized_query = self.encoder.encode([f"search_query: {query}"])
+            query_embeddings = self.encoder.encode([f"search_query: {query}"])
+
+        with Timer("reduce and normalize query"):
+            reduced_normalized_query_embeddings = \
+                EmbeddingUtils.reduce_dim_and_normalize_embeddings(
+                    query_embeddings, self.target_dim, self.l2_normalize, self.target_stype)
 
         # Step 3: Compute cosine similarities
         with Timer("compute similarities"):
-            similarities = np.dot(normalized_embeddings, reduced_normalized_query.T)
+            similarities = np.dot(normalized_embeddings, reduced_normalized_query_embeddings.T)
             similarities = similarities.flatten()
 
         # Step 4: Create a DataFrame for aggregation

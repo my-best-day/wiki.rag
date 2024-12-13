@@ -1,7 +1,6 @@
 import logging
-from typing import Optional, List
+from typing import List
 from numpy.typing import NDArray
-from embedding_utils import EmbeddingUtils, TargetStype
 from xutils.app_config import AppConfig
 
 __import__("gen.encoder_helper")
@@ -23,26 +22,15 @@ class Encoder:
     def __init__(
             self,
             batch_size: int,
-            target_dim: Optional[int] = None,
-            l2_normalize: bool = True,
-            target_stype: TargetStype = None,
             config_id: str = "big"):
 
         self.config: AppConfig = encoder_configs[config_id]
         self.batch_size: int = batch_size
-        self.target_dim: int = target_dim
-        self.l2_normalize: bool = l2_normalize
         self._model = None
 
     def encode(self, sentences: List[str]) -> NDArray:
         query_embedding = self.model.encode(sentences, batch_size=self.batch_size)
-        query_embedding = self.reduce_dim_and_normalize_embedding(query_embedding)
         return query_embedding
-
-    def reduce_dim_and_normalize_embedding(self, embedding: NDArray) -> NDArray:
-        """Reduce dimension and normalize the embedding."""
-        return EmbeddingUtils.reduce_dim_and_normalize_embedding(
-            embedding, self.target_dim, self.l2_normalize, self.target_stype)
 
     @property
     def model(self):
