@@ -91,28 +91,35 @@ def compare_embeddings_params():
         [max_len, 768, "float32"],
         [max_len, 512, "float32"],
         [max_len, 256, "float32"],
+        [max_len, 128, "float32"],
         [max_len, 768, "float16"],
         [max_len, 512, "float16"],
         [max_len, 256, "float16"],
+        [max_len, 128, "float16"],
         [max_len, 768, "int8"],
         [max_len, 512, "int8"],
         [max_len, 256, "int8"],
+        [max_len, 128, "int8"],
+        [max_len, 768, "uint8"],
+        [max_len, 512, "uint8"],
+        [max_len, 256, "uint8"],
+        [max_len, 128, "uint8"],
     ]
 
     transformed = originals
 
-    original_files = [store_path("data/train", *params) for params in originals]
-    transformed_files = [store_path("data/train", *params) for params in transformed]
+    original_files = [embed_store_path("data/train", *params) for params in originals]
+    transformed_files = [embed_store_path("data/train", *params) for params in transformed]
     compare_embeddings(original_files, transformed_files)
 
 
-def store_path(prefix, max_len, dim, stype):
+def embed_store_path(prefix, max_len, dim, stype):
     """
     Generate a path based on the template and parameters
     Example: store_path("data/train_{max_len}_{dim}_{stype}.npz", 5000, 768, "float16")
     """
     type_part = f"_{stype}" if stype != "float32" else ""
-    path = f"{prefix}_{max_len}_{dim}{type_part}.npz"
+    path = f"{prefix}_{max_len}_{dim}{type_part}_embeddings.npz"
     return path
 
 
