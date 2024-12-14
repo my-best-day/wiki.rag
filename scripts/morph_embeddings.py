@@ -71,7 +71,7 @@ if __name__ == "__main__":
     if args.input_file is None or args.output_file is None:
         if args.prefix is None or \
             args.max_len is None or \
-                args.src_dim is None or args.dim is None:
+                args.dim is None:
 
             raise ValueError("Either files or (prefix, max_len, source_dim, dim) must be provided")
 
