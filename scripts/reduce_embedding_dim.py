@@ -54,6 +54,7 @@ def gpu_process_embeddings(
                                         normalized_shape=(tensor_batch.shape[1],))
 
         # Dimension reduction
+        # this operation only suitable for models supporting matryoshka embeddings
         reduced_batch = normalized_batch[:, :target_dim]
 
         # L2 Normalization
