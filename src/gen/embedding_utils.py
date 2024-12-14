@@ -18,15 +18,15 @@ class EmbeddingUtils:
             target_stype: TargetStype) -> NDArray:
         """Reduce dimension, normalize, and quantize the embeddings."""
 
-        reduced_embeddings = EmbeddingUtils.reduce_dim(embeddings, target_dim)
+        embeddings1 = EmbeddingUtils.reduce_dim(embeddings, target_dim)
 
-        normalized_embeddings = \
-            EmbeddingUtils.normalize_embeddings(reduced_embeddings, l2_normalize)
+        embeddings2 = \
+            EmbeddingUtils.normalize_embeddings(embeddings1, l2_normalize)
 
-        quantized_embeddings = EmbeddingUtils.quantize_embeddings(
-            normalized_embeddings, target_stype)
+        embeddings3 = EmbeddingUtils.quantize_embeddings(
+            embeddings2, target_stype)
 
-        return quantized_embeddings
+        return embeddings3
 
     @staticmethod
     def reduce_dim(embeddings: NDArray, target_dim: Optional[int]) -> NDArray:
@@ -52,7 +52,7 @@ class EmbeddingUtils:
         if reduced_embeddings is embeddings:
             logger.info("Dim reduction: NOT applied (dim: %s)", current_dim)
         else:
-            logger.infos("Dim reduction: applied from %s to %s", current_dim, target_dim)
+            logger.info("Dim reduction: applied from %s to %s", current_dim, target_dim)
 
         return reduced_embeddings
 
