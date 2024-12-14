@@ -49,6 +49,9 @@ def similarity_preservation(orig_emb, trans_emb, sample_size=1000, top_k=10):
 
 
 def compare_embeddings(original_files, transformed_files):
+    """
+    Compare embeddings from original and transformed files
+    """
     for original_file in original_files:
         print("Original File:", original_file)
         original_embeddings = np.load(original_file)["embeddings"]
@@ -89,6 +92,10 @@ def compare_embeddings_params():
 
     originals = [
         [max_len, 768, "float32"],
+    ]
+
+    transformed = [
+        [max_len, 768, "float32"],
         [max_len, 512, "float32"],
         [max_len, 256, "float32"],
         [max_len, 128, "float32"],
@@ -105,8 +112,6 @@ def compare_embeddings_params():
         [max_len, 256, "uint8"],
         [max_len, 128, "uint8"],
     ]
-
-    transformed = originals
 
     original_files = [embed_store_path("data/train", *params) for params in originals]
     transformed_files = [embed_store_path("data/train", *params) for params in transformed]
