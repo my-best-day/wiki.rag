@@ -15,6 +15,7 @@ def quantize_embeddings(
         dim: int,
         stype: TargetStype,
         l2_normalize: bool,
+        norm_type: TargetStype,
         l2_verify: bool) -> None:
 
     logger.info("Morphing embeddings with in file: %s, out file: %s, dim: %s, stype: %s",
@@ -28,7 +29,8 @@ def quantize_embeddings(
             raise ValueError("Embeddings are not L2 normalized")
         l2_normalize = False
 
-    morphed_embeddings = EmbeddingUtils.morph_embeddings(embeddings, dim, l2_normalize, stype)
+    morphed_embeddings = EmbeddingUtils.morph_embeddings(
+        embeddings, dim, l2_normalize, norm_type, stype)
 
     np.savez(output_file,
              uids=data['uids'],
@@ -62,8 +64,10 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--stype', type=str, help='Stype'
                         , choices=["float32", "float16", "int8", "uint8"])
     parser.add_argument('-f', '--force', action='store_true', help='Force overwrite')
-    parser.add_argument('--l2-normalized', action='store_true', default=False,
-                        help='Is embedding normalized')
+    parser.add_argument('--l2-normalize', action='store_true', default=False,
+                        help='l2 normalize the embeddings')
+    parser.add_argument('--norm-type', type=str, choices=["float32", "float16", "int8", "uint8"],
+                        help='Data type to use for L2 normalization (default: input type)')
     parser.add_argument('--l2-verify', action='store_true', default=False,
                         help='Verify embedding is L2 normalized')
     args = parser.parse_args()
@@ -73,7 +77,7 @@ if __name__ == "__main__":
             args.max_len is None or \
                 args.dim is None:
 
-            raise ValueError("Either files or (prefix, max_len, source_dim, dim) must be provided")
+            raise ValueError("Either files or (prefix, max_len, dim) must be provided")
 
     if args.src_dim is None:
         args.src_dim = args.dim
@@ -96,5 +100,6 @@ if __name__ == "__main__":
         args.output_file,
         args.dim,
         args.stype,
-        args.l2_normalized,
+        args.l2_normalize,
+        args.norm_type,
         args.l2_verify)

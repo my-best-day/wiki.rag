@@ -15,13 +15,14 @@ class EmbeddingUtils:
             embeddings: NDArray,
             target_dim: Optional[int],
             l2_normalize: bool,
+            norm_type: TargetStype,
             target_stype: TargetStype) -> NDArray:
         """Reduce dimension, normalize, and quantize the embeddings."""
 
         embeddings1 = EmbeddingUtils.reduce_dim(embeddings, target_dim)
 
         embeddings2 = \
-            EmbeddingUtils.normalize_embeddings(embeddings1, l2_normalize)
+            EmbeddingUtils.normalize_embeddings(embeddings1, l2_normalize, norm_type)
 
         embeddings3 = EmbeddingUtils.quantize_embeddings(
             embeddings2, target_stype)
@@ -57,11 +58,14 @@ class EmbeddingUtils:
         return reduced_embeddings
 
     @staticmethod
-    def normalize_embeddings(embeddings: NDArray, l2_normalize: bool) -> NDArray:
+    def normalize_embeddings(embeddings: NDArray, l2_normalize: bool,
+                             astype: TargetStype = None) -> NDArray:
         """Normalize the embeddings using L2 normalization if specified."""
         if l2_normalize:
-            normalized_embeddings = embeddings / \
-                np.linalg.norm(embeddings, axis=1, keepdims=True)
+            if astype is not None:
+                embeddings1 = embeddings.astype(astype) if astype is not None else embeddings
+            normalized_embeddings = embeddings1 / \
+                np.linalg.norm(embeddings1, axis=1, keepdims=True)
             result = normalized_embeddings
             logger.info("L2 normalization: applied")
         else:
