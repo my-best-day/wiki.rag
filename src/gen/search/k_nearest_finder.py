@@ -36,9 +36,11 @@ class KNearestFinder:
     @property
     def uids_and_normalized_embeddings(self):
         if self._normalized_embeddings is None:
-            uids, embeddings = self.uids_and_embeddings
+            _, embeddings = self.uids_and_embeddings
+
             self._normalized_embeddings = \
                 embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+
         return self._uids, self._normalized_embeddings
 
     def find_k_nearest_articles(
