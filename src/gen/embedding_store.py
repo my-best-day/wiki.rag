@@ -140,5 +140,8 @@ class EmbeddingStore:
         should_load_normalized = not config.l2_normalize and not config.norm_type
         norm_part = f"_{config.norm_type}" if should_load_normalized else ""
 
+        logger.debug("EmbeddingStore: dim_part: %s, type_part: %s, norm_part: %s",
+                     dim_part, type_part, norm_part)
+
         path = f"{config.prefix}_{config.max_len}{dim_part}{type_part}{norm_part}_embeddings.npz"
         return path
