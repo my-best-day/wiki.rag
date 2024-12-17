@@ -64,14 +64,24 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--max-len', type=int, help='Max length')
     parser.add_argument('-s', '--stype', type=str, help='Stype'
                         , choices=["float32", "float16", "int8", "uint8"])
+    parser.add_argument('--src-stype', type=str, help='Source stype'
+                        , choices=["float32", "float16", "int8", "uint8"])
     parser.add_argument('-f', '--force', action='store_true', help='Force overwrite')
     parser.add_argument('--l2-normalize', action='store_true', default=False,
                         help='l2 normalize the embeddings')
     parser.add_argument('--norm-type', type=str, choices=["float32", "float16", "int8", "uint8"],
                         help='Data type to use for L2 normalization (default: input type)')
+    parser.add_argument('--src-norm-type', type=str, choices=["float32",
+                        "float16", "int8", "uint8"], default=None,
+                        help='Indicate the norm type of the source embeddings')
     parser.add_argument('--l2-verify', action='store_true', default=False,
                         help='Verify embedding is L2 normalized')
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help='Enable debug logging')
     args = parser.parse_args()
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     if args.input_file is None or args.output_file is None:
         if args.prefix is None or \
@@ -83,13 +93,19 @@ if __name__ == "__main__":
     if args.src_dim is None:
         args.src_dim = args.dim
 
+    if args.src_stype is None:
+        args.src_stype = args.stype
+
+    if args.src_norm_type is None:
+        args.src_norm_type = args.norm_type
+
     if args.input_file is None:
         input_config = EmbeddingConfig(
             prefix=args.prefix,
             max_len=args.max_len,
             dim=args.src_dim,
-            stype=args.stype,
-            norm_type=args.norm_type
+            stype=args.src_stype,
+            norm_type=args.src_norm_type
         )
         args.input_file = EmbeddingStore.get_store_path(input_config)
 
