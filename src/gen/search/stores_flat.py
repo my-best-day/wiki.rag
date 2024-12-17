@@ -17,16 +17,16 @@ from gen.element.element import Element
 from gen.element.article import Article
 from gen.element.flat.flat_article import FlatArticle
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment
-
+from xutils.embedding_config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
 
 class StoresFlat:
-    def __init__(self, text_file_path: str, path_prefix: str, max_len: int):
+    def __init__(self, text_file_path: str, embedding_config: EmbeddingConfig):
         self.text_file_path = text_file_path
-        self.path_prefix = path_prefix
-        self.max_len = max_len
+
+        self.embedding_config = embedding_config
 
         self._articles_loaded = False
         self._segments_loaded = False
@@ -70,7 +70,7 @@ class StoresFlat:
         Caller is responsible for locking.s
         """
         if not self._articles_loaded:
-            flat_article_file_path = Path(f"{self.path_prefix}_flat_articles.json")
+            flat_article_file_path = Path(f"{self.embedding_config.prefix}_flat_articles.json")
             text_file_path = Path(self.text_file_path)
             self._store.load_elements(text_file_path, flat_article_file_path)
             self._articles_loaded = True
@@ -80,7 +80,9 @@ class StoresFlat:
         Caller is responsible for locking.s
         """
         if not self._segments_loaded:
-            flat_segment_file_path = Path(f"{self.path_prefix}_{self.max_len}_flat_segments.json")
+            flat_segment_file_path_str = \
+                f"{self.embedding_config.prefix}_{self.embedding_config.max_len}_flat_segments.json"
+            flat_segment_file_path = Path(flat_segment_file_path_str)
             text_file_path = Path(self.text_file_path)
             self._store.load_elements(text_file_path, flat_segment_file_path)
             self._segments_loaded = True
@@ -90,8 +92,9 @@ class StoresFlat:
         Caller is responsible for locking.s
         """
         if self._embeddings is None:
-            embedding_store_path = Path(f"{self.path_prefix}_{self.max_len}_embeddings.npz")
-            embedding_store = EmbeddingStore(embedding_store_path)
+            embedding_store_path_str = EmbeddingStore.get_store_path(self.embedding_config)
+            embedding_store_path = Path(embedding_store_path_str)
+            embedding_store = EmbeddingStore(embedding_store_path, allow_empty=False)
             self._uids, self._embeddings = embedding_store.load_embeddings()
 
     @property
@@ -125,6 +128,7 @@ class StoresFlat:
         return article
 
     def get_embeddings_article_ids(self) -> List[UUID]:
+        self._load_flat_articles()
         extended_segments = self.extended_segments
         article_ids = [seg.article.uid for seg in extended_segments]
         return article_ids

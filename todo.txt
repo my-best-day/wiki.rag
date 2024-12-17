@@ -299,3 +299,39 @@ def main():
 
 
 #####################################################
+
+
+
+
+2024-12-14 ================================================
+
+Morphing Embeddings
+
+capture how embeddings need to be manipulated before use.
+standard pipeline (morph_embeddings.py)
+
+1. reduce dimension from 768 to 512, 256, 128, 64
+- current implementation tied to a model that supports matryoshka dimensions
+-
+
+
+Embeddings
+- prefix
+- max-len
+- dim - 768, 512, 256, 128, 64  # None -> 768
+- stype - float32, float16, int8, uint8  # None -> float32
+- norm-type - float32, float16, int8, uint8  # None -> don't astype before norm
+
+
+data/train_1
+5000
+768
+float32
+None
+
+
+
+2024-12-16
+
+What we want is:
+- load stype (int8)

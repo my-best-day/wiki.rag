@@ -8,9 +8,13 @@ from gen.element.header import Header
 from gen.element.segment import Segment
 from gen.element.extended_segment import ExtendedSegment
 from gen.search.stores import Stores
+from xutils.embedding_config import EmbeddingConfig
 
 
 class TestStores(unittest.TestCase):
+
+    def setUp(self):
+        self.embedding_config = EmbeddingConfig('path_prefix', 1)
 
     @patch('logging.Logger.info')
     def test_background_load(self, _):
@@ -29,7 +33,7 @@ class TestStores(unittest.TestCase):
 
                         mock_thread_instance.start.side_effect = start_side_effect
 
-                        stores = Stores('text_file_path', 'path_prefix', 1)
+                        stores = Stores('text_file_path', self.embedding_config)
                         stores.background_load()
 
                         mock_thread.assert_called_once()
@@ -47,7 +51,7 @@ class TestStores(unittest.TestCase):
             mock_store_instance = MagicMock()
             mock_store.return_value = mock_store_instance
             mock_store_instance.load_elements = MagicMock()
-            stores = Stores('text_file_path', 'path_prefix', 1)
+            stores = Stores('text_file_path', self.embedding_config)
             stores._segments_loaded = True
             stores._load_segments()
             self.assertFalse(mock_store_instance.load_elements.called)
@@ -65,7 +69,7 @@ class TestStores(unittest.TestCase):
             mock_embedding_store.return_value = mock_embedding_store_instance
             mock_embedding_store_instance.load_embeddings = MagicMock()
             mock_embedding_store_instance.load_embeddings.return_value = (['uids'], ['embeddings'])
-            stores = Stores('text_file_path', 'path_prefix', 1)
+            stores = Stores('text_file_path', self.embedding_config)
             stores._embeddings = 'embeddings'
             stores._load_embeddings()
 
@@ -80,7 +84,7 @@ class TestStores(unittest.TestCase):
         with patch("gen.search.stores.Stores._load_embeddings") as mock_load_embeddings:
             with patch("gen.search.stores.RLock") as mock_rlock:
 
-                stores = Stores('text_file_path', 'path_prefix', 1)
+                stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNone(stores._uids)
                 self.assertIsNone(stores._embeddings)
 
@@ -101,7 +105,7 @@ class TestStores(unittest.TestCase):
         with patch("gen.search.stores.Stores._load_segments") as mock_load_segments:
             with patch("gen.search.stores.RLock") as mock_rlock:
 
-                stores = Stores('text_file_path', 'path_prefix', 1)
+                stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNone(stores._extended_segments)
 
                 header = Header(14, b'header', 'header_uid')
@@ -128,7 +132,7 @@ class TestStores(unittest.TestCase):
         with patch("gen.search.stores.Stores._load_segments") as mock_load_segments:
             with patch("gen.search.stores.RLock") as mock_rlock:
 
-                stores = Stores('text_file_path', 'path_prefix', 1)
+                stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNotNone(Element.instances)
                 self.assertIsNone(stores._articles)
 
@@ -155,7 +159,7 @@ class TestStores(unittest.TestCase):
         header = Header(14, b'header', 'header_uid')
         article = Article(header, 'article_uid')
 
-        stores = Stores('text_file_path', 'path_prefix', 1)
+        stores = Stores('text_file_path', self.embedding_config)
         Element.instances.update({
             article.uid: article
         })
@@ -179,7 +183,7 @@ class TestStores(unittest.TestCase):
         extended_segment = ExtendedSegment(segment, 'extended_segment_uid2')
         extended_segments.append(extended_segment)
 
-        stores = Stores('text_file_path', 'path_prefix', 1)
+        stores = Stores('text_file_path', self.embedding_config)
         stores._extended_segments = extended_segments
         article_uids = stores.get_embeddings_article_ids()
         self.assertEqual(article_uids, ['article_uid1', 'article_uid2'])

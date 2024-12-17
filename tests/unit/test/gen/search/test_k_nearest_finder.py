@@ -4,6 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from unittest.mock import MagicMock, patch
 from gen.search.k_nearest_finder import KNearestFinder
+from xutils.embedding_config import EmbeddingConfig
 
 
 class TestKNearestFinder(unittest.TestCase):
@@ -11,6 +12,11 @@ class TestKNearestFinder(unittest.TestCase):
     def setUp(self):
         # stops Encoders from proactively loading the model
         os.environ['UNIT_TESTING'] = '1'
+        self.embed_config = EmbeddingConfig(
+            prefix='path_prefix',
+            max_len=1,
+            l2_normalize=True
+        )
 
     # mock encoder so we do not load the actual model
     @patch('gen.search.k_nearest_finder.Stores')
@@ -23,7 +29,7 @@ class TestKNearestFinder(unittest.TestCase):
         mock_stores_instance.uids_and_embeddings = (uids, embeddings)
         mock_stores.return_value = mock_stores_instance
 
-        k_nearest_finder = KNearestFinder(mock_stores_instance)
+        k_nearest_finder = KNearestFinder(mock_stores_instance, self.embed_config)
         self.assertIsNone(k_nearest_finder._uids)
         self.assertIsNone(k_nearest_finder._embeddings)
         uids2, embeddings2 = k_nearest_finder.uids_and_embeddings
@@ -35,7 +41,7 @@ class TestKNearestFinder(unittest.TestCase):
         self.assertIs(embeddings3, embeddings2)
 
     @patch('gen.search.k_nearest_finder.Encoder')
-    def test_find_k_nearest_segments(self, mock_encoder):
+    def test_find_k_nearest_articles(self, mock_encoder):
         query_embeddings = np.array([[0.1, 0.2, 0.3]])  # Shape (1, 3)
         embeddings = np.array([
             [0.6, 0.7, 0.8],
@@ -52,12 +58,13 @@ class TestKNearestFinder(unittest.TestCase):
 
         # Instantiate the class with mocked encoder
         mock_stores_instance = MagicMock()
-        finder = KNearestFinder(mock_stores_instance)
+        mock_stores_instance.get_embeddings_article_ids.return_value = uids
+        finder = KNearestFinder(mock_stores_instance, self.embed_config)
         finder._uids = uids
         finder._embeddings = embeddings
 
         # Call the method
-        result = finder.find_k_nearest_segments(query, k=2)
+        result = finder.find_k_nearest_articles(query, k=2, threshold=0.99, max_results=2)
 
         # Assert the expected result
         expected_result = [[3 , 0.991460],

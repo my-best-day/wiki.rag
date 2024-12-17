@@ -6,8 +6,9 @@ from uuid import UUID
 from pathlib import Path
 from typing import List
 
+from gen import embedding_store
 from gen.encoder import Encoder
-from gen.embedding_store import EmbeddingStore
+from gen.embedding_store import EmbeddingStore, EmbeddingConfig
 
 from gen.element.store import Store
 from gen.element.element import Element
@@ -27,10 +28,11 @@ class SegmentEncoder:
     def __init__(self, args):
         self.args = args
         self.encoder = Encoder(batch_size=args.batch_size)
-        embedding_store_path = Path(f"{args.path_prefix}_{args.max_len}_embeddings.npz")
-        self.embedding_store = EmbeddingStore(embedding_store_path)
-        if not args.incremental and embedding_store_path.exists():
-            embedding_store_path.unlink()
+        self.config = EmbeddingConfig(prefix=args.path_prefix, max_len=args.max_len)
+        embedding_store_path = embedding_store.get_store_path(self.config)
+        self.embedding_store = EmbeddingStore(embedding_store_path, allow_empty=True)
+        if not args.incremental and self.embedding_store.does_store_exist():
+            self.embedding_store.delete()
 
     @property
     def extended_segments(self):
@@ -50,7 +52,7 @@ class SegmentEncoder:
 
         count = 0
         if self.args.incremental:
-            count = self.embedding_store.get_count()
+            count = self.embedding_store.get_count(allow_empty=True)
             extended_segments = all_extended_segments[count:]
         else:
             extended_segments = all_extended_segments

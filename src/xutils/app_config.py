@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
+from xutils.embedding_config import EmbeddingConfig
 
 
 @dataclass
 class AppConfig:
     text_file_path: str
-    path_prefix: str
-    max_len: int
-    target_dim: Optional[int] = None
-    l2_normalize: bool = True
+    embed_config: Optional[EmbeddingConfig]

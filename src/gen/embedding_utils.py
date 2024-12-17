@@ -2,6 +2,7 @@ import logging
 import numpy as np
 from typing import Optional, Literal
 from numpy.typing import NDArray
+from xutils.embedding_config import EmbeddingConfig
 
 TargetStype = Optional[Literal["float32", "float16", "int8", "uint8"]]
 
@@ -13,19 +14,16 @@ class EmbeddingUtils:
     @staticmethod
     def morph_embeddings(
             embeddings: NDArray,
-            target_dim: Optional[int],
-            l2_normalize: bool,
-            norm_type: TargetStype,
-            target_stype: TargetStype) -> NDArray:
+            embed_config: EmbeddingConfig) -> NDArray:
         """Reduce dimension, normalize, and quantize the embeddings."""
 
-        embeddings1 = EmbeddingUtils.reduce_dim(embeddings, target_dim)
+        embeddings1 = EmbeddingUtils.reduce_dim(embeddings, embed_config.dim)
 
-        embeddings2 = \
-            EmbeddingUtils.normalize_embeddings(embeddings1, l2_normalize, norm_type)
+        embeddings2 = EmbeddingUtils.normalize_embeddings(
+            embeddings1, embed_config.l2_normalize, embed_config.norm_type)
 
         embeddings3 = EmbeddingUtils.quantize_embeddings(
-            embeddings2, target_stype)
+            embeddings2, embed_config.stype)
 
         return embeddings3
 
@@ -62,8 +60,7 @@ class EmbeddingUtils:
                              astype: TargetStype = None) -> NDArray:
         """Normalize the embeddings using L2 normalization if specified."""
         if l2_normalize:
-            if astype is not None:
-                embeddings1 = embeddings.astype(astype) if astype is not None else embeddings
+            embeddings1 = embeddings.astype(astype) if astype is not None else embeddings
             normalized_embeddings = embeddings1 / \
                 np.linalg.norm(embeddings1, axis=1, keepdims=True)
             result = normalized_embeddings
@@ -109,7 +106,9 @@ class EmbeddingUtils:
     def get_stype(embeddings: NDArray) -> str:
         """Determine the stype of the current embeddings."""
         dtype = embeddings.dtype
-        if dtype == np.float32:
+        if dtype == np.float64:
+            stype = "float32"
+        elif dtype == np.float32:
             stype = "float32"
         elif dtype == np.float16:
             stype = "float16"

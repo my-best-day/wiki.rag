@@ -8,6 +8,7 @@ from fastapi import FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from xutils.embedding_config import EmbeddingConfig
 from xutils.app_config import AppConfig
 
 from gen.element.article import Article
@@ -36,9 +37,10 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
     templates.env.filters['clean_header'] = clean_header
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 
-    stores = Stores(app_config.text_file_path, app_config.path_prefix, app_config.max_len)
+    embed_config = app_config.embed_config
+    stores = Stores(app_config.text_file_path, embed_config)
     stores.background_load()
-    finder = KNearestFinder(stores, app_config.target_dim, app_config.l2_normalize)
+    finder = KNearestFinder(stores, embed_config)
 
     app.state.config = app_config
     app.state.templates = templates
@@ -84,7 +86,7 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
                 "request": request, "query": query, "results": results,
                 "elapsed": elapsed, "k": k, "threshold": threshold, "max": max,
                 "text_file": text_file_name,
-                "max_len": app_config.max_len,
+                "max_len": app_config.embed_config.max_len,
                 "now": datetime.datetime.now(),
             },
         )

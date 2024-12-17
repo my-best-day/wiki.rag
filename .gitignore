@@ -5,6 +5,7 @@
 .coverage
 settings.json
 config.ini
+alt_config.ini
 local_config.ini
 **/.DS_Store
 # soft links to directories
@@ -24,3 +25,6 @@ tmp/
 /wiki
 **/checkpoints/
 **/logs/
+
+# windsurf rules
+.windsurfrules

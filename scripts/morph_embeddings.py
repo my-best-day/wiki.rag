@@ -4,7 +4,8 @@ import logging
 import argparse
 import numpy as np
 from pathlib import Path
-from gen.embedding_utils import EmbeddingUtils, TargetStype
+from gen.embedding_store import EmbeddingStore
+from gen.embedding_utils import EmbeddingUtils, TargetStype, EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +84,24 @@ if __name__ == "__main__":
         args.src_dim = args.dim
 
     if args.input_file is None:
-        args.input_file = f"{args.prefix}_{args.max_len}_{args.src_dim}_embeddings.npz"
+        input_config = EmbeddingConfig(
+            prefix=args.prefix,
+            max_len=args.max_len,
+            dim=args.src_dim,
+            stype=args.stype,
+            norm_type=args.norm_type
+        )
+        args.input_file = EmbeddingStore.get_store_path(input_config)
 
     if args.output_file is None:
-        stype_part = f"_{args.stype}" if args.stype != "float32" else ""
-        args.output_file = f"{args.prefix}_{args.max_len}_{args.dim}{stype_part}_embeddings.npz"
+        output_config = EmbeddingConfig(
+            prefix=args.prefix,
+            max_len=args.max_len,
+            dim=args.dim,
+            stype=args.stype,
+            norm_type=args.norm_type
+        )
+        args.output_file = EmbeddingStore.get_store_path(output_config)
 
     if not Path(args.input_file).exists():
         parser.error(f"Input file {args.input_file} does not exist")

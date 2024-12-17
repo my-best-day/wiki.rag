@@ -1,10 +1,20 @@
 import os
+import logging
 import numpy as np
 from uuid import UUID
 from pathlib import Path
 from filelock import FileLock
 from typing import List, Tuple
 from numpy.typing import NDArray
+from xutils.embedding_config import EmbeddingConfig
+
+logger = logging.getLogger(__name__)
+
+
+EMPTY_RESULT = (
+    np.empty((0,), dtype=str),
+    np.empty((0, 0), dtype=float),
+)
 
 
 class CleanFileLock(FileLock):
@@ -28,8 +38,15 @@ class EmbeddingStore:
     # Indirection allows easier substitution for testing purposes
     file_lock_class = CleanFileLock
 
-    def __init__(self, path):
+    def __init__(self, path, allow_empty: bool):
+        logger.info(f"EmbeddingStore: {path}")
         self.path = Path(path)
+        self.allow_empty = allow_empty
+        logger.debug("EmbeddingStore(path=%s, allow_empty=%s)", path, allow_empty)
+
+        if not self.does_store_exist():
+            if not allow_empty:
+                raise RuntimeError(f"Embedding store {path} does not exist")
 
     @property
     def lock_path(self):
@@ -54,23 +71,23 @@ class EmbeddingStore:
         """
         if len(add_uids) == 0:
             return
-        np_str_uids, np_embeds = self._load_embeddings()
+        np_str_uids, np_embeds = self._load_embeddings(allow_empty=True)
         np_str_uids = np.concatenate((np_str_uids, add_uids)) if len(np_str_uids) else add_uids
         np_embeds = np.concatenate((np_embeds, add_embeds)) if len(np_embeds) else add_embeds
         np.savez(self.path, uids=np_str_uids, embeddings=np_embeds)
 
-    def get_count(self) -> int:
+    def get_count(self, allow_empty: bool = False) -> int:
         """
         Get the number of embeddings in the store.
         :return: Number of embeddings in the store.
         """
         lock_path = self.lock_path
         with self.file_lock_class(lock_path):
-            np_str_uids, _ = self._load_embeddings()
+            np_str_uids, _ = self._load_embeddings(allow_empty=allow_empty)
             count = len(np_str_uids)
         return count
 
-    def load_embeddings(self) -> Tuple[List[int], List[np.ndarray]]:
+    def load_embeddings(self, allow_empty: bool = False) -> Tuple[List[UUID], List[np.ndarray]]:
         """
         Load embeddings from the store.
         Do type conversion and handle locks here.
@@ -78,11 +95,12 @@ class EmbeddingStore:
         """
         lock_path = self.lock_path
         with self.file_lock_class(lock_path):
-            np_str_uids, np_embeddings = self._load_embeddings()
+            np_str_uids, np_embeddings = self._load_embeddings(allow_empty=allow_empty)
             np_uids = np.vectorize(UUID)(np_str_uids)
+            logger.debug("EmbeddingStore: %d embeddings loaded", len(np_uids))
             return np_uids, np_embeddings
 
-    def _load_embeddings(self) -> Tuple[NDArray[str], np.ndarray]:  # type: ignore
+    def _load_embeddings(self, allow_empty: bool) -> Tuple[NDArray[str], np.ndarray]:
         """
         Load embeddings from the store.
         - It is the caller responsibility to very the file exists and handle
@@ -90,13 +108,17 @@ class EmbeddingStore:
         - this method returns a tuple of ndarrays.
         :return: an ndarray of uids: NDArray[UUID] and an ndarray of embeddings: NDArray[np.ndarray]
         """
-        if self.does_store_exist():
+        if not self.does_store_exist():
+            if allow_empty:
+                return np.array([]), np.array([])
+            else:
+                raise FileNotFoundError(f"Embeddings store {self.path} does not exist")
+        else:
             with np.load(self.path) as data:
                 np_str_uids = data["uids"]
                 np_embeddings = data["embeddings"]
-        else:
-            np_str_uids, np_embeddings = self.empty_result()
 
+        logger.info(f"EmbeddingStore: {len(np_str_uids)} embeddings loaded")
         return np_str_uids, np_embeddings
 
     # for testing purposes we move file.path.exists here
@@ -105,7 +127,18 @@ class EmbeddingStore:
         return self.path.exists()
 
     @staticmethod
-    def empty_result() -> Tuple[List[UUID], np.ndarray]:
-        uids = np.empty((0,), dtype=str)
-        embeddings = np.empty((0, 0), dtype=float)
-        return uids, embeddings
+    def get_store_path(config: EmbeddingConfig) -> str:
+        """
+        Generate a path based on the embedding configuration
+        Args:
+            config: EmbeddingConfig instance containing prefix, max_len, dim, stype, and norm_type
+        """
+        dim_part = f"_{config.dim}" if config.dim is not None else ""
+        type_part = f"_{config.stype}" if config.stype != "float32" else ""
+
+        # only load the pre-normalized embeddings if we are not asked to normalize
+        should_load_normalized = not config.l2_normalize and not config.norm_type
+        norm_part = f"_{config.norm_type}" if should_load_normalized else ""
+
+        path = f"{config.prefix}_{config.max_len}{dim_part}{type_part}{norm_part}_embeddings.npz"
+        return path

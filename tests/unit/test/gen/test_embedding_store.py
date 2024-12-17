@@ -6,7 +6,7 @@ from uuid import uuid4
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from gen.embedding_store import CleanFileLock
-from gen.embedding_store import EmbeddingStore
+from gen.embedding_store import EmbeddingStore, EMPTY_RESULT
 
 
 class CleanFileLockTestCase(unittest.TestCase):
@@ -53,14 +53,14 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_lock_path(self):
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         self.assertEqual(str(store.lock_path), f"{path}.lock")
         self.assertIsInstance(store.lock_path, Path)
 
     def test_extend_embeddings(self):
         # test: lock is used, _add_embeddings was called, uids were cast to strings
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         store._add_embeddings = MagicMock()
 
         uids = [uuid4(), uuid4()]
@@ -78,7 +78,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_extend_embeddings_empty(self):
         # test: lock is used, _add_embeddings was called, uids were cast to strings
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         store._add_embeddings = MagicMock()
 
         uids = []
@@ -96,8 +96,8 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_add_embeddings_init(self):
         # test: incremental addition... from scratch
         path = "/dev/null"
-        store = EmbeddingStore(path)
-        empty_uids, empty_embeddings = EmbeddingStore.empty_result()
+        store = EmbeddingStore(path, True)
+        empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
         np.savez = MagicMock()
@@ -113,8 +113,8 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_add_embeddings_init_empty(self):
         # test: incremental addition... from scratch
         path = "/dev/null"
-        store = EmbeddingStore(path)
-        empty_uids, empty_embeddings = EmbeddingStore.empty_result()
+        store = EmbeddingStore(path, True)
+        empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
         np.savez = MagicMock()
@@ -130,7 +130,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_add_embeddings_append(self):
         # test: incremental addition with existing entries
         path = "/dev/null"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         existing_uids = np.array([str(uuid4()), str(uuid4())])
         existing_embeddings = np.array([[7, 8, 9], [10, 11, 12]])
         store._load_embeddings = MagicMock(return_value=(
@@ -152,7 +152,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_add_embeddings_append_empty(self):
         # test: incremental addition with existing entries
         path = "/dev/null"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         existing_uids = np.array([str(uuid4()), str(uuid4())])
         existing_embeddings = np.array([[7, 8, 9], [10, 11, 12]])
         store._load_embeddings = MagicMock(return_value=(
@@ -169,8 +169,8 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_add_embeddings_do_not_stringify(self):
         # stringifying uids is the public method responsibility, don't do it here
         path = "/dev/null"
-        store = EmbeddingStore(path)
-        empty_uids, empty_embeddings = EmbeddingStore.empty_result()
+        store = EmbeddingStore(path, True)
+        empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
         np.savez = MagicMock()
@@ -185,7 +185,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_get_count(self):
         # test count for zero and none zero entries
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
 
         store._load_embeddings = MagicMock(return_value=(np.array([]), np.array([])))
         self.assertEqual(store.get_count(), 0)
@@ -196,7 +196,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_load_embeddings(self):
         # test: lock is used, _load_embeddings was called, uids were cast to UUIDS
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
 
         uids = np.array([uuid4(), uuid4()])
         stringified_uids = uids.astype(str)
@@ -218,17 +218,17 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_protected_load_embeddings_no_file(self):
         # test: no store
         path = "/dev/null"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         store.does_store_exist = MagicMock(return_value=False)
 
-        uids, embeddings = store._load_embeddings()
+        uids, embeddings = store._load_embeddings(allow_empty=True)
         self.assertEqual(uids.size, 0)
         self.assertEqual(embeddings.size, 0)
 
     def test_protected_load_embeddings(self):
         # test: empty store
         path = "/dev/null"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         store.does_store_exist = MagicMock(return_value=True)
 
         uids = [uuid4(), uuid4()]
@@ -240,7 +240,7 @@ class TestEmbeddingStore(unittest.TestCase):
         mock_np_load.return_value.__enter__.return_value = mocked_data
 
         with patch("numpy.load", mock_np_load):
-            out_uids, out_embeddings = store._load_embeddings()
+            out_uids, out_embeddings = store._load_embeddings(allow_empty=False)
             mock_np_load.assert_called_once_with(Path(path))
             npt.assert_array_equal(out_uids, stringified_uids)
             npt.assert_array_equal(out_embeddings, embeddings)
@@ -248,7 +248,7 @@ class TestEmbeddingStore(unittest.TestCase):
     def test_does_store_exists(self):
         # test: file exists
         path = "/fake/path"
-        store = EmbeddingStore(path)
+        store = EmbeddingStore(path, True)
         with patch.object(Path, "exists", return_value=False):
             self.assertFalse(store.does_store_exist())
 
