@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 
+import copy
 import logging
 import argparse
 import numpy as np
 from pathlib import Path
 from gen.embedding_store import EmbeddingStore
-from gen.embedding_utils import EmbeddingUtils, TargetStype, EmbeddingConfig
+from gen.embedding_utils import EmbeddingUtils, EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
 
-def quantize_embeddings(
+def morph_embeddings(
         input_file: str,
         output_file: str,
-        dim: int,
-        stype: TargetStype,
-        l2_normalize: bool,
-        norm_type: TargetStype,
+        config: EmbeddingConfig,
         l2_verify: bool) -> None:
 
+    config = copy.copy(config)
+
     logger.info("Morphing embeddings with in file: %s, out file: %s, dim: %s, stype: %s",
-                input_file, output_file, dim, stype)
+                input_file, output_file,
+                config.dim, config.stype)
 
     data = np.load(input_file)
     embeddings = data["embeddings"]
@@ -28,10 +29,9 @@ def quantize_embeddings(
     if l2_verify:
         if not EmbeddingUtils.are_l2_normalized(embeddings):
             raise ValueError("Embeddings are not L2 normalized")
-        l2_normalize = False
+        config.l2_normalize = False
 
-    morphed_embeddings = EmbeddingUtils.morph_embeddings(
-        embeddings, dim, l2_normalize, norm_type, stype)
+    morphed_embeddings = EmbeddingUtils.morph_embeddings(embeddings, config)
 
     np.savez(output_file,
              uids=data['uids'],
@@ -41,16 +41,16 @@ def quantize_embeddings(
 
 
 if __name__ == "__main__":
-    # python quantize_embeddings.py -i data/test_5000_512.npz -o data/test_5000_512_int8.npz -s int8
-    # python quantize_embeddings.py -pp data_test -d 512 -m 5000 -s int8
+    # python morph_embeddings.py -i data/test_5000_512.npz -o data/test_5000_512_int8.npz -s int8
+    # python morph_embeddings.py -pp data_test -d 512 -m 5000 -s int8
     # -i and -o overrides -pp
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
         description='Quantize embeddings',
         epilog='''Example usage:
-  python quantize_embeddings.py -i data/test_256_512.npz -o data/test_256_512_int8.npz -s int8
-  python quantize_embeddings.py -pp data_test -d 512 -m 5000 -s int8
+  python morph_embeddings.py -i data/test_256_512.npz -o data/test_256_512_int8.npz -s int8
+  python morph_embeddings.py -pp data_test -d 512 -m 5000 -s int8
   -i and -o overrides -pp''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -109,15 +109,16 @@ if __name__ == "__main__":
         )
         args.input_file = EmbeddingStore.get_store_path(input_config)
 
+    config = EmbeddingConfig(
+        prefix=args.prefix,
+        max_len=args.max_len,
+        dim=args.dim,
+        stype=args.stype,
+        l2_normalize=args.l2_normalize,
+        norm_type=args.norm_type
+    )
     if args.output_file is None:
-        output_config = EmbeddingConfig(
-            prefix=args.prefix,
-            max_len=args.max_len,
-            dim=args.dim,
-            stype=args.stype,
-            norm_type=args.norm_type
-        )
-        args.output_file = EmbeddingStore.get_store_path(output_config)
+        args.output_file = EmbeddingStore.get_store_path(config)
 
     if not Path(args.input_file).exists():
         parser.error(f"Input file {args.input_file} does not exist")
@@ -125,11 +126,9 @@ if __name__ == "__main__":
     if Path(args.output_file).exists() and not args.force:
         parser.error(f"Output file {args.output_file} already exists (use -f to force overwrite)")
 
-    quantize_embeddings(
+    morph_embeddings(
         args.input_file,
         args.output_file,
-        args.dim,
-        args.stype,
-        args.l2_normalize,
-        args.norm_type,
-        args.l2_verify)
+        config,
+        args.l2_verify
+    )

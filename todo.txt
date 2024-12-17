@@ -4,8 +4,6 @@
 
 
 2024-12-12
-- quantization
-- check similarity
 
 
 2024-12-11

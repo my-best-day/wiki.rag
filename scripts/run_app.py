@@ -21,6 +21,7 @@ def get_search_app():
 
 
 def get_rag_app():
+    setup()
     app_config = load_app_config()
     rag_app = create_rag_app(app_config)
     return rag_app
@@ -75,8 +76,23 @@ def load_app_config() -> AppConfig:
 
 
 def main():
-    app = get_search_app()
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--app", type=str, default=None)
+    parser.add_argument("--port", type=int, default=None)
+    args, _ = parser.parse_known_args()
+
+    if args.app is None:
+        parser.error("Please provide --app")
+
+    app_arg = args.app.upper()
+    if app_arg == "SEARCH":
+        app = get_search_app()
+    elif app_arg == "RAG":
+        app = get_rag_app()
+    else:
+        parser.error(f"Unknown app: {app_arg}")
+
+    uvicorn.run(app, host="127.0.0.1", port=args.port)  # , reload=True
 
 
 if __name__ == "__main__":

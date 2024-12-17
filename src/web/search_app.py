@@ -8,7 +8,6 @@ from fastapi import FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from xutils.embedding_config import EmbeddingConfig
 from xutils.app_config import AppConfig
 
 from gen.element.article import Article

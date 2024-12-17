@@ -37,9 +37,10 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
     templates.env.filters['clean_header'] = clean_header
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 
-    stores = Stores(app_config.text_file_path, app_config.path_prefix, app_config.max_len)
+    embed_config = app_config.embed_config
+    stores = Stores(app_config.text_file_path, embed_config)
     stores.background_load()
-    finder = KNearestFinder(stores)
+    finder = KNearestFinder(stores, embed_config)
 
     app.state.config = app_config
     app.state.templates = templates
@@ -51,11 +52,11 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
         return templates.TemplateResponse("rag.html", {"request": request})
 
     @app.get("/rag", response_class=HTMLResponse)
-    async def search_get(request: Request):
+    async def rag_get(request: Request):
         return await index(request)
 
     @app.post("/rag", response_class=HTMLResponse)
-    async def search(
+    async def rag(
         request: Request,
         query: str = Form(...), k:
         int = Form(5),
@@ -67,7 +68,7 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
 
         t0 = time.time()
         article_id_similarity_tuple_list = \
-            finder.find_k_nearest_articles(query, k=k, threshold=threshold, max=max)
+            finder.find_k_nearest_articles(query, k=k, threshold=threshold, max_results=max)
         elapsed = time.time() - t0
         logger.info(f"Found {len(article_id_similarity_tuple_list)} results")
 
@@ -107,7 +108,7 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
                 "elapsed": elapsed, "k": k, "threshold": threshold, "max": max,
                 "prompt_length": len(prompt),
                 "text_file": text_file_name,
-                "max_len": app_config.max_len,
+                "max_len": app_config.embed_config.max_len,
                 "now": datetime.datetime.now(),
             },
         )
