@@ -1,4 +1,6 @@
 import copy
+import torch
+import logging
 import numpy as np
 import polars as pl
 from uuid import UUID
@@ -9,20 +11,24 @@ from gen.encoder import Encoder
 from gen.embedding_utils import EmbeddingUtils
 
 from gen.search.stores import Stores
+from xutils.timer import LoggingTimer, log_timeit
+
+logger = logging.getLogger(__name__)
 
 
 class KNearestFinder:
     def __init__(
             self, stores: Stores,
-            embedding_config: EmbeddingConfig):
+            embed_config: EmbeddingConfig):
 
         self.stores = stores
-        self.embed_config = copy.copy(embedding_config)
-        self.embed_config.l2_normalize = True
+        self.input_embed_config = embed_config
+        self.query_embed_config = copy.copy(embed_config)
+        self.query_embed_config.l2_normalize = True
 
         # no need to do a detour,
-        if self.embed_config.norm_type is not None:
-            self.embed_config.stype = self.embed_config.norm_type
+        # if self.query_embed_config.norm_type is not None:
+        #     self.query_embed_config.stype = self.query_embed_config.norm_type
 
         self.encoder = Encoder(1)
 
@@ -36,73 +42,95 @@ class KNearestFinder:
             self._uids, self._embeddings = self.stores.uids_and_embeddings
         return self._uids, self._embeddings
 
+    @log_timeit(logger=logger)
     @property
     def uids_and_normalized_embeddings(self):
         if self._normalized_embeddings is None:
             _, embeddings = self.uids_and_embeddings
-
             self._normalized_embeddings = \
-                EmbeddingUtils.morph_embeddings(embeddings, self.embed_config)
-
+                EmbeddingUtils.morph_embeddings(embeddings, self.input_embed_config)
         return self._uids, self._normalized_embeddings
 
     def find_k_nearest_articles(
-            self,
-            query: str,
-            k: int,
-            threshold: float,
-            max_results: int) -> List[Tuple[UUID, float]]:
+        self,
+        query: str,
+        k: int = 5,
+        threshold: float = 0.3,
+        max_results: int = 10
+    ) -> List[Tuple[UUID, float]]:
         """
         Find the K-nearest articles based on cosine similarity.
         """
         # Step 1: Get precomputed embeddings, uids, and article IDs
         uids, normalized_embeddings = self.uids_and_normalized_embeddings
         article_ids = self.stores.get_embeddings_article_ids()
-
-        adjusted_query_embeddings = self.encode_query(query)
+        query_embeddings = self.encode_query(query)
 
         # Step 3: Compute cosine similarities
-        similarities = np.dot(normalized_embeddings, adjusted_query_embeddings.T)
+        similarities = self.torch_batched_similarity(
+            normalized_embeddings,
+            query_embeddings,
+        )
         similarities = similarities.flatten()
 
         # Step 4: Create a DataFrame for aggregation
-        similarity_data = {
+        timer = LoggingTimer('find_k_nearest_articles', logger=logger, level="DEBUG")
+        df_data = {
             'seg_id': uids,
             'art_id': article_ids,
             'similarity': similarities
         }
-        df = pl.DataFrame(similarity_data)
+        df = pl.DataFrame(df_data)
+        timer.restart("created df")
 
-        # Step 5: Aggregate similarities
-        aggregated_df = df.group_by('art_id').agg(
+        # Step 5: Aggregate similarities by article
+        agg_df = df.group_by('art_id').agg(
             pl.col('similarity').mean().alias('mean_similarity')
         )
+        timer.restart("aggregated df")
 
-        # Step 6: Filter based on threshold
-        filtered_df = aggregated_df.filter(pl.col('mean_similarity') > threshold)
+        # Step 6: Filter and sort results
+        filtered_df = agg_df.filter(pl.col('mean_similarity') > threshold)
+        timer.restart("filtered df")
 
-        # Step 7: Select results based on the threshold and size of the filtered set
+        # Step 7: Select results based on threshold and filtered set size
         if len(filtered_df) >= k:
-            # Case 1: Enough elements above threshold, return at most `max` results
-            max_results = max(max_results, k)
-            top_k_results = filtered_df.sort('mean_similarity', descending=True) \
-                .head(max_results).to_numpy()
+            # Case 1: Enough elements above threshold
+            max_k = max(max_results, k)
+            results_df = filtered_df.sort('mean_similarity', descending=True) \
+                .head(max_k)
         else:
-            # Case 2: Not enough above threshold, return top `k` elements
-            top_k_results = aggregated_df.sort('mean_similarity', descending=True) \
-                .head(k).to_numpy()
+            # Case 2: Not enough above threshold, return top k elements
+            results_df = agg_df.sort('mean_similarity', descending=True) \
+                .head(k)
 
-        # Convert to list of tuples
-        top_k_results = [(row[0], row[1]) for row in top_k_results]
+        top_k_results = results_df.to_numpy()
+        timer.restart("selected results")
+
         return top_k_results
 
+    @log_timeit(logger=logger)
+    @staticmethod
+    def torch_batched_similarity(normalized_embeddings, query_embedding, batch_size=100000):
+        similarities = []
+        for i in range(0, len(normalized_embeddings), batch_size):
+            batch = normalized_embeddings[i:i + batch_size]
+            batch_similarities = torch.matmul(
+                torch.from_numpy(batch),
+                torch.from_numpy(query_embedding.T)
+            )
+            similarities.append(batch_similarities.numpy())
+        return np.concatenate(similarities, axis=0)
+
+    @log_timeit(logger=logger)
     def encode_query(self, query: str) -> np.ndarray:
-        # Step 2: Encode, reduced-dim, and normalize the query
-        query_embeddings = self.encoder.encode([f"search_query: {query}"])
+        # Step 1: Get embeddings
+        query_embeddings = self.encoder.encode([query])
 
-        # TODO: add support for norm-type
-        reduced_normalized_query_embeddings = \
-            EmbeddingUtils.morph_embeddings(
-                query_embeddings, self.embed_config)
+        # Step 2: Morph embeddings if needed
+        adjusted_embeddings = EmbeddingUtils.morph_embeddings(
+            query_embeddings,
+            self.input_embed_config
+        )
 
-        return reduced_normalized_query_embeddings
+        return adjusted_embeddings

@@ -3,6 +3,7 @@ import numpy as np
 from typing import Optional, Literal
 from numpy.typing import NDArray
 from xutils.embedding_config import EmbeddingConfig
+from xutils.timer import LoggingTimer, log_timeit
 
 TargetStype = Optional[Literal["float32", "float16", "int8", "uint8"]]
 
@@ -11,22 +12,29 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingUtils:
 
+    @log_timeit(logger=logger)
     @staticmethod
     def morph_embeddings(
             embeddings: NDArray,
             embed_config: EmbeddingConfig) -> NDArray:
         """Reduce dimension, normalize, and quantize the embeddings."""
 
-        embeddings1 = EmbeddingUtils.reduce_dim(embeddings, embed_config.dim)
+        reduced_embeddings = EmbeddingUtils.reduce_dim(embeddings, embed_config.dim)
+        timer = LoggingTimer(logger=logger)
+        timer.restart("Reduced dimension")
 
-        embeddings2 = EmbeddingUtils.normalize_embeddings(
-            embeddings1, embed_config.l2_normalize, embed_config.norm_type)
+        normalized_embeddings = EmbeddingUtils.normalize_embeddings(
+            reduced_embeddings, embed_config.l2_normalize, embed_config.norm_type)
+        timer.restart("Normalized embeddings")
 
-        embeddings3 = EmbeddingUtils.quantize_embeddings(
-            embeddings2, embed_config.stype)
+        quantized_embeddings = EmbeddingUtils.quantize_embeddings(
+            normalized_embeddings, embed_config.stype)
+        timer.restart("Quantized embeddings")
 
-        return embeddings3
+        result = quantized_embeddings
+        return result
 
+    @log_timeit(logger=logger)
     @staticmethod
     def reduce_dim(embeddings: NDArray, target_dim: Optional[int]) -> NDArray:
         """Reduce the embeddings dimension if necessary."""
@@ -53,55 +61,66 @@ class EmbeddingUtils:
         else:
             logger.info("Dim reduction: applied from %s to %s", current_dim, target_dim)
 
-        return reduced_embeddings
+        result = reduced_embeddings
+        return result
 
+    @log_timeit(logger=logger)
     @staticmethod
     def normalize_embeddings(embeddings: NDArray, l2_normalize: bool,
                              astype: TargetStype = None) -> NDArray:
         """Normalize the embeddings using L2 normalization if specified."""
+
         if l2_normalize:
-            embeddings1 = embeddings.astype(astype) if astype is not None else embeddings
-            normalized_embeddings = embeddings1 / \
-                np.linalg.norm(embeddings1, axis=1, keepdims=True)
-            result = normalized_embeddings
+            embeddings_casted = embeddings.astype(astype) if astype is not None else embeddings
+            timer = LoggingTimer(logger=logger)
+            timer.restart("Casted embeddings")
+            normalized_embeddings = embeddings_casted / np.linalg.norm(
+                embeddings_casted, axis=1, keepdims=True)
+            timer.restart("Normalized embeddings")
             logger.info("L2 normalization: applied")
+            result = normalized_embeddings
         else:
-            result = embeddings
             logger.info("L2 normalization: NOT applied")
+            result = embeddings
 
         return result
 
+    @log_timeit(logger=logger)
     @staticmethod
     def quantize_embeddings(embeddings: NDArray, stype: TargetStype) -> NDArray:
         """Quantize the embeddings to the specified type."""
+
         if stype is None:
-            logger.info("Quantization: non requested")
-            return embeddings
-
-        current_stype = EmbeddingUtils.get_stype(embeddings)
-        if current_stype == stype:
-            logger.info("Quantization: already of type %s", stype)
-            return embeddings
-
-        assert stype in ["float32", "float16", "int8", "uint8"]
-
-        if not EmbeddingUtils.are_l2_normalized(embeddings):
-            raise ValueError("Quantization only supported for L2 normalized embeddings")
-
-        if stype == "float32":
-            quantized = embeddings.astype(np.float32)
-        elif stype == "float16":
-            quantized = embeddings.astype(np.float16)
-        elif stype == "int8":
-            quantized = np.round(embeddings * 127).astype(np.int8)
-        elif stype == "uint8":
-            quantized = np.round((embeddings + 1) * 127.5).astype(np.uint8)
+            logger.info("Quantization: not requested")
+            result = embeddings
         else:
-            raise ValueError(f"Unknown stype: {stype}")
-        logger.info("Quantization: converted from %s to %s", current_stype, stype)
+            current_stype = EmbeddingUtils.get_stype(embeddings)
+            if current_stype == stype:
+                logger.info("Quantization: already of type %s", stype)
+                result = embeddings
+            else:
+                assert stype in ["float32", "float16", "int8", "uint8"]
 
-        return quantized
+                if not EmbeddingUtils.are_l2_normalized(embeddings):
+                    raise ValueError("Quantization only supported for L2 normalized embeddings")
 
+                if stype == "float32":
+                    quantized_embeddings = embeddings.astype(np.float32)
+                elif stype == "float16":
+                    quantized_embeddings = embeddings.astype(np.float16)
+                elif stype == "int8":
+                    quantized_embeddings = np.round(embeddings * 127).astype(np.int8)
+                elif stype == "uint8":
+                    quantized_embeddings = np.round((embeddings + 1) * 127.5).astype(np.uint8)
+                else:
+                    raise ValueError(f"Unknown stype: {stype}")
+
+                logger.info("Quantization: converted from %s to %s", current_stype, stype)
+                result = quantized_embeddings
+
+        return result
+
+    @log_timeit(logger=logger)
     @staticmethod
     def get_stype(embeddings: NDArray) -> str:
         """Determine the stype of the current embeddings."""
@@ -120,18 +139,11 @@ class EmbeddingUtils:
             raise ValueError(f"Unknown dtype: {dtype}")
         return stype
 
+    @log_timeit(logger=logger)
     @staticmethod
     def are_l2_normalized(embeddings, tolerance=1e-6) -> bool:
-        """
-        Check if embeddings are L2 normalized.
+        """Check if embeddings are L2 normalized."""
 
-        Args:
-            embeddings (np.ndarray): 2D array of embeddings (batch_size x embedding_dim).
-            tolerance (float): Tolerance for the L2 norm deviation from 1.
-
-        Returns:
-            bool: True if all embeddings are L2 normalized, False otherwise.
-        """
         norms = np.linalg.norm(embeddings, axis=1)
-        is_l2_norm = np.all(np.abs(norms - 1) < tolerance)
-        return is_l2_norm
+        result = np.all(np.abs(norms - 1) < tolerance)
+        return result

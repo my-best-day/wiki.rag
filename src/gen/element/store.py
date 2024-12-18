@@ -2,11 +2,11 @@
 Multi-purpose store for elements and segments.
 """
 import json
+import logging
 from uuid import UUID
 from pathlib import Path
 from gen.element.element import Element
 from xutils.byte_reader import ByteReader
-
 
 __import__("gen.element.element")
 __import__("gen.element.section")
@@ -18,6 +18,9 @@ __import__("gen.element.article")
 __import__("gen.element.extended_segment")
 __import__("gen.element.list_container")
 __import__("gen.element.segment")
+
+
+logger = logging.getLogger(__name__)
 
 
 class Store:
@@ -36,33 +39,43 @@ class Store:
     def write_elements_to_handle(self, file, elements: list[Element]) -> None:
         buffer = []
         for element in elements:
-            xdata = element.to_xdata()
-            json_string = json.dumps(xdata)
+            element_data = element.to_xdata()
+            json_string = json.dumps(element_data)
             buffer.append(json_string)
-            if len(buffer) >= Store._buffer_size:
-                file.write('\n'.join(buffer) + '\n')
-                buffer.clear()
-        if buffer:
-            file.write('\n'.join(buffer) + '\n')
 
-    def load_elements(self, text_file_path: Path,
-                      element_store_path: Path) -> None:
+            if len(buffer) >= Store._buffer_size:
+                buffer_str = '\n'.join(buffer) + '\n'
+                file.write(buffer_str)
+                buffer.clear()
+
+        if buffer:
+            final_str = '\n'.join(buffer) + '\n'
+            file.write(final_str)
+
+    def load_elements(
+        self,
+        text_file_path: Path,
+        element_store_path: Path
+    ) -> None:
+        """Load elements from a file using a byte reader."""
         byte_reader = ByteReader(text_file_path)
         with open(element_store_path, 'r') as file:
             self.load_elements_from_handle(byte_reader, file)
 
     def load_elements_from_handle(self, byte_reader, file) -> None:
+        """Load elements from a file handle and resolve their dependencies."""
         if self.single_store:
             assert len(Element.instances) == 0, "Store already contains elements"
-        xdata_list = []
+
+        # First pass: Create elements
+        element_data_list = []
         for line in file:
-            json_strings = line.split('\n')
-            for json_string in json_strings:
-                if not json_string:
-                    continue
-                xdata = json.loads(json_string)
-                Element.hierarchy_from_xdata(xdata, byte_reader)
-                xdata_list.append(xdata)
-        for xdata in xdata_list:
-            uid = UUID(xdata['uid'])
-            Element.instances[uid].resolve_dependencies(xdata)
+            element_data = json.loads(line)
+            Element.hierarchy_from_xdata(element_data, byte_reader)
+            element_data_list.append(element_data)
+
+        # Second pass: Resolve dependencies
+        for element_data in element_data_list:
+            element_id = UUID(element_data['uid'])
+            element = Element.instances[element_id]
+            element.resolve_dependencies(element_data)

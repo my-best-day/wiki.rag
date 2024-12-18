@@ -137,7 +137,7 @@ class EmbeddingStore:
         type_part = f"_{config.stype}" if config.stype != "float32" else ""
 
         # only load the pre-normalized embeddings if we are not asked to normalize
-        should_load_normalized = not config.l2_normalize and not config.norm_type
+        should_load_normalized = not config.l2_normalize and config.norm_type
         norm_part = f"_{config.norm_type}" if should_load_normalized else ""
 
         logger.debug("EmbeddingStore: dim_part: %s, type_part: %s, norm_part: %s",

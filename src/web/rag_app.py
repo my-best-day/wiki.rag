@@ -1,6 +1,5 @@
 import re
 import os
-import time
 import logging
 import datetime
 from openai import OpenAI
@@ -10,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from xutils.app_config import AppConfig
+from xutils.timer import LoggingTimer
 
 from gen.element.article import Article
 from gen.search.stores_flat import StoresFlat as Stores
@@ -56,27 +56,23 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
         return await index(request)
 
     @app.post("/rag", response_class=HTMLResponse)
-    async def rag(
-        request: Request,
-        query: str = Form(...), k:
-        int = Form(5),
-        threshold: float = Form(0.3),
-        max: int = Form(10),
-    ):
-        logger.info(f"Received query: {query}, ({k}, {threshold}, {max})")
-        logger.warning("*** --- *** --- *** MY CWD: %s" % os.getcwd())
+    async def rag(request: Request,
+                  query: str = Form(...), k: int = Form(5),
+                  threshold: float = Form(0.3), max: int = Form(10)):
 
-        t0 = time.time()
+        logger.info(f"Received query: {query}, ({k}, {threshold}, {max})")
+
+        timer = LoggingTimer('=> => => RAG APP', logger=logger, level="INFO")
         article_id_similarity_tuple_list = \
             finder.find_k_nearest_articles(query, k=k, threshold=threshold, max_results=max)
-        elapsed = time.time() - t0
-        logger.info(f"Found {len(article_id_similarity_tuple_list)} results")
+        timer.restart("Found {len(article_id_similarity_tuple_list)} results")
 
         article_texts = []
         for i, (article_id, similarity) in enumerate(article_id_similarity_tuple_list):
             article = stores.get_article(article_id)
             article_texts.append(f"Article {i}:\n{article.text[:15000]}")
         articles_text = "\n\n".join(article_texts)
+        timer.restart("composed articles_text")
 
         prompt = (
             f"question: {query}\n"
@@ -84,33 +80,40 @@ def create_rag_app(app_config: AppConfig) -> FastAPI:
             f"of the question:\n{articles_text}"
         )
 
-        client = OpenAI()
+        if False:
+            client = OpenAI()
+            timer.restart("client created")
 
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
+            messages = [
                 {"role": "system", "content": "You are a helpful assistant. "},
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt}
             ]
-        )
-        answer = completion.choices[0].message.content
-        # print(answer)
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages
+            )
+            timer.restart("completion created")
+            answer = completion.choices[0].message.content
+        else:
+            answer = "TODO"
 
         text_file_name = os.path.basename(app_config.text_file_path)
+        total_elapsed = timer.total_time()
+        timer.total(total_elapsed)
 
-        return templates.TemplateResponse(
-            "rag.html",
-            {
-                "request": request, "query": query, "results": answer,
-                "elapsed": elapsed, "k": k, "threshold": threshold, "max": max,
-                "prompt_length": len(prompt),
-                "text_file": text_file_name,
-                "max_len": app_config.embed_config.max_len,
-                "now": datetime.datetime.now(),
-            },
-        )
+        template_vars = {
+            "request": request,
+            "query": query,
+            "results": answer,
+            "elapsed": total_elapsed,
+            "k": k,
+            "threshold": threshold,
+            "max": max,
+            "prompt_length": len(prompt),
+            "text_file": text_file_name,
+            "max_len": app_config.embed_config.max_len,
+            "now": datetime.datetime.now(),
+        }
+        return templates.TemplateResponse("rag.html", template_vars)
 
     return app
