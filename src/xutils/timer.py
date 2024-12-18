@@ -27,6 +27,7 @@ Timer constructor:
 which one should be the default?
 """
 import time
+import logging
 from typing import Optional, Union
 
 
@@ -34,7 +35,8 @@ class Timer:
     def __init__(self, caption: Optional[str] = None, time: str = 'performance') -> None:
         self._caption = caption
         self._time_type = time
-        self._start_time = self._time()
+        self._t0 = self._time()
+        self._start_time = self._t0
 
     def elapsed(self, restart: bool = False) -> float:
         now = self._time()
@@ -43,9 +45,18 @@ class Timer:
             self._start_time = now
         return elapsed
 
+    def total_time(self) -> float:
+        now = self._time()
+        elapsed = now - self._t0
+        return elapsed
+
+    def total(self, elapsed: Optional[float] = None) -> str:
+        elapsed = elapsed if elapsed is not None else self.total_time()
+        return self.format("total", elapsed)
+
     def step(self, title: Optional[str] = None, restart: bool = False) -> str:
         elapsed = self.elapsed(restart)
-        return self._format(title, elapsed)
+        return self.format(title, elapsed)
 
     def restart(self, title: Optional[str] = None) -> str:
         return self.step(title, restart=True)
@@ -53,7 +64,7 @@ class Timer:
     def print(self, title: Optional[str] = None, restart: bool = False) -> None:
         print(self.step(title, restart))
 
-    def _format(self, title: str, elapsed: float) -> str:
+    def format(self, title: str, elapsed: float) -> str:
         if self._caption is None:
             caption = ""
         else:
@@ -80,7 +91,7 @@ class Timer:
 
     def __exit__(self, exc_type, exc_value, traceback):
         elapsed = self.elapsed()
-        print(self._format("completed", elapsed))
+        print(self.format("completed", elapsed))
 
     async def __aenter__(self):  # NOSONAR
         self._start_time = self._time()
@@ -88,23 +99,28 @@ class Timer:
 
     async def __aexit__(self, exc_type, exc_value, traceback):  # NOSONAR
         elapsed = self.elapsed()
-        print(self._format("completed", elapsed))
+        print(self.format("completed", elapsed))
 
 
-def _main():
-    import random
-    timer = Timer('training')
-    time.sleep(random.random() * 3)
-    print(timer.step('step 1', restart=True))
-    time.sleep(random.random() * 3)
-    timer.print('step 2', restart=False)
-    sleep_time = random.random() * 3
-    print(f"sleeping for {sleep_time}")
-    time.sleep(sleep_time)
-    timer.print('step 3', restart=True)
-    time.sleep(random.random() * 3)
-    timer.print('last step')
+class LoggingTimer(Timer):
 
+    def __init__(self, caption: Optional[str] = None, time: str = 'performance',
+                 logger=None, level="DEBUG"):
+        super().__init__(caption, time)
+        self.logger = logger if logger else logging.getLogger(__name__)
+        self.level = getattr(logging, level.upper(), logging.DEBUG)
 
-if __name__ == '__main__':
-    _main()
+    def total(self, elapsed: Optional[float] = None) -> str:
+        total_time = self.total_time() if elapsed is None else elapsed
+        msg = super().total(total_time)
+        self.logger.log(level=self.level, msg=msg)
+        return msg
+
+    def step(self, title: Optional[str] = None, restart: bool = False) -> str:
+        msg = super().step(title, restart)
+        self.logger.log(level=self.level, msg=msg)
+        return msg
+
+    def log(self, title: Optional[str] = None, restart: bool = False) -> None:
+        msg = self.step(title, restart)
+        self.logger.log(level=self.level, msg=msg)
