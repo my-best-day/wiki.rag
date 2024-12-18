@@ -26,6 +26,7 @@ Timer constructor:
 
 which one should be the default?
 """
+import os
 import time
 import logging
 from typing import Optional, Union
@@ -124,3 +125,46 @@ class LoggingTimer(Timer):
     def log(self, title: Optional[str] = None, restart: bool = False) -> None:
         msg = self.step(title, restart)
         self.logger.log(level=self.level, msg=msg)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        elapsed = self.elapsed()
+        self.logger.log(level=self.level, msg=self.format("completed", elapsed))
+
+    async def __aexit__(self, exc_type, exc_value, traceback):  # NOSONAR
+        elapsed = self.elapsed()
+        self.logger.log(level=self.level, msg=self.format("completed", elapsed))
+
+
+DEBUG_MODE = os.getenv("DEBUG", "0") == "1"  # Enable debugging based on an environment variable
+
+
+def timeit(caption: Optional[str] = None):
+    def decorator(func):
+        if DEBUG_MODE:
+            return func
+
+        def wrapper(*args, **kwargs):
+            nonlocal caption
+            if caption is None:
+                caption = func.__name__
+            with Timer(caption):
+                return func(*args, **kwargs)
+        return wrapper
+
+    return decorator
+
+
+def log_timeit(caption: Optional[str] = None, logger=None, level="DEBUG"):
+    def decorator(func):
+        if DEBUG_MODE:
+            return func
+
+        def wrapper(*args, **kwargs):
+            nonlocal caption
+            if caption is None:
+                caption = func.__name__
+            with LoggingTimer(caption, logger=logger, level=level):
+                return func(*args, **kwargs)
+        return wrapper
+
+    return decorator
