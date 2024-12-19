@@ -42,9 +42,6 @@ class KNearestFinder:
             self._uids, self._embeddings = self.stores.uids_and_embeddings
         return self._uids, self._embeddings
 
-    # def uids_and_normalized_embeddings(self):
-    #     return self._uids_and_normalized_embeddings()
-
     @property
     @log_timeit(logger=logger)
     def uids_and_normalized_embeddings(self):
