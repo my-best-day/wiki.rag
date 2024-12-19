@@ -1,3 +1,4 @@
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, call
@@ -18,36 +19,37 @@ class TestStores(unittest.TestCase):
 
     @patch('logging.Logger.info')
     def test_background_load(self, _):
-        with patch('gen.search.stores.Thread') as mock_thread:
+        with patch('gen.search.stores_base.Thread') as mock_thread:
             with patch('gen.search.stores.Stores._load_segments') as mock_load_segments:
                 with patch('gen.search.stores.Stores._load_embeddings') as mock_load_embeddings:
-                    with patch('gen.search.stores.RLock') as mock_rlock:
+                    with patch('gen.search.stores_base.RLock') as mock_rlock:
+                        with patch.dict(os.environ, {"UNIT_TESTING": "0"}):
 
-                        mock_thread_instance = MagicMock()
-                        mock_thread.return_value = mock_thread_instance
+                            mock_thread_instance = MagicMock()
+                            mock_thread.return_value = mock_thread_instance
 
-                        def start_side_effect():
-                            _, argv = mock_thread.call_args
-                            target = argv['target']
-                            target()
+                            def start_side_effect():
+                                _, argv = mock_thread.call_args
+                                target = argv['target']
+                                target()
 
-                        mock_thread_instance.start.side_effect = start_side_effect
+                            mock_thread_instance.start.side_effect = start_side_effect
 
-                        stores = Stores('text_file_path', self.embedding_config)
-                        stores.background_load()
+                            stores = Stores('text_file_path', self.embedding_config)
+                            stores.background_load()
 
-                        mock_thread.assert_called_once()
-                        mock_thread_instance.start.assert_called_once()
+                            mock_thread.assert_called_once()
+                            mock_thread_instance.start.assert_called_once()
 
-                        mock_load_segments.assert_called_once()
-                        mock_load_embeddings.assert_called_once()
+                            mock_load_segments.assert_called_once()
+                            mock_load_embeddings.assert_called_once()
 
-                        mock_rlock_instance = mock_rlock.return_value
-                        expected_calls = [call.__enter__(), call.__exit__(None, None, None)]
-                        self.assertEqual(mock_rlock_instance.mock_calls, expected_calls)
+                            mock_rlock_instance = mock_rlock.return_value
+                            expected_calls = [call.__enter__(), call.__exit__(None, None, None)]
+                            self.assertEqual(mock_rlock_instance.mock_calls, expected_calls)
 
     def test_protected_load_segments(self):
-        with patch("gen.search.stores.Store") as mock_store:
+        with patch("gen.search.stores_base.Store") as mock_store:
             mock_store_instance = MagicMock()
             mock_store.return_value = mock_store_instance
             mock_store_instance.load_elements = MagicMock()
@@ -64,7 +66,7 @@ class TestStores(unittest.TestCase):
             self.assertEqual(args, (Path('text_file_path'), Path('path_prefix_1_segments.json')))
 
     def test_protected_load_embeddings(self):
-        with patch("gen.search.stores.EmbeddingStore") as mock_embedding_store:
+        with patch("gen.search.stores_base.EmbeddingStore") as mock_embedding_store:
             mock_embedding_store_instance = MagicMock()
             mock_embedding_store.return_value = mock_embedding_store_instance
             mock_embedding_store_instance.load_embeddings = MagicMock()
@@ -82,7 +84,7 @@ class TestStores(unittest.TestCase):
 
     def test_embeddings(self):
         with patch("gen.search.stores.Stores._load_embeddings") as mock_load_embeddings:
-            with patch("gen.search.stores.RLock") as mock_rlock:
+            with patch("gen.search.stores_base.RLock") as mock_rlock:
 
                 stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNone(stores._uids)
@@ -103,7 +105,7 @@ class TestStores(unittest.TestCase):
     def test_extended_segments(self):
         Element.instances.clear()
         with patch("gen.search.stores.Stores._load_segments") as mock_load_segments:
-            with patch("gen.search.stores.RLock") as mock_rlock:
+            with patch("gen.search.stores_base.RLock") as mock_rlock:
 
                 stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNone(stores._extended_segments)
@@ -130,7 +132,7 @@ class TestStores(unittest.TestCase):
     def test_articles(self):
         Element.instances.clear()
         with patch("gen.search.stores.Stores._load_segments") as mock_load_segments:
-            with patch("gen.search.stores.RLock") as mock_rlock:
+            with patch("gen.search.stores_base.RLock") as mock_rlock:
 
                 stores = Stores('text_file_path', self.embedding_config)
                 self.assertIsNotNone(Element.instances)

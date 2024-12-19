@@ -4,8 +4,6 @@ Consider refactoring this to make reduce duplication.
 """
 import logging
 from pathlib import Path
-from gen.element.flat.flat_article import FlatArticle
-from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 from xutils.embedding_config import EmbeddingConfig
 from gen.search.stores_base import StoresBase
 
@@ -18,8 +16,6 @@ class StoresFlat(StoresBase):
     def __init__(self, text_file_path: str, embedding_config: EmbeddingConfig):
         super().__init__(text_file_path, embedding_config)
         self._articles_loaded = False
-        self.extended_segment_class = FlatExtendedSegment
-        self.article_class = FlatArticle
 
     def _load_articles(self):
         """

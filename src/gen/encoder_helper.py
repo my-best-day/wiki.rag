@@ -1,14 +1,13 @@
-import os
 import logging
 import threading
 import torch
 
+from xutils.utils import Utils
 from xutils.timer import LoggingTimer
 
 logger = logging.getLogger(__name__)
 
-if not os.getenv("UNIT_TESTING"):
-
+if Utils.is_env_var_truthy("UNIT_TESTING"):
     def background_load():
         """
         Load the SentenceTransformer model in the background.

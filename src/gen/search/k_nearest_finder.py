@@ -42,8 +42,11 @@ class KNearestFinder:
             self._uids, self._embeddings = self.stores.uids_and_embeddings
         return self._uids, self._embeddings
 
-    @log_timeit(logger=logger)
+    # def uids_and_normalized_embeddings(self):
+    #     return self._uids_and_normalized_embeddings()
+
     @property
+    @log_timeit(logger=logger)
     def uids_and_normalized_embeddings(self):
         if self._normalized_embeddings is None:
             _, embeddings = self.uids_and_embeddings
@@ -109,8 +112,8 @@ class KNearestFinder:
 
         return top_k_results
 
-    @log_timeit(logger=logger)
     @staticmethod
+    @log_timeit(logger=logger)
     def torch_batched_similarity(normalized_embeddings, query_embedding, batch_size=100000):
         similarities = []
         for i in range(0, len(normalized_embeddings), batch_size):
