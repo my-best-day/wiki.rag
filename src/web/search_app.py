@@ -79,15 +79,20 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
 
         text_file_name = os.path.basename(app_config.text_file_path)
 
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request, "query": query, "results": results,
-                "elapsed": elapsed, "k": k, "threshold": threshold, "max": max,
-                "text_file": text_file_name,
-                "max_len": app_config.embed_config.max_len,
-                "now": datetime.datetime.now(),
-            },
-        )
+        template_vars = {
+            "request": request,
+            "query": query,
+            "results": results,
+
+            "k": k,
+            "threshold": threshold,
+            "max": max,
+
+            "text_file": text_file_name,
+            "max_len": app_config.embed_config.max_len,
+            "elapsed": elapsed,
+            "now": datetime.datetime.now(),
+        }
+        return templates.TemplateResponse("index.html", template_vars)
 
     return app

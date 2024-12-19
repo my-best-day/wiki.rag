@@ -16,10 +16,23 @@ def get_search_app(logger):
 
 
 def get_rag_app(logger):
+    if not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+
     from web.rag_app import create_rag_app
     app_config = load_app_config(logger)
     rag_app = create_rag_app(app_config)
     return rag_app
+
+
+def get_combined_app(logger):
+    if not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+
+    from web.combined_app import create_combined_app
+    app_config = load_app_config(logger)
+    combined_app = create_combined_app(app_config)
+    return combined_app
 
 
 def load_app_config(logger) -> AppConfig:
@@ -81,6 +94,8 @@ def main():
         app = get_search_app(logger)
     elif app_arg == "RAG":
         app = get_rag_app(logger)
+    elif app_arg == "COMBINED":
+        app = get_combined_app(logger)
     else:
         parser.error(f"Unknown app: {app_arg}")
 

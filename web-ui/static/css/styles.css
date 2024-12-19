@@ -208,3 +208,8 @@ textarea:focus, button:focus {
 .btn-expand-all:hover, .btn-collapse-all:hover {
     background: #1976D2;
 }
+
+/* .html-output > pre:first-of-type > code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+} */

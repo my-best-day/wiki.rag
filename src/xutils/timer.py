@@ -109,12 +109,33 @@ class LoggingTimer(Timer):
                  logger=None, level="DEBUG"):
         super().__init__(caption, time)
         self.logger = logger if logger else logging.getLogger(__name__)
-        self.level = getattr(logging, level.upper(), logging.DEBUG)
+        self.level = self.get_logging_level(level)
 
-    def total(self, elapsed: Optional[float] = None) -> str:
+    def get_logging_level(self, level: Union[str, int]) -> int:
+        if isinstance(level, str):
+            log_level_upper = level.upper()
+            numeric_level = getattr(logging, log_level_upper)
+        elif isinstance(level, int):
+            numeric_level = level
+        else:
+            raise ValueError(f"Unknown logging level: '{level}'")
+
+        return numeric_level
+
+    def total_message(self, elapsed: Optional[float] = None) -> str:
         total_time = self.total_time() if elapsed is None else elapsed
         msg = super().total(total_time)
-        self.logger.log(level=self.level, msg=msg)
+        return msg
+
+    def total(
+        self,
+        elapsed: Optional[float] = None,
+        level: Union[str, int, None] = None
+    ) -> str:
+
+        level = self.get_logging_level(level) if level is not None else self.level
+        msg = self.total_message(elapsed)
+        self.logger.log(level=level, msg=msg)
         return msg
 
     def step(self, title: Optional[str] = None, restart: bool = False) -> str:

@@ -1,3 +1,7 @@
+2024-12-19
++ refactor rag_app and search_app -- created combined_app
+- move from articles to segments - shorter prompts to the AI
+
 2024-12-18
 + load normalized float16 embeddings
 + fix embed config to load embeddings and the one to encode query

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple search application built with FastAPI.">
+    <title>Search App</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <section class="search-container">
+            <form method="POST" action="/combined" class="search-form" id="search-form">
+                <label for="query">Search Query:</label>
+                <textarea id="query" name="query" placeholder="Enter your search query here...">{{ query }}</textarea>
+                <div class="button-group">
+                    <div class="submit-button-group">
+                        <button type="submit" class="btn-submit" name="action" value="search">Search!</button>
+                        <button type="submit" class="btn-submit" name="action" value="rag">RAG!</button>
+                    </div>
+                    <div class="clear-button-group">
+                        <button type="button" class="btn-clear-query" onclick="clearQuery()">Clear Query</button>
+                        <button type="button" class="btn-clear" onclick="clearQueryAndReset()">Clear</button>
+                    </div>
+                </div>
+                <div class="result-filtering">
+                    <label for="k">Show:</label>
+                    <input type="number" id="k" name="k" value="{{ k | default(3) }}" min="1">
+                    <label for="threshold">Threshold</label>
+                    <input type="number" id="threshold" name="threshold" value="{{ threshold | default(0.65) }}" step="0.05" min="0" max="1">
+                    <label for="max">Max:</label>
+                    <input type="number" id="max" name="max" value="{{ max | default(6) }}" min="-1">
+                </div>
+                <div class="expand-collapse-buttons">
+                    <div>
+                        <button type="button" class="btn-expand-all" onclick="expandAllArticles()">Expand All</button>
+                        <button type="button" class="btn-collapse-all" onclick="collapseAllArticles()">Collapse All</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        {% if query %}
+        <div class="env-info">
+            {{text_file}}, {{max_len}}
+        </div>
+
+        <div class="query-info">
+            Time: {{ now.strftime('%H:%M:%S') if now else 'N/A' }} |
+            {{ elapsed | default(0.0) | round(3) }} sec |
+            {{ article_results | length }} results |
+            in: {{ ((prompt_length / 4.5)) | round }} tokens,
+            {{ (prompt_length / 4.5) * (15 / 1e6) | round(4) }} cents |
+            out: {{ (answer | length / 4.5) | round }} tokens,
+            {{ ((answer | length / 4.5) * (60 / 1e6)) | round(4) }} cents |
+            Query: "{{ query }}"
+        </div>
+        {% endif %}
+
+        {% if answer %}
+        <section class="result-container answer-container">
+            <div id="markdown-content" style="display: none;">
+                {{ answer }}
+            </div>
+            <div id="html-output" class="html-output"></div>
+        </section>
+        {% else %}
+        <p>No answer found.</p>
+        {% endif %}
+
+        {% if article_results %}
+        <section class="result-container">
+            <h3>Search Results:</h3>
+            {% for article_result in article_results %}
+            <div class="article">
+                <div class="article-header">
+                    {{ article_result.article.header.text | clean_header }}
+                    <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
+                </div>
+                <div class="article-stats">
+                    Offset: {{ article_result.article.offset }} |
+                    Length: {{ article_result.article.char_length }} |
+                    Similarity: {{ article_result.similarity | round(3) }}
+                </div>
+                <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
+                    {{ article_result.article.body.text }}
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% else %}
+        <p>No articles found.</p>
+        {% endif %}
+
+    </div> <!-- container -->
+    <script src="/static/js/search.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+
+    <script>
+        // Initialize Showdown.js
+        const converter = new showdown.Converter();
+        // Get Markdown content from the hidden div
+        const markdownContent = document.getElementById('markdown-content');
+        const htmlOutput = document.getElementById('html-output')
+
+        // Convert Markdown to HTML
+        const htmlContent = converter.makeHtml(markdownContent.textContent);
+        // Insert HTML into the output div
+        htmlOutput.innerHTML = htmlContent;
+
+        // showdown puts the first paragraph inside a <pre><code>.
+        // replace it with a simple <p>
+
+        // Select the first <pre><code> inside .html-output
+        const firstPreCode = document.querySelector('.html-output > pre > code');
+
+        if (firstPreCode) {
+            // Create a new <p> element
+            const paragraph = document.createElement('p');
+
+            // Set the text content of the <p> to the <code>'s text
+            paragraph.textContent = firstPreCode.textContent;
+
+            // Replace the <pre> parent of the <code> with the <p>
+            firstPreCode.parentElement.replaceWith(paragraph);
+        }
+
+        markdownContent.textContent = ''
+    </script>
+
+</body>
+</html>
