@@ -1,6 +1,22 @@
+2024-12-18
++ load normalized float16 embeddings
++ fix embed config to load embeddings and the one to encode query
++ using 1500 now - greater number of segments
++ cleanup
++ base store added
++ search performance improved
++ logging improved
+- refactor rag_app and search_app
+
+
 2024-12-17
 + quantization
 + check similarity
+
+- check timing of 1500
+- check timing of OpenAI API
+- try to split prompt to query/prompt by an API call
+- fix threshold / max / k logic
 
 
 2024-12-12
