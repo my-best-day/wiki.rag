@@ -5,8 +5,7 @@
 .coverage
 settings.json
 config.ini
-alt_config.ini
-local_config.ini
+*_config.ini
 **/.DS_Store
 # soft links to directories
 /data
