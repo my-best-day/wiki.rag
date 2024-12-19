@@ -133,7 +133,7 @@ class KNearestFinder:
         # Step 2: Morph embeddings if needed
         adjusted_embeddings = EmbeddingUtils.morph_embeddings(
             query_embeddings,
-            self.input_embed_config
+            self.query_embed_config
         )
 
         return adjusted_embeddings

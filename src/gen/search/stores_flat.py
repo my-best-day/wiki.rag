@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class StoresFlat(StoresBase):
     is_flat = True
 
-    def __init__(self, text_file_path: str, embedding_config: EmbeddingConfig):
-        super().__init__(text_file_path, embedding_config)
+    def __init__(self, text_file_path: str, embed_config: EmbeddingConfig):
+        super().__init__(text_file_path, embed_config)
         self._articles_loaded = False
 
     def _load_articles(self):
@@ -22,7 +22,7 @@ class StoresFlat(StoresBase):
         Caller is responsible for locking.s
         """
         if not self._articles_loaded:
-            flat_article_file_path = self._element_file_path("article", flat=True)
+            flat_article_file_path = self.get_element_file_path(self.embed_config, True, "articles")
             text_file_path = Path(self.text_file_path)
             self._store.load_elements(text_file_path, flat_article_file_path)
             self._articles_loaded = True

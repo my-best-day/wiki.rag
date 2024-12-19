@@ -34,7 +34,7 @@ class StoresBase(ABC):
         self.segment_file_path = self.get_element_file_path(
             embed_config,
             self.is_flat,
-            "segment"
+            "segments"
         )
         self.extended_segment_class = (
             FlatExtendedSegment if self.is_flat else ExtendedSegment)
@@ -104,9 +104,9 @@ class StoresBase(ABC):
 
     @staticmethod
     def get_element_file_path(embed_config: EmbeddingConfig, is_flat: bool, kind: str):
-        len_part = f"_{embed_config.max_len}" if kind == "segment" else ""
+        len_part = f"_{embed_config.max_len}" if kind == "segments" else ""
         flat_part = "_flat" if is_flat else ""
-        path_str = f"{embed_config.prefix}{len_part}{flat_part}_segments.json"
+        path_str = f"{embed_config.prefix}{len_part}{flat_part}_{kind}.json"
         path = Path(path_str)
         return path
 
