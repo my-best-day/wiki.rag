@@ -28,7 +28,8 @@ class LookupCLI:
         self._article_map = None
 
     def run(self):
-        self.run_articles()
+        # self.run_articles()
+        self.run_segments()
 
     def run_segments(self):
         while True:

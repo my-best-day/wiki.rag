@@ -51,6 +51,31 @@ class KNearestFinder:
                 EmbeddingUtils.morph_embeddings(embeddings, self.input_embed_config)
         return self._uids, self._normalized_embeddings
 
+    def find_k_nearest_segments(
+        self,
+        query: str,
+        k: int = 5,
+        threshold: float = 0.3,
+        max_results: int = 10
+    ) -> List[Tuple[UUID, float]]:
+        """
+        Find the K-nearest segments based on cosine similarity.
+        """
+        uids, similarities = self.get_similarities(query)
+
+        # Create a DataFrame for aggregation
+        timer = LoggingTimer('find_k_nearest_articles', logger=logger, level="DEBUG")
+        df_data = {
+            'seg_id': uids,
+            'similarity': similarities
+        }
+        df = pl.DataFrame(df_data)
+        timer.restart("created df")
+
+        result_tuples = self.pick_results(k, threshold, max_results, df, by='similarity')
+
+        return result_tuples
+
     def find_k_nearest_articles(
         self,
         query: str,
@@ -61,19 +86,13 @@ class KNearestFinder:
         """
         Find the K-nearest articles based on cosine similarity.
         """
-        # Step 1: Get precomputed embeddings, uids, and article IDs
-        uids, normalized_embeddings = self.uids_and_normalized_embeddings
+        # Get cosine similarities
+        uids, similarities = self.get_similarities(query)
+
+        # Get article ids - for aggregation by article
         article_ids = self.stores.get_embeddings_article_ids()
-        query_embeddings = self.encode_query(query)
 
-        # Step 3: Compute cosine similarities
-        similarities = self.torch_batched_similarity(
-            normalized_embeddings,
-            query_embeddings,
-        )
-        similarities = similarities.flatten()
-
-        # Step 4: Create a DataFrame for aggregation
+        # Create a DataFrame for aggregation
         timer = LoggingTimer('find_k_nearest_articles', logger=logger, level="DEBUG")
         df_data = {
             'seg_id': uids,
@@ -83,31 +102,53 @@ class KNearestFinder:
         df = pl.DataFrame(df_data)
         timer.restart("created df")
 
-        # Step 5: Aggregate similarities by article
+        # Aggregate similarities by article
         agg_df = df.group_by('art_id').agg(
             pl.col('similarity').mean().alias('mean_similarity')
         )
         timer.restart("aggregated df")
 
-        # Step 6: Filter and sort results
-        filtered_df = agg_df.filter(pl.col('mean_similarity') > threshold)
-        timer.restart("filtered df")
+        result_tuples = self.pick_results(k, threshold, max_results, agg_df, by='mean_similarity')
 
-        # Step 7: Select results based on threshold and filtered set size
-        if len(filtered_df) >= k:
-            # Case 1: Enough elements above threshold
-            max_k = max(max_results, k)
-            results_df = filtered_df.sort('mean_similarity', descending=True) \
-                .head(max_k)
+        return result_tuples
+
+    def get_similarities(self, query: str):
+        """
+        Get cosine similarities for a given query.
+        """
+        uids, normalized_embeddings = self.uids_and_normalized_embeddings
+        query_embeddings = self.encode_query(query)
+
+        similarities = self.torch_batched_similarity(
+            normalized_embeddings,
+            query_embeddings,
+        )
+        similarities = similarities.flatten()
+
+        return uids, similarities
+
+    def pick_results(self, k, threshold, max_results, df, by):
+        timer = LoggingTimer('pick_results', logger=logger, level="DEBUG")
+
+        q = max(k, max_results)
+        top_q = df.top_k(q, by=by)
+        timer.restart("top k")
+
+        filtered_top_q = top_q.filter(pl.col(by) > threshold)
+        timer.restart("filtered top k")
+
+        if len(filtered_top_q) >= k:
+            # if filtered results has enough elements, use them
+            result_df = filtered_top_q.head(q)
         else:
-            # Case 2: Not enough above threshold, return top k elements
-            results_df = agg_df.sort('mean_similarity', descending=True) \
-                .head(k)
+            # otherwise, use unfiltered top k
+            result_df = top_q.head(k)
+        timer.restart("picked results")
 
-        top_k_results = results_df.to_numpy()
+        result_tuples = result_df.to_numpy()
         timer.restart("selected results")
 
-        return top_k_results
+        return result_tuples
 
     @staticmethod
     @log_timeit(logger=logger)
