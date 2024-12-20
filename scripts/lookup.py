@@ -6,8 +6,11 @@ import logging
 import argparse
 from uuid import UUID
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
+
 from gen.element.element import Element
+from gen.element.extended_segment import ExtendedSegment
+from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 from gen.search.stores_flat import StoresFlat
 from gen.search.stores import Stores
 from gen.search.k_nearest_finder import KNearestFinder
@@ -73,15 +76,34 @@ class LookupCLI:
         for i, (uid, score) in enumerate(nearest_segments):
             segment = self.get_extended_segment(uid)
 
-            text = segment.before_overlap.text if segment.before_overlap else ""
-            text += "][" + segment.segment.text + "]["
-            text += segment.after_overlap.text if segment.after_overlap else ""
+            text = self.format_ext_segment(segment)
 
             print(f"{i + 1}. Segment ID: {uid}, Score: {score:.4f}, "
                   f"(off: {segment.offset}, len: {len(segment.text)})")
             print(f"Article: {segment.article.header.text.strip()}")
             print(text)
             print("<--- " * 10, "\n")
+
+    def format_ext_segment(self, ext_segment: Union[ExtendedSegment, FlatExtendedSegment]) -> str:
+        if isinstance(ext_segment, FlatExtendedSegment):
+            text = self.format_flat_extended_segment(ext_segment)
+        elif isinstance(ext_segment, ExtendedSegment):
+            text = self.format_compound_extended_segment(ext_segment)
+        else:
+            raise TypeError
+
+        return text
+
+    @staticmethod
+    def format_compound_extended_segment(extended_segment: ExtendedSegment) -> str:
+        text = extended_segment.before_overlap.text if extended_segment.before_overlap else ""
+        text += "][" + extended_segment.segment.text + "]["
+        text += extended_segment.after_overlap.text if extended_segment.after_overlap else ""
+        return text
+
+    @staticmethod
+    def format_flat_extended_segment(flat_extended_segment):
+        return flat_extended_segment.text
 
     def display_nearest_articles(self, query, top_k_article_similarities, elapsed):
         print("\n\n\n\n")
