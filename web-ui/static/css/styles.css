@@ -169,7 +169,8 @@ textarea:focus, button:focus {
 .result-filtering label {
     font-weight: lighter;
 }
-.result-filtering input {
+.result-filtering input,
+.result-filtering select {
     border: 1px solid #ddf;
     font-size: 12px;
     color: #aaf;
@@ -208,8 +209,3 @@ textarea:focus, button:focus {
 .btn-expand-all:hover, .btn-collapse-all:hover {
     background: #1976D2;
 }
-
-/* .html-output > pre:first-of-type > code {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-} */

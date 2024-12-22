@@ -12,7 +12,7 @@
         <section class="search-container">
             <form method="POST" action="/combined" class="search-form" id="search-form">
                 <label for="query">Search Query:</label>
-                <textarea id="query" name="query" placeholder="Enter your search query here...">{{ query }}</textarea>
+                <textarea id="query" name="query" placeholder="Enter your search query here...">{{ app_request.query if app_request else '' }}</textarea>
                 <div class="button-group">
                     <div class="submit-button-group">
                         <button type="submit" class="btn-submit" name="action" value="search">Search!</button>
@@ -25,11 +25,17 @@
                 </div>
                 <div class="result-filtering">
                     <label for="k">Show:</label>
-                    <input type="number" id="k" name="k" value="{{ k | default(3) }}" min="1">
+                    <input type="number" id="k" name="k" value="{{ app_request.k if app_request else 3 }}" min="1">
                     <label for="threshold">Threshold</label>
-                    <input type="number" id="threshold" name="threshold" value="{{ threshold | default(0.65) }}" step="0.05" min="0" max="1">
+                    <input type="number" id="threshold" name="threshold" value="{{ app_request.threshold if app_request else 0.65 }}" step="0.05" min="0" max="1">
                     <label for="max">Max:</label>
-                    <input type="number" id="max" name="max" value="{{ max | default(6) }}" min="-1">
+                    <input type="number" id="max" name="max" value="{{ app_request.max if app_request else 3 }}" min="-1">
+                    <label for="kind">Kind:</label>
+                    <select id="kind" name="kind">
+                        {% set kindly = app_request.kind if app_request else Kind.Segment %}
+                        <option value="segment" {% if kindly == Kind.Segment %}selected{% endif %}>Segment</option>
+                        <option value="article" {% if kindly == Kind.Article %}selected{% endif %}>Article</option>
+                    </select>
                 </div>
                 <div class="expand-collapse-buttons">
                     <div>
@@ -40,27 +46,28 @@
             </form>
         </section>
 
-        {% if query %}
+        {% if app_request %}
         <div class="env-info">
-            {{text_file}}, {{max_len}}
+            {{text_file}}, {{ max_len }}
         </div>
 
         <div class="query-info">
-            Time: {{ now.strftime('%H:%M:%S') if now else 'N/A' }} |
-            {{ elapsed | default(0.0) | round(3) }} sec |
-            {{ article_results | length }} results |
-            in: {{ ((prompt_length / 4.5)) | round }} tokens,
-            {{ (prompt_length / 4.5) * (15 / 1e6) | round(4) }} cents |
-            out: {{ (answer | length / 4.5) | round }} tokens,
-            {{ ((answer | length / 4.5) * (60 / 1e6)) | round(4) }} cents |
-            Query: "{{ query }}"
+            <span id="completed-display" title="completed {{ completed.isoformat() if completed else 'N/A' }}"
+                        data-completed="{{ completed.isoformat() if completed else 'N/A' }}"></span> |
+            {{ (completed - received).total_seconds() | default(0.0) | round(3) }} sec |
+            {{ app_response.results | length }} results |
+            in: {{ ( app_response.prompt | length / 4.5) | round }} tokens,
+            {{ (app_response.prompt | length / 4.5) * (15 / 1e6) | round(4) }} cents |
+            out: {{ (app_response.answer | length / 4.5) | round }} tokens,
+            {{ ((app_response.answer | length / 4.5) * (60 / 1e6)) | round(4) }} cents |
+            Query: "{{ app_request.query }}"
         </div>
         {% endif %}
 
-        {% if answer %}
+        {% if app_response and app_response.answer %}
         <section class="result-container answer-container">
             <div id="markdown-content" style="display: none;">
-                {{ answer }}
+                {{ app_response.answer }}
             </div>
             <div id="html-output" class="html-output"></div>
         </section>
@@ -68,35 +75,64 @@
         <p>No answer found.</p>
         {% endif %}
 
-        {% if article_results %}
-        <section class="result-container">
-            <h3>Search Results:</h3>
-            {% for article_result in article_results %}
-            <div class="article">
-                <div class="article-header">
-                    {{ article_result.article.header.text | clean_header }}
-                    <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
+        {% if app_response %}
+            <section class="result-container">
+                <h3>Search Results:</h3>
+                <div id="total-search-result-length">Total length:
+                        {{ app_response.total_length }} chars,
+                        {{ (app_response.total_length /  4.5) | round() }} tokens
                 </div>
-                <div class="article-stats">
-                    Offset: {{ article_result.article.offset }} |
-                    Length: {{ article_result.article.char_length }} |
-                    Similarity: {{ article_result.similarity | round(3) }}
+                {% for result in app_response.results %}
+                <div class="article">
+                    <div class="article-header">
+                        {{ result.caption | clean_header }}
+                        <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
+                    </div>
+                    <div class="article-stats">
+                        Offset: {{ result.element.offset }} |
+                        Length: {{ result.element.char_length }} |
+                        Similarity: {{ result.similarity | round(3) }}
+                    </div>
+                    <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
+                        {{ result.element.text }}
+                    </div>
                 </div>
-                <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
-                    {{ article_result.article.body.text }}
-                </div>
-            </div>
-            {% endfor %}
-        </section>
+                {% endfor %}
+            </section>
+        {% elif app_request %}
+            <p>No {{ app_request.kind | capitalize }} found.</p>
         {% else %}
-        <p>No articles found.</p>
+            <p>... waiting ...</p>
         {% endif %}
 
     </div> <!-- container -->
     <script src="/static/js/search.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 
     <script>
+        dayjs.extend(window.dayjs_plugin_relativeTime);
+
+        function updateElapsedTime() {
+            const timeElement = document.getElementById('completed-display');
+            const completedTime = dayjs(timeElement.getAttribute('data-completed'));
+
+            // Update the content with "time from now"
+            timeElement.textContent = completedTime.fromNow();
+        }
+
+        // Initial update
+        updateElapsedTime();
+
+        // Periodically update every 1 second
+        setInterval(updateElapsedTime, 4000);
+
+    </script>
+
+<script>
+
+
         // Initialize Showdown.js
         const converter = new showdown.Converter();
         // Get Markdown content from the hidden div

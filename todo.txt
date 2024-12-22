@@ -1,6 +1,25 @@
+2024-12-21
++ added combined_service
++ cleaned up combined_app
++ supporting article, segments, and a select box
++ other improvements:
+  + length of search results (chars, tokens)
+  + time since update (using dayjs)
+
+
+2024-12-20
+
++ read a blog post, a paper, and an article
+- read https://platform.openai.com/docs/guides/prompt-generation
+
++ openai releases gpt o3
+
+
 2024-12-19
 + refactor rag_app and search_app -- created combined_app
 - move from articles to segments - shorter prompts to the AI
+  + converted lookup.py
+  - work on combined_app.py    ZZZZZZZ
 
 2024-12-18
 + load normalized float16 embeddings
@@ -358,3 +377,30 @@ None
 
 What we want is:
 - load stype (int8)
+
+
+
+
+
+2024-12-21
+
+Handle both segments and articles -- for now only flat (adapt to compound elements later)
+
+article:
+return an article-id / similarity tuple list
+
+segment:
+find segment return a segment-id / similarity tuple list
+
+get element-results:
+
+article:
+get article
+get article.header.text
+element-result = similarity, article, header-text
+
+segment:
+get segment
+get article
+get article.header.text
+element-result = similarity, segment, header-text + segment.text[:60] + "..."

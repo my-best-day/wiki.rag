@@ -149,6 +149,10 @@ class StoresBase(ABC):
         article = Element.instances.get(uid)
         return article
 
+    def get_segment(self, uid: UUID) -> FlatExtendedSegment:
+        segment = Element.instances.get(uid)
+        return segment
+
     def get_embeddings_article_ids(self) -> List[UUID]:
         if self._embeddings_article_ids is None:
             extended_segments = self.extended_segments
