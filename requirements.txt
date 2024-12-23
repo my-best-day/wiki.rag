@@ -6,3 +6,4 @@ torch
 sentence_transformers
 einops
 openai
+pysocks # coverage might needs it
