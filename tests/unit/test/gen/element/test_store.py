@@ -116,6 +116,17 @@ class TestStore(unittest.TestCase):
         self.assertEqual(section2.offset, section.offset)
         self.assertEqual(section2.bytes, section.bytes)
 
+        with self.assertRaises(AssertionError):
+            json_file = StringIO(json_xdata + '\n')
+            self.store.load_elements(text_file_path, element_store_path)
+
+        self.store.single_store = False
+        try:
+            json_file = StringIO(json_xdata + '\n')
+            self.store.load_elements(text_file_path, element_store_path)
+        except AssertionError:
+            self.fail("load_elements raised AssertionError unexpectedly!")
+
     @patch("builtins.open")
     def test_buffer_size(self, mock_open_func):
         sections = []

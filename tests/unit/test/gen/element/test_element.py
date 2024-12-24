@@ -196,6 +196,55 @@ class TestElement(unittest.TestCase):
         self.assertEqual(extended_segment2.segment.bytes, b"section 1section 2section 3section 4")
         self.assertEqual(extended_segment2.after_overlap.bytes, b"after overlap")
 
+    def test_extended_segment_no_overlaps(self):
+        sec1 = Section(0, b"section 1")
+        sec2 = Section(sec1.offset + sec1.byte_length, b"section 2")
+        sec3 = Section(sec2.offset + sec2.byte_length, b"section 3")
+        sec4 = Section(sec3.offset + sec3.byte_length, b"section 4")
+
+        header = Header(0, b'')
+        article = Article(header)
+
+        segment1 = Segment(article, sec1)
+        segment1.append_element(sec2)
+
+        segment2 = Segment(article, sec3)
+        segment2.append_element(sec4)
+
+        extended_segment = ExtendedSegment(segment1)
+        extended_segment.append_element(segment2)
+
+        xdata_list = []
+        xdata_list.append(header.to_xdata())
+        xdata_list.append(article.to_xdata())
+        for segment in [segment1, segment2]:
+            for element in segment.elements:
+                xdata_list.append(element.to_xdata())
+
+        xdata_list.extend([
+            extended_segment.segment.to_xdata(),
+            extended_segment.to_xdata(),
+        ])
+        byte_reader = TestByteReader.from_element(extended_segment)
+
+        Element.instances.clear()
+
+        objects = []
+        for xdata in xdata_list:
+            obj = Element.hierarchy_from_xdata(xdata, byte_reader)
+            objects.append(obj)
+        for xdata in xdata_list:
+            uid = UUID(xdata['uid'])
+            Element.instances[uid].resolve_dependencies(xdata)
+
+        extended_segment2 = objects[8]
+
+        self.assertIsInstance(extended_segment2, ExtendedSegment)
+        self.assertIsNone(extended_segment2.before_overlap)
+        self.assertEqual(extended_segment2.segment.bytes, b"section 1section 2section 3section 4")
+        self.assertEqual(extended_segment2.bytes, b"section 1section 2section 3section 4")
+        self.assertIsNone(extended_segment2.after_overlap)
+
     def test_fragment(self):
         section = Section(0, b"hello world")
         fragment = Fragment(section, 6, b"world")

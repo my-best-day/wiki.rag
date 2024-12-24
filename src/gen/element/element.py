@@ -5,8 +5,8 @@ from abc import ABC
 from uuid import UUID, uuid4
 from xutils.encoding_utils import EncodingUtils
 
-if TYPE_CHECKING:
-    from gen.element.fragment import Fragment
+if TYPE_CHECKING:  # pragma: no cover
+    from gen.element.fragment import Fragment  # pragma: no cover
 
 
 class Element(ABC):

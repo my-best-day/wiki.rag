@@ -81,6 +81,15 @@ class TestContainer(unittest.TestCase):
         container.append_element(element2)
         self.assertEqual(container.clean_length, 11)
 
+    def test_contained_element_reset_is_called(self):
+        container = self.container_class()
+        element = Section(10, b'HELLO  WORLD')
+        container.append_element(element)
+        cleaned_text = element.clean_text
+        self.assertIs(element.clean_text, cleaned_text)
+        container.reset()
+        self.assertIsNot(element.clean_text, cleaned_text)
+
     def test_abstract_methods(self):
         class BareContainer(Container):
             @property

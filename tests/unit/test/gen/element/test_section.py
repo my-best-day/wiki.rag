@@ -64,7 +64,11 @@ class TestSection(unittest.TestCase):
         offset = 23
         _bytes = b'h\xc3\xa9llo!'
         section = self.create_section(offset, _bytes)  # NOSONAR
-        self.assertEqual(section.clean_text, 'hello!')
+        cleaned_text = section.clean_text
+        self.assertEqual(cleaned_text, 'hello!')
+
+        # check memoization
+        self.assertIs(section.clean_text, cleaned_text)
 
     def test_byte_length(self):
         offset = 23

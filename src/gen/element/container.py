@@ -88,8 +88,7 @@ class Container(Element, ABC):
         Reset the memoizations of the container.
         """
         for element in self.elements:
-            if callable(getattr(element, 'reset', None)):
-                element.reset()
+            element.reset()
         self.__bytes = None
         self.__text = None
         self.__clean_text = None

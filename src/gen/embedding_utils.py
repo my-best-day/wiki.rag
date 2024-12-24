@@ -44,13 +44,14 @@ class EmbeddingUtils:
             if current_dim < target_dim:
                 raise ValueError(f"Dim reduction: target {target_dim} exceeds input {current_dim}")
 
-            if current_dim > target_dim:
+            elif current_dim > target_dim:
                 # layer normalization
                 mean = np.mean(embeddings, axis=1, keepdims=True)
                 std = np.std(embeddings, axis=1, keepdims=True)
                 normalized_embeddings = (embeddings - mean) / (std + 1e-5)  # avoid division by zero
                 # reduce dimension
                 reduced_embeddings = normalized_embeddings[:, :target_dim]
+
             else:
                 reduced_embeddings = embeddings
         else:
@@ -99,8 +100,6 @@ class EmbeddingUtils:
                 logger.info("Quantization: already of type %s", stype)
                 result = embeddings
             else:
-                assert stype in ["float32", "float16", "int8", "uint8"]
-
                 if not EmbeddingUtils.are_l2_normalized(embeddings):
                     raise ValueError("Quantization only supported for L2 normalized embeddings")
 
@@ -126,7 +125,7 @@ class EmbeddingUtils:
         """Determine the stype of the current embeddings."""
         dtype = embeddings.dtype
         if dtype == np.float64:
-            stype = "float32"
+            stype = "float64"
         elif dtype == np.float32:
             stype = "float32"
         elif dtype == np.float16:

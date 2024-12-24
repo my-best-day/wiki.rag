@@ -123,9 +123,9 @@ class IndexBuilder:
                     length = 0
                     remainder = _bytes
                     break
-            if length:
-                _bytes = _bytes[length:]
-                offset += length
+            assert length > 0, "length should never be zero ats this point"  # pragma: no cover
+            _bytes = _bytes[length:]
+            offset += length
 
         return remainder
 

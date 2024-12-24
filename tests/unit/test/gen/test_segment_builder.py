@@ -57,6 +57,14 @@ class TestSegmentBuilder(unittest.TestCase):
         builder.close_segment_start_segment(article1)
         self.assertEqual(len(builder.segments), before_length)
 
+        # test last empty segment is ignored
+        segment = Segment(article1, Section(0, b''))
+        extended_segment = ExtendedSegment(segment)
+        builder.segment = extended_segment
+        before_length = len(builder.segments)
+        builder.close_last_segment()
+        self.assertEqual(len(builder.segments), before_length)
+
     def test_long_first_section(self):
         """one long article -> two segments"""
 

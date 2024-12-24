@@ -1,3 +1,4 @@
 [run]
 omit =
     src/gen/encoder_helper.py
+    src/xutils/timer.py

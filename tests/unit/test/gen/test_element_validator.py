@@ -76,6 +76,10 @@ class TestElementValidator(unittest.TestCase):
         mock_reader.cleanup.assert_called_once()
         self.assertIsNone(validator._byte_reader)
 
+        # safe to call cleanup multiple times
+        validator.cleanup()
+        mock_reader.cleanup.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()

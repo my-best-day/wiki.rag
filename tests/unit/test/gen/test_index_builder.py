@@ -56,6 +56,28 @@ class TestIndexBuilder(unittest.TestCase):
         mock_handle_paragraph.assert_any_call(26, b'Paragraph 2\n')
         self.assertEqual(out_remainder, b'Para')
 
+    @patch('gen.index_builder.IndexBuilder.handle_paragraph')
+    @patch('gen.index_builder.IndexBuilder.handle_header')
+    def test_exhausted_bytes_in_chunk(self, mock_handle_header, mock_handle_paragraph):
+        chunk = Chunk(0, b' = Header 1 =\n')
+        builder = IndexBuilder(Mock())
+        out_remainder = builder.process_chunk(chunk)
+
+        mock_handle_header.assert_called_once_with(0, b' = Header 1 =\n')
+        mock_handle_paragraph.assert_not_called()
+        self.assertEqual(out_remainder, b'')
+
+    @patch('gen.index_builder.IndexBuilder.handle_paragraph')
+    @patch('gen.index_builder.IndexBuilder.handle_header')
+    def test_no_match(self, mock_handle_header, mock_handle_paragraph):
+        chunk = Chunk(0, b'there is no complete paragraph here')
+        builder = IndexBuilder(Mock())
+        out_remainder = builder.process_chunk(chunk)
+
+        mock_handle_header.assert_not_called()
+        mock_handle_paragraph.assert_not_called()
+        self.assertEqual(out_remainder, chunk._bytes)
+
     def test_handle_header(self):
         # an article is created with the header
         # forward is called with the header

@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 from gen.embedding_store import CleanFileLock
 from gen.embedding_store import EmbeddingStore, EMPTY_RESULT
+from xutils.embedding_config import EmbeddingConfig
 
 
 class CleanFileLockTestCase(unittest.TestCase):
@@ -20,6 +21,13 @@ class CleanFileLockTestCase(unittest.TestCase):
                 lock.__exit__(None, None, None)
                 mock_exists.assert_called_once_with(path)
                 mock_unlink.assert_called_once_with(path)
+
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.return_value = False
+            with patch("os.unlink") as mock_unlink:
+                lock.__exit__(None, None, None)
+                mock_exists.assert_called_once_with(path)
+                mock_unlink.assert_not_called()
 
 
 class TestCleanFileLock:
@@ -215,17 +223,26 @@ class TestEmbeddingStore(unittest.TestCase):
         npt.assert_array_equal(out_uids, uids)
         npt.assert_array_equal(out_embeddings, embeddings)
 
-    def test_protected_load_embeddings_no_file(self):
+    @patch.object(EmbeddingStore, "does_store_exist", return_value=False)
+    def test_protected_load_embeddings_no_file_ctor(self, does_store_exist_mock):
+        path = "/dev/null"
+        with self.assertRaises(RuntimeError):
+            EmbeddingStore(path, False)
+
+    def test_protected_load_embeddings_stores_does_not_exist(self):
         # test: no store
         path = "/dev/null"
-        store = EmbeddingStore(path, True)
+        store = EmbeddingStore(path, False)
         store.does_store_exist = MagicMock(return_value=False)
 
         uids, embeddings = store._load_embeddings(allow_empty=True)
         self.assertEqual(uids.size, 0)
         self.assertEqual(embeddings.size, 0)
 
-    def test_protected_load_embeddings(self):
+        with self.assertRaises(FileNotFoundError):
+            store._load_embeddings(allow_empty=False)
+
+    def test_protected_load_embeddings_store_exists(self):
         # test: empty store
         path = "/dev/null"
         store = EmbeddingStore(path, True)
@@ -251,6 +268,44 @@ class TestEmbeddingStore(unittest.TestCase):
         store = EmbeddingStore(path, True)
         with patch.object(Path, "exists", return_value=False):
             self.assertFalse(store.does_store_exist())
+
+    def test_get_store_path(self):
+        config = EmbeddingConfig(
+            prefix="/fake/path",
+            max_len=10,
+            dim=768,
+            stype="float16",
+            norm_type="int8",
+            l2_normalize=True
+        )
+
+        store = EmbeddingStore("/fake/path", True)
+        path = store.get_store_path(config)
+        expected_path = "/fake/path_10_768_float16_embeddings.npz"
+        self.assertEqual(path, expected_path)
+
+        config.dim = None
+        path = store.get_store_path(config)
+        expected_path = "/fake/path_10_float16_embeddings.npz"
+        self.assertEqual(path, expected_path)
+
+        config.dim = 256
+        config.max_len = 20
+        config.stype = "float32"
+        path = store.get_store_path(config)
+        expected_path = "/fake/path_20_256_embeddings.npz"
+        self.assertEqual(path, expected_path)
+
+        config.stype = "float16"
+        config.l2_normalize = False
+        path = store.get_store_path(config)
+        expected_path = "/fake/path_20_256_float16_int8_embeddings.npz"
+        self.assertEqual(path, expected_path)
+
+        config.norm_type = None
+        path = store.get_store_path(config)
+        expected_path = "/fake/path_20_256_float16_embeddings.npz"
+        self.assertEqual(path, expected_path)
 
 
 if __name__ == "__main__":

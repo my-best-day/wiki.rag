@@ -37,8 +37,20 @@ class TestEncoder(unittest.TestCase):
         encoder = Encoder(batch_size)
         with patch.object(encoder, "_get_model", return_value=mock_model):
             model = encoder.get_model()
-
             self.assertEqual(model, mock_model)
+
+    def test_model_property_memoized(self):
+        mock_model = Mock()
+        batch_size = 31
+        encoder = Encoder(batch_size)
+
+        with patch.object(encoder, "_get_model", return_value=mock_model):
+            model = encoder.model
+            self.assertIs(model, mock_model)
+
+        with patch.object(encoder, "_get_model", return_value=None):
+            model2 = encoder.model
+            self.assertIs(model2, mock_model)
 
     @patch.dict("sys.modules", {"sentence_transformers": MagicMock()})
     @patch.dict("sys.modules", {"torch": MagicMock()})

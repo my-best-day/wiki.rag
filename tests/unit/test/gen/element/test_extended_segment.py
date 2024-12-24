@@ -76,6 +76,7 @@ class TestExtendedSegment(unittest.TestCase):
         self.assertEqual(flat.article_uid, self.article.uid)
         self.assertEqual(flat.offset, self.ext_segment.offset)
         self.assertEqual(flat.byte_length, self.ext_segment.byte_length)
+        self.assertIs(self.ext_segment.article, flat.article)
 
         self.assertEqual(flat.text, self.ext_segment.text)
         self.assertEqual(flat.clean_text, self.ext_segment.clean_text)

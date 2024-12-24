@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from gen.element.element import Element
 from gen.element.section import Section
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from gen.element.article import Article
 
 

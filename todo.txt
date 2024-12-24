@@ -1,3 +1,9 @@
+2024-12-23
+  + improve unittest coverage (now at 100%)
+
+2024-12-22
+  ? extend unittest coverage ?
+
 2024-12-21
 + added combined_service
 + cleaned up combined_app
