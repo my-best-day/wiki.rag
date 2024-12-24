@@ -9,8 +9,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from xutils.app_config import AppConfig
-from gen.search.stores_flat import StoresFlat as Stores
-from gen.search.k_nearest_finder import KNearestFinder
+from search.stores.stores_flat import StoresFlat as Stores
+from search.k_nearest_finder import KNearestFinder
 
 from .services.combined_service import CombinedService, CombinedRequest, Kind
 

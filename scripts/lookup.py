@@ -11,9 +11,9 @@ from typing import List, Tuple, Union
 from gen.element.element import Element
 from gen.element.extended_segment import ExtendedSegment
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment
-from gen.search.stores_flat import StoresFlat
-from gen.search.stores import Stores
-from gen.search.k_nearest_finder import KNearestFinder
+from search.stores.stores_flat import StoresFlat
+from search.stores.stores import Stores
+from search.k_nearest_finder import KNearestFinder
 from xutils.embedding_config import EmbeddingConfig
 
 

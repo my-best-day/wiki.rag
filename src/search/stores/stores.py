@@ -4,7 +4,7 @@ Consider refactoring this to make reduce duplication.
 """
 import logging
 from xutils.embedding_config import EmbeddingConfig
-from gen.search.stores_base import StoresBase
+from search.stores.stores_base import StoresBase
 
 logger = logging.getLogger(__name__)
 

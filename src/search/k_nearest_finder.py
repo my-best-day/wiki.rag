@@ -10,7 +10,7 @@ from xutils.embedding_config import EmbeddingConfig
 from gen.encoder import Encoder
 from gen.embedding_utils import EmbeddingUtils
 
-from gen.search.stores import Stores
+from search.stores.stores import Stores
 from xutils.timer import LoggingTimer, log_timeit
 
 logger = logging.getLogger(__name__)

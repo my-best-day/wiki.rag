@@ -11,9 +11,9 @@ from fastapi.staticfiles import StaticFiles
 from xutils.app_config import AppConfig
 
 from gen.element.article import Article
-from gen.search.stores_flat import StoresFlat as Stores
+from search.stores.stores_flat import StoresFlat as Stores
+from search.k_nearest_finder import KNearestFinder
 
-from gen.search.k_nearest_finder import KNearestFinder
 from xutils.timer import Timer
 
 logger = logging.getLogger(__name__)

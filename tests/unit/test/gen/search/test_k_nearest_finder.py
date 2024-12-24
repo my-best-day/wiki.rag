@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 from unittest.mock import MagicMock, patch, PropertyMock
-from gen.search.k_nearest_finder import KNearestFinder
+from search.k_nearest_finder import KNearestFinder
 from xutils.embedding_config import EmbeddingConfig
 
 
@@ -19,8 +19,8 @@ class TestKNearestFinder(unittest.TestCase):
         )
 
     # mock encoder so we do not load the actual model
-    @patch('gen.search.k_nearest_finder.Stores')
-    @patch('gen.search.k_nearest_finder.Encoder')
+    @patch('search.k_nearest_finder.Stores')
+    @patch('search.k_nearest_finder.Encoder')
     def test_uids_and_embeddings(self, mock_encoder, mock_stores):
         uids = ['uid1', 'uid2']
         embeddings = np.array([[1, 2, 3], [4, 5, 6]])
@@ -39,7 +39,7 @@ class TestKNearestFinder(unittest.TestCase):
         self.assertIs(uids3, uids2)
         self.assertIs(embeddings3, embeddings2)
 
-    @patch('gen.search.k_nearest_finder.EmbeddingUtils.morph_embeddings')
+    @patch('search.k_nearest_finder.EmbeddingUtils.morph_embeddings')
     @patch.object(KNearestFinder, 'uids_and_embeddings', new_callable=PropertyMock)
     def test_uids_and_normalized_embeddings(self, mock_uids_and_embeddings, mock_morph_embeddings):
         uids = MagicMock()
@@ -63,7 +63,7 @@ class TestKNearestFinder(unittest.TestCase):
         self.assertIs(normalized_embeddings5, normalized_embeddings)
         mock_morph_embeddings.assert_called_once_with(embeddings, self.embed_config)
 
-    @patch('gen.search.k_nearest_finder.Encoder')
+    @patch('search.k_nearest_finder.Encoder')
     def test_find_k_nearest_segments(self, mock_encoder):
         query_embeddings = np.array([[0.1, 0.2, 0.3]])  # Shape (1, 3)
         embeddings = np.array([
@@ -97,7 +97,7 @@ class TestKNearestFinder(unittest.TestCase):
         result = finder.find_k_nearest_segments(query, k=1, threshold=0.98, max_results=2)
         npt.assert_array_almost_equal(result, expected_result)
 
-    @patch('gen.search.k_nearest_finder.Encoder')
+    @patch('search.k_nearest_finder.Encoder')
     def test_find_k_nearest_articles(self, mock_encoder):
         query_embeddings = np.array([[0.1, 0.2, 0.3]])  # Shape (1, 3)
         embeddings = np.array([

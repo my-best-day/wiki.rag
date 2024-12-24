@@ -12,9 +12,8 @@ from xutils.app_config import AppConfig
 from xutils.timer import LoggingTimer
 
 from gen.element.article import Article
-from gen.search.stores_flat import StoresFlat as Stores
-
-from gen.search.k_nearest_finder import KNearestFinder
+from search.stores.stores_flat import StoresFlat as Stores
+from search.k_nearest_finder import KNearestFinder
 
 
 logger = logging.getLogger(__name__)
