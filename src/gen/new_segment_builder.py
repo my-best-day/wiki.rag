@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from xutils.byte_reader import ByteReader
 from xutils.iterator_deque import IteratorDeque
+from xutils.overlap_setter import OverlapSetter
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ class SegmentBuilder:
     def split_sentence(sentence, length):
         """
         split a sentence into fragments of a target length
-        (plus a few extra characters)
+        attempting to avoid splitted words between fragments.
         """
         logger.info("splitting sentence, length = %s", length)
 
@@ -175,28 +176,36 @@ class SegmentBuilder:
         return fragments
 
 
-def main(args):
-    plots_file_path = args.plots_dir / "plots"
-    plots_record_path = args.plots_dir / "plots_data.csv"
+def set_overlaps_for_document_list(max_len: int, doc_section_byte_list_list) -> List[List[bytes]]:
+    section_with_overlap_list_list = []
+    for doc_section_byte_list in doc_section_byte_list_list:
+        section_with_overlap_list = set_overlaps_for_document(max_len, doc_section_byte_list)
+        section_with_overlap_list_list.append(section_with_overlap_list)
+    return section_with_overlap_list_list
 
-    byte_reader = ByteReader(plots_file_path)
-    plots_df = pd.read_csv(plots_record_path, index_col=False)
 
-    document_list = []
-    for record in plots_df.values:
-        document_data = DocumentData(*record)
-        document = Document(document_data, byte_reader)
-        document_list.append(document)
+def set_overlaps_for_document(max_len: int, doc_section_byte_list):
+    section_with_overlaps_list = []
 
-    max_len = args.max_len
-    segment_builder = SegmentBuilder(max_len)
-    document_section_list_list = segment_builder.segmentize_documents(document_list)
-    dump_document_section_list_list(args.plots_dir, max_len, document_section_list_list)
+    section_count = len(doc_section_byte_list)
+    prev_section_bytes = None
+    for i in range(section_count):
+        target_section_bytes = doc_section_byte_list[i]
+        if i < section_count - 1:
+            next_section_bytes = doc_section_byte_list[i + 1]
+        else:
+            next_section_bytes = None
 
-    describe_document_sections(document_section_list_list, max_len)
-    section_records = get_section_records(document_section_list_list)
-    verify_sections(args.plots_dir, document_section_list_list, section_records)
-    save_section_records(section_records, max_len)
+        section_with_overlaps = OverlapSetter.add_overlaps(
+            max_len,
+            target_section_bytes,
+            prev_section_bytes,
+            next_section_bytes
+        )
+
+        section_with_overlaps_list.append(section_with_overlaps)
+
+    return section_with_overlaps_list
 
 
 # for debugging
@@ -285,6 +294,38 @@ def save_section_records(records, max_len):
     section_file_path = args.plots_dir / f"sections_{max_len}.csv"
     section_df.to_csv(section_file_path, index=False)
     logger.info("*** saved to %s", section_file_path)
+
+
+def main(args):
+    plots_file_path = args.plots_dir / "plots"
+    plots_record_path = args.plots_dir / "plots_data.csv"
+
+    byte_reader = ByteReader(plots_file_path)
+    plots_df = pd.read_csv(plots_record_path, index_col=False)
+
+    document_list = []
+    for record in plots_df.values:
+        document_data = DocumentData(*record)
+        document = Document(document_data, byte_reader)
+        document_list.append(document)
+
+    max_len = args.max_len
+    segment_builder = SegmentBuilder(max_len)
+    document_section_list_list = segment_builder.segmentize_documents(document_list)
+    # dump_document_section_list_list(args.plots_dir, max_len, document_section_list_list)
+
+    describe_document_sections(document_section_list_list, max_len)
+
+    document_section_list_list = set_overlaps_for_document_list(
+        max_len,
+        document_section_list_list
+    )
+
+    describe_document_sections(document_section_list_list, max_len)
+
+    section_records = get_section_records(document_section_list_list)
+    verify_sections(args.plots_dir, document_section_list_list, section_records)
+    save_section_records(section_records, max_len)
 
 
 if __name__ == "__main__":
