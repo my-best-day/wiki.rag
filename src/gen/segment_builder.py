@@ -206,11 +206,14 @@ class SegmentBuilder:
                 if before_overlap < allowed:
                 before_overlap = min(allowed, initial_room + available_backward, prev_seg_length)
         """
+        if target_segment.segment.byte_length >= max_len:
+            return
+
         prev_seg_length = prev_segment.segment.byte_length if prev_segment else 0
         next_seg_length = next_segment.segment.byte_length if next_segment else 0
         allowed = int(0.2 * max_len)
 
-        initial_room = max(0, int((max_len - target_segment.segment.byte_length) / 2))
+        initial_room = (max_len - target_segment.segment.byte_length) // 2
         before_overlap = min(allowed, initial_room, prev_seg_length)
         after_overlap = min(allowed, initial_room, next_seg_length)
 
