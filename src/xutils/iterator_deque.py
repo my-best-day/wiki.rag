@@ -10,11 +10,9 @@ class IteratorDeque(Iterator[T]):
     and the ability to append to the left or right.
     """
     def __init__(self, iterable: Iterable[T]) -> None:
-        if not isinstance(iterable, Iterable):
-            raise TypeError("iterable must be an iterable")
         self.left_queue = deque()
         self.right_queue = deque()
-        self.iterable = iterable
+        self.iterator: Iterator = iter(iterable)
 
     def __iter__(self) -> Iterator[T]:
         return self
@@ -26,7 +24,7 @@ class IteratorDeque(Iterator[T]):
         if self.left_queue:
             return self.left_queue.popleft()
         try:
-            return next(self.iterable)
+            return next(self.iterator)
         except StopIteration:
             if self.right_queue:
                 return self.right_queue.popleft()
@@ -45,4 +43,5 @@ class IteratorDeque(Iterator[T]):
         raise NotImplementedError("popright is not supported")
 
     def __bool__(self) -> bool:
-        return bool(self.left_queue or self.right_queue or self.iterable)
+        # TODO: remove this method in a few days
+        raise NotImplementedError("bool operator is not supported")
