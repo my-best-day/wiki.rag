@@ -34,7 +34,10 @@ class OverlapSetter:
             prev_seg_text,
             next_seg_text
         )
-        result = f"{before_overlap_text or ''}{target_seg_text}{after_overlap_text or ''}"
+        before_part = before_overlap_text or b''
+        after_part = after_overlap_text or b''
+        result = before_part + target_seg_text + after_part
+
         return result
 
     @staticmethod
