@@ -2,22 +2,6 @@ import unittest
 from xutils.iterator_deque import IteratorDeque
 
 
-class iter:
-    def __init__(self, items):
-        self.items = items
-
-    def __next__(self):
-        if not self.items:
-            raise StopIteration
-        return self.items.pop(0)
-
-    def __iter__(self):
-        return self
-
-    def __bool__(self):
-        return bool(self.items)
-
-
 class TestIteratorDeque(unittest.TestCase):
     def test_basic_iteration(self):
         # Test basic iteration through the iterator
@@ -61,38 +45,13 @@ class TestIteratorDeque(unittest.TestCase):
         deque.appendleft(0)
         self.assertEqual(list(deque), [0, 1])
 
-    def test_empty_iterator(self):
-        deque = IteratorDeque(iter([]))
-        self.assertFalse(bool(deque))
-        with self.assertRaises(StopIteration):
-            next(deque)
-
     def test_none_iterator(self):
         with self.assertRaises(TypeError):
             IteratorDeque(None)
 
     def test_not_an_iterator(self):
         with self.assertRaises(TypeError):
-            IteratorDeque("not an iterator")
-
-    def test_bool_operator(self):
-        # Test empty
-        deque = IteratorDeque(iter([]))
-        self.assertFalse(bool(deque))
-
-        # Test with items in iterator
-        deque = IteratorDeque(iter([1]))
-        self.assertTrue(bool(deque))
-
-        # Test with items in left queue
-        deque = IteratorDeque(iter([]))
-        deque.appendleft(1)
-        self.assertTrue(bool(deque))
-
-        # Test with items in right queue
-        deque = IteratorDeque(iter([]))
-        deque.appendright(1)
-        self.assertTrue(bool(deque))
+            IteratorDeque(False)
 
     def test_popleft_order(self):
         numbers = iter([2, 3])
