@@ -4,9 +4,10 @@ from gen.element.element import Element
 from gen.element.section import Section
 from gen.element.article import Article
 from gen.element.segment import Segment
+from gen.element.fragment import Fragment
 from gen.element.extended_segment import ExtendedSegment
 from xutils.iterator_deque import IteratorDeque
-
+from xutils.overlap_setter import OverlapSetter
 
 logger = logging.getLogger(__name__)
 
@@ -168,73 +169,32 @@ class SegmentBuilder:
             self.set_overlaps(self.max_len, prev_segment, target_segment, None)
 
     @staticmethod
-    def set_overlaps(max_len: int,
-                     prev_segment: Union[ExtendedSegment, None],
-                     target_segment: ExtendedSegment,
-                     next_segment: Union[ExtendedSegment, None]) -> None:
-        """
-        * we have three segments: previous, current, next
-        * each segment is supposed to have at least 0.1 * max_len room for each overlap
-        * overlap is limited to up to 0.2 * max-len
-        * start by allocating equal overlap to before and after
-        * if one of the ends doesn't uses the room allocated to it and the other end can use more,
-        * add the unused room to the other end
+    def set_overlaps(
+        max_len: int,
+        prev_segment: Union[ExtendedSegment, None],
+        target_segment: ExtendedSegment,
+        next_segment: Union[ExtendedSegment, None]
+    ) -> None:
 
-        Dictionary:
-        * allowed - maximum overlap allowed regardless of room / availability
-        * room - available room divided equally between before and after
-        * before_overlap, after_overlap - the lengths of the before and after overlaps
-        * prev_seg_length, cur_seg_length, next_seg_length - the lengths of the before, current,
-          and after segments
-        * available_forward - room not used by before_overlap that can be added to after_overlap
-        * available_backward - room not used by after_overlap that can be added to before_overlap
+        prev_segment_bytes = prev_segment.segment.bytes if prev_segment else None
+        next_segment_bytes = next_segment.segment.bytes if next_segment else None
 
-        Algorithm:
-        1.  prev_seg_length = previous_segment.length if previous_segment else 0
-        2.  next_seg_length = next_segment.length if next_segment else 0
-        3.  allowed = 0.2 * max_len
-        4.  initial_room = (max-len - cur_seg_length) / 2
-        5.  before_overlap = min(allowed, initial_room, prev_seg_length)
-        6.  after_overlap  = min(allowed, initial_room, next_seg_length)
-        7.  available_forward = initial_room - before_overlap
-        8.  if available_forward > 0:
-                if after_overlap < allowed:
-                    after_overlap = min(allowed, initial_room + available_forward, next_seg_length)
-        9.  else:
-                available_backward = initial_room - after_overlap
-                if available_backward > 0:
-                if before_overlap < allowed:
-                before_overlap = min(allowed, initial_room + available_backward, prev_seg_length)
-        """
-        if target_segment.segment.byte_length >= max_len:
-            return
+        before_overlap_text, after_overlap_text = OverlapSetter.get_overlaps(
+            max_len,
+            target_segment.bytes,
+            prev_segment_bytes,
+            next_segment_bytes
+        )
+        print(f"before_overlap_text: {before_overlap_text}")
+        print(f"after_overlap_text: {after_overlap_text}")
 
-        prev_seg_length = prev_segment.segment.byte_length if prev_segment else 0
-        next_seg_length = next_segment.segment.byte_length if next_segment else 0
-        allowed = int(0.2 * max_len)
+        if before_overlap_text:
+            before_offset = \
+                prev_segment.offset + prev_segment.segment.byte_length - len(before_overlap_text)
+            before_overlap = Fragment(prev_segment, before_offset, before_overlap_text)
+            target_segment.before_overlap = before_overlap
 
-        initial_room = (max_len - target_segment.segment.byte_length) // 2
-        before_overlap = min(allowed, initial_room, prev_seg_length)
-        after_overlap = min(allowed, initial_room, next_seg_length)
-
-        available_forward = initial_room - before_overlap
-        if available_forward > 0 and after_overlap < allowed:
-            after_overlap = min(allowed, initial_room + available_forward, next_seg_length)
-        else:
-            available_backward = initial_room - after_overlap
-            if available_backward > 0 and before_overlap < allowed:
-                before_overlap = min(allowed, initial_room + available_backward, prev_seg_length)
-
-        if before_overlap:
-            # if prev_segment is None, we expect before_overlap to be 0
-            assert prev_segment is not None
-            _, before_overlap_fragment = prev_segment.segment.split(
-                -before_overlap, after_char=True, include_first=False, include_remainder=True)
-            target_segment.before_overlap = before_overlap_fragment
-
-        if after_overlap:
-            # if next_segment is None, we expect after_overlap to be 0
-            assert next_segment is not None
-            after_overlap_fragment, _ = next_segment.segment.split(
-                after_overlap, after_char=False, include_first=True, include_remainder=False)
-            target_segment.after_overlap = after_overlap_fragment
+        if after_overlap_text:
+            after_offset = next_segment.offset
+            after_overlap = Fragment(next_segment, after_offset, after_overlap_text)
+            target_segment.after_overlap = after_overlap

@@ -1,3 +1,10 @@
+2024-12-29
+  + added plot
+  + make code reusable, for example: overlap_setter, now used by segment_builder
+    and hopefully with new_segment_builder
+    - add overlaps to new_segment_builder
+  + added new_segment_builder which might be a simplified version of segment_builder,
+    - look for opportunities to reuse code
 2024-12-23
   + improve unittest coverage (now at 100%)
 

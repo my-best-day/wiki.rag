@@ -3,6 +3,7 @@ import re
 import unicodedata
 from abc import ABC
 from uuid import UUID, uuid4
+
 from xutils.encoding_utils import EncodingUtils
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -150,16 +151,23 @@ class Element(ABC):
         """
         from gen.element.fragment import Fragment
 
-        first, remainder = None, None
-        # prevent splitting in the middle of a multi-byte character
-        split_point = EncodingUtils.adjust_split_point(self.bytes, index, after_char)
+        first_bytes, remainder_bytes = EncodingUtils.split_at(
+            self.bytes,
+            index,
+            after_char,
+            include_first,
+            include_remainder
+        )
 
         if include_first:
-            first_bytes = self.bytes[:split_point]
             first = Fragment(self, self.offset, first_bytes)
+        else:
+            first = None
 
         if include_remainder:
-            remainder_bytes = self.bytes[split_point:]
-            remainder = Fragment(self, self.offset + split_point, remainder_bytes)
+            offset = self.offset + len(self.bytes) - len(remainder_bytes)
+            remainder = Fragment(self, offset, remainder_bytes)
+        else:
+            remainder = None
 
         return first, remainder
