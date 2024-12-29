@@ -98,3 +98,24 @@ Element
 
             > Segment
                 # empty
+
+
+
+====
+PlotData
+  uid
+  title
+  offset
+  byte_length
+
+Section
+  uid
+  plot_uid
+  offset
+  byte_length
+
+Segment
+  uid
+  plot_uid
+  offset
+  byte_length

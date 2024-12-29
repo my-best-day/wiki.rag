@@ -10,6 +10,7 @@ config.ini
 # soft links to directories
 /data
 /ignore
+/plots
 
 
 # directories to be ignored

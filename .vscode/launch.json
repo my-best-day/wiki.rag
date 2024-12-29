@@ -99,6 +99,19 @@
             ]
         },
         {
+            "name": "New Segment Builder",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/gen/new_segment_builder.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--plots-dir",
+                "plots",
+                "-m",
+                "1500",
+            ]
+        },
+        {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
