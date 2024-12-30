@@ -185,8 +185,6 @@ class SegmentBuilder:
             prev_segment_bytes,
             next_segment_bytes
         )
-        print(f"before_overlap_text: {before_overlap_text}")
-        print(f"after_overlap_text: {after_overlap_text}")
 
         if before_overlap_text:
             before_offset = \

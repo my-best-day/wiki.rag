@@ -67,6 +67,24 @@ class TestIteratorDeque(unittest.TestCase):
         with self.assertRaises(StopIteration):
             deque.popleft()
 
+        deque.appendright(13)
+        deque.appendleft(6)
+        deque.extendleft([7, 8, 9])
+        deque.appendleft(10)
+        deque.extendleft([11, 12])
+        self.assertEqual(deque.popleft(), 11)
+        self.assertEqual(deque.popleft(), 12)
+        self.assertEqual(deque.popleft(), 10)
+        self.assertEqual(deque.popleft(), 7)
+        self.assertEqual(deque.popleft(), 8)
+        self.assertEqual(deque.popleft(), 9)
+        self.assertEqual(deque.popleft(), 6)
+        self.assertEqual(deque.popleft(), 13)
+
+        # bool is not supported
+        with self.assertRaises(NotImplementedError):
+            _ = bool(deque)
+
     def test_popright_order(self):
         numbers = iter([2, 3])
         deque = IteratorDeque(numbers)

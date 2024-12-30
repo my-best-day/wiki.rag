@@ -84,6 +84,25 @@ class TestEncodingUtils(unittest.TestCase):
         adjusted = EncodingUtils.adjust_split_point(_bytes, index, after)
         self.assertEqual(adjusted, expected)
 
+    def test_adjust_split_point_trivial_after_negative_index_string(self):
+        text = 'abc'
+        after = True
+
+        index = -1
+        expected = len(text) + index
+        adjusted = EncodingUtils.adjust_split_point(text, index, after)
+        self.assertEqual(adjusted, expected)
+
+        index = -2
+        expected = len(text) + index
+        adjusted = EncodingUtils.adjust_split_point(text, index, after)
+        self.assertEqual(adjusted, expected)
+
+        index = -3
+        expected = len(text) + index
+        adjusted = EncodingUtils.adjust_split_point(text, index, after)
+        self.assertEqual(adjusted, expected)
+
     def test_adjust_split_point_multi_before(self):
         _bytes = b'a' + b'\xF0\x9F\x8D\x94' + b'z'
         after = False

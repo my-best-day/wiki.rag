@@ -5,7 +5,7 @@ import logging
 import argparse
 import numpy as np
 from pathlib import Path
-from gen.embedding_store import EmbeddingStore
+from gen.uuid_embedding_store import EmbeddingStore
 from gen.embedding_utils import EmbeddingUtils, EmbeddingConfig
 
 logger = logging.getLogger(__name__)

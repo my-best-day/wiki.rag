@@ -14,7 +14,7 @@ from xutils.timer import LoggingTimer
 from gen.element.element import Element
 from gen.element.article import Article
 from gen.element.extended_segment import ExtendedSegment
-from gen.embedding_store import EmbeddingStore
+from gen.uuid_embedding_store import EmbeddingStore
 from xutils.embedding_config import EmbeddingConfig
 from gen.element.flat.flat_article import FlatArticle
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment

@@ -1,10 +1,9 @@
 import os
 import logging
 import numpy as np
-from uuid import UUID
 from pathlib import Path
 from filelock import FileLock
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from numpy.typing import NDArray
 from xutils.embedding_config import EmbeddingConfig
 
@@ -52,17 +51,16 @@ class EmbeddingStore:
     def lock_path(self):
         return self.path.with_suffix(".lock")
 
-    def extend_embeddings(self, uids: List[UUID], embeddings: np.ndarray) -> None:
+    def extend_embeddings(self, uids: List[Any], embeddings: np.ndarray) -> None:
         """
         Add embeddings to the store.
         Args:
-            uids: List of UUIDs
+            uids: List of IDs, must be supported by np.savez
             embeddings: List of embeddings (the output of a sentence_transformer.encode())
         """
-        str_uids = [str(uid) for uid in uids]
         lock_path = self.lock_path
         with self.file_lock_class(lock_path):
-            self._add_embeddings(str_uids, embeddings)
+            self._add_embeddings(uids, embeddings)
 
     def _add_embeddings(self, add_uids: List[str], add_embeds: np.ndarray):
         """
@@ -71,10 +69,10 @@ class EmbeddingStore:
         """
         if len(add_uids) == 0:
             return
-        np_str_uids, np_embeds = self._load_embeddings(allow_empty=True)
-        np_str_uids = np.concatenate((np_str_uids, add_uids)) if len(np_str_uids) else add_uids
+        np_uids, np_embeds = self._load_embeddings(allow_empty=True)
+        np_uids = np.concatenate((np_uids, add_uids)) if len(np_uids) else add_uids
         np_embeds = np.concatenate((np_embeds, add_embeds)) if len(np_embeds) else add_embeds
-        np.savez(self.path, uids=np_str_uids, embeddings=np_embeds)
+        np.savez(self.path, uids=np_uids, embeddings=np_embeds)
 
     def get_count(self, allow_empty: bool = False) -> int:
         """
@@ -87,26 +85,25 @@ class EmbeddingStore:
             count = len(np_str_uids)
         return count
 
-    def load_embeddings(self, allow_empty: bool = False) -> Tuple[List[UUID], List[np.ndarray]]:
+    def load_embeddings(self, allow_empty: bool = False) -> Tuple[List, List[np.ndarray]]:
         """
         Load embeddings from the store.
         Do type conversion and handle locks here.
-        :return: an array of uids: List[UUID] and an array of embeddings: List[np.ndarray]
+        :return: an array of uids: List and an array of embeddings: List[np.ndarray]
         """
         lock_path = self.lock_path
         with self.file_lock_class(lock_path):
-            np_str_uids, np_embeddings = self._load_embeddings(allow_empty=allow_empty)
-            np_uids = np.vectorize(UUID)(np_str_uids)
+            np_uids, np_embeddings = self._load_embeddings(allow_empty=allow_empty)
             logger.debug("EmbeddingStore: %d embeddings loaded", len(np_uids))
             return np_uids, np_embeddings
 
-    def _load_embeddings(self, allow_empty: bool) -> Tuple[NDArray[str], np.ndarray]:
+    def _load_embeddings(self, allow_empty: bool) -> Tuple[NDArray, np.ndarray]:
         """
         Load embeddings from the store.
         - It is the caller responsibility to very the file exists and handle
           locks.
         - this method returns a tuple of ndarrays.
-        :return: an ndarray of uids: NDArray[UUID] and an ndarray of embeddings: NDArray[np.ndarray]
+        :return: an ndarray of uids: NDArray and an ndarray of embeddings: NDArray[np.ndarray]
         """
         if not self.does_store_exist():
             if allow_empty:

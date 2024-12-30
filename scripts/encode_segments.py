@@ -6,9 +6,9 @@ from uuid import UUID
 from pathlib import Path
 from typing import List
 
-from gen import embedding_store
 from gen.encoder import Encoder
-from gen.embedding_store import EmbeddingStore, EmbeddingConfig
+from gen.embedding_store import EmbeddingConfig
+from gen.uuid_embedding_store import UUIDEmbeddingStore
 
 from gen.element.store import Store
 from gen.element.element import Element
@@ -29,8 +29,8 @@ class SegmentEncoder:
         self.args = args
         self.encoder = Encoder(batch_size=args.batch_size)
         self.config = EmbeddingConfig(prefix=args.path_prefix, max_len=args.max_len)
-        embedding_store_path = embedding_store.get_store_path(self.config)
-        self.embedding_store = EmbeddingStore(embedding_store_path, allow_empty=True)
+        embedding_store_path = UUIDEmbeddingStore.get_store_path(self.config)
+        self.embedding_store = UUIDEmbeddingStore(embedding_store_path, allow_empty=True)
         if not args.incremental and self.embedding_store.does_store_exist():
             self.embedding_store.delete()
 
@@ -105,7 +105,7 @@ class SegmentEncoder:
         return result
 
     def persist_embeddings(self, uids: List[UUID], embeddings: List[np.ndarray]) -> None:
-        self.embedding_store.extend_embeddings(uids, embeddings)
+        self.embedding_store.extend_uuid_embeddings(uids, embeddings)
 
 
 def main(args):
