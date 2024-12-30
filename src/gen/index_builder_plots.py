@@ -20,7 +20,7 @@ from typing import List
 from pandas import DataFrame
 from dataclasses import asdict
 
-from gen.plots.plot import DocumentData, Plot
+from gen.plots.plot import PlotData, Plot
 from xutils.byte_reader import ByteReader
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class IndexBuilderPlots:
         super().__init__()
         self.args: argparse.Namespace = args
 
-    def build_index(self) -> List[DocumentData]:
+    def build_index(self) -> List[PlotData]:
         plot_dir = self.args.plots_dir
         plots_file_path = plot_dir / "plots"
         titles_file_path = plot_dir / "titles"
@@ -43,7 +43,7 @@ class IndexBuilderPlots:
             return self._build_index(titles, plots_handle)
 
     def _build_index(self, titles: List[str], plots_handle):
-        plot_data_list: List[DocumentData] = []
+        plot_data_list: List[PlotData] = []
 
         offset: int = 0
         byte_length = 0
@@ -63,7 +63,7 @@ class IndexBuilderPlots:
             elif line == b'<EOS>\n':
                 uid = len(plot_data_list)
                 title = titles[uid]
-                plot_data = DocumentData(uid, title, offset, byte_length)
+                plot_data = PlotData(uid, title, offset, byte_length)
                 plot_data_list.append(plot_data)
                 if len(plot_data_list) % 10000 == 0:
                     logger.info(f"processed {len(plot_data_list)} / {len(titles)} plots")
@@ -92,16 +92,16 @@ def main(args):
     byte_reader = ByteReader(args.plots_dir / "plots")
 
     for i, plot_array in enumerate(short_plots.values):
-        plot_data = DocumentData(*plot_array)
+        plot_data = PlotData(*plot_array)
         plot = Plot(plot_data, byte_reader)
         print(f"Shortest plot {i}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")
-        print(plot.bytes()[:200])
+        print(plot.bytes[:200])
 
     for i, plot_array in enumerate(long_plots.values):
-        plot_data = DocumentData(*plot_array)
+        plot_data = PlotData(*plot_array)
         plot = Plot(plot_data, byte_reader)
         print(f"Longest plot {i}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")
-        print(plot.bytes()[:200])
+        print(plot.bytes[:200])
 
     print(f"Done. {len(plot_data_list)} plots")
 

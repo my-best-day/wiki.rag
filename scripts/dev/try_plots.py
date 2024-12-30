@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 
 from xutils.byte_reader import ByteReader
-from gen.plots.plot import DocumentData, Plot
+from gen.plots.plot import PlotData, Plot
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def show_plot(plot_dir, index, show_full_text):
     plot_record = plot_line.split(",")
     plot_record[2] = int(plot_record[2])
     plot_record[3] = int(plot_record[3])
-    plot_data = DocumentData(*plot_record)
+    plot_data = PlotData(*plot_record)
     byte_reader = ByteReader(plot_file_path)
     plot = Plot(plot_data, byte_reader)
     print(f"plot {index}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")

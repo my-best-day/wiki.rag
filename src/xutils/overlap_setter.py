@@ -34,9 +34,8 @@ class OverlapSetter:
             prev_seg_text,
             next_seg_text
         )
-        before_part = before_overlap_text or b''
-        after_part = after_overlap_text or b''
-        result = before_part + target_seg_text + after_part
+
+        result = before_overlap_text + target_seg_text + after_overlap_text
 
         return result
 
@@ -46,7 +45,7 @@ class OverlapSetter:
         target_seg_text: bytes_or_str,
         prev_seg_text: opt_bytes_or_str,
         next_seg_text: opt_bytes_or_str
-    ) -> Tuple[opt_bytes_or_str, opt_bytes_or_str]:
+    ) -> Tuple[bytes_or_str, bytes_or_str]:
         """
         Compute overlaps for the target segment.
 
@@ -128,7 +127,7 @@ class OverlapSetter:
                 include_remainder=True
             )
         else:
-            before_overlap_text = None
+            before_overlap_text = b''
 
         if after_overlap_len > 0:
             # if next_segment is None, we expect after_overlap to be 0
@@ -141,6 +140,6 @@ class OverlapSetter:
                 include_remainder=False
             )
         else:
-            after_overlap_text = None
+            after_overlap_text = b''
 
         return before_overlap_text, after_overlap_text

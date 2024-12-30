@@ -5,7 +5,8 @@ import argparse
 import pandas as pd
 from typing import List
 from pathlib import Path
-from dataclasses import dataclass
+
+from gen.plots.plot import PlotData, Plot
 
 from xutils.byte_reader import ByteReader
 from xutils.iterator_deque import IteratorDeque
@@ -14,59 +15,34 @@ from xutils.overlap_setter import OverlapSetter
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class DocumentData:
-    uid: str
-    title: str
-    offset: int
-    byte_length: int
-
-
-class Document:
-    def __init__(self, document_data: DocumentData, byte_reader: ByteReader):
-        self.document_data = document_data
-        self.byte_reader = byte_reader
-
-    def __getattr__(self, name):
-        return getattr(self.document_data, name)
-
-    @property
-    def bytes(self):
-        return self.byte_reader.read_bytes(self.offset, self.byte_length)
-
-    @property
-    def text(self):
-        return self.bytes.decode('utf-8')
-
-
 class SegmentBuilder:
     def __init__(self, max_len: int) -> None:
         self.max_len = max_len
         self.base_length = int(0.8 * self.max_len)
 
-    def segmentize_documents(self, doc_data_list: List[DocumentData]) -> List[List[bytes]]:
-        doc_section_byte_list_list = []
+    def segmentize_plots(self, plot_data_list: List[PlotData]) -> List[List[bytes]]:
+        plot_segment_bytes_list_list = []
         base_length = int(0.8 * self.max_len)
-        for doc_data in doc_data_list:
-            document_sections = self.segmentize_document(base_length, doc_data)
-            doc_section_byte_list_list.append(document_sections)
-            if len(doc_section_byte_list_list) % 5000 == 0:
-                msg = f"processed {len(doc_section_byte_list_list)} / {len(doc_data_list)} docs"
+        for plot_data in plot_data_list:
+            plot_segments = self.segmentize_plot(base_length, plot_data)
+            plot_segment_bytes_list_list.append(plot_segments)
+            if len(plot_segment_bytes_list_list) % 5000 == 0:
+                msg = f"processed {len(plot_segment_bytes_list_list)} / {len(plot_data_list)} plots"
                 logger.info(msg)
 
-        return doc_section_byte_list_list
+        return plot_segment_bytes_list_list
 
-    def segmentize_document(
+    def segmentize_plot(
         self,
         base_length: int,
-        document_data: DocumentData
+        plot_data: PlotData
     ) -> List[bytes]:
 
-        segment_count = (document_data.byte_length + base_length - 1) // base_length
-        average_length = document_data.byte_length // segment_count if segment_count else 0
-        document_bytes = document_data.bytes
+        segment_count = (plot_data.byte_length + base_length - 1) // base_length
+        average_length = plot_data.byte_length // segment_count if segment_count else 0
+        plot_bytes = plot_data.bytes
         delimiter = b'\n'
-        sentences = document_bytes.split(delimiter)
+        sentences = plot_bytes.split(delimiter)
         sentences = [sentence + delimiter for sentence in sentences if sentence]
         sentence_iterator = IteratorDeque(iter(sentences))
         segment_byte_list = []
@@ -79,12 +55,12 @@ class SegmentBuilder:
                     fragments = self.split_sentence(sentence, base_length)
                 except ValueError:
                     logger.error(
-                        "Could not split sentence of doc %s.%s: '%s'",
-                        document_data.uid, rel_index, sentence
+                        "Could not split sentence of plot %s.%s: '%s'",
+                        plot_data.uid, rel_index, sentence
                     )
                     raise
                 sentence_iterator.extendleft(fragments)
-                logger.info(f"... sentence too long at document {document_data.uid}, fragments: "
+                logger.info(f"... sentence too long at plot {plot_data.uid}, fragments: "
                             f"{len(fragments)}")
 
             elif self.is_there_enough_room_in_mean_length(average_length, segment_byte, sentence):
@@ -95,6 +71,7 @@ class SegmentBuilder:
             else:
                 segment_byte_list.append(segment_byte)
                 segment_byte = sentence
+                rel_index += 1
 
         # add last segment
         if len(segment_byte) > 0:
@@ -110,22 +87,22 @@ class SegmentBuilder:
     @staticmethod
     def is_there_enough_room_in_mean_length(
         avg_length: int,
-        section: str,
+        segment: str,
         sentence: str
     ) -> bool:
         """is there a room for the next sentence within the average length?"""
-        result = len(section) + len(sentence) <= avg_length
+        result = len(segment) + len(sentence) <= avg_length
         return result
 
     @staticmethod
     def is_there_enough_room_in_base_length_and_segment_is_short(
         base_length: int,
-        section: str,
+        segment: str,
         sentence: str
     ) -> bool:
-        """if section is short, is there a room for the next sentence within the base length?"""
-        is_short = len(section) <= 0.6 * base_length
-        is_room_in_base_length = len(section) + len(sentence) <= base_length
+        """if segment is short, is there a room for the next sentence within the base length?"""
+        is_short = len(segment) <= 0.6 * base_length
+        is_room_in_base_length = len(segment) + len(sentence) <= base_length
         result = is_short and is_room_in_base_length
         return result
 
@@ -176,124 +153,139 @@ class SegmentBuilder:
         return fragments
 
 
-def set_overlaps_for_document_list(max_len: int, doc_section_byte_list_list) -> List[List[bytes]]:
-    section_with_overlap_list_list = []
-    for doc_section_byte_list in doc_section_byte_list_list:
-        section_with_overlap_list = set_overlaps_for_document(max_len, doc_section_byte_list)
-        section_with_overlap_list_list.append(section_with_overlap_list)
-    return section_with_overlap_list_list
+def set_overlaps_for_plot_list(max_len: int, plot_segment_byte_list_list) -> List[List[bytes]]:
+    segment_with_overlaps_list_list = []
+    for plot_index, plot_segment_byte_list in enumerate(plot_segment_byte_list_list):
+        plot_with_overlaps_list = set_overlaps_for_plot(max_len, plot_index, plot_segment_byte_list)
+        segment_with_overlaps_list_list.append(plot_with_overlaps_list)
+    return segment_with_overlaps_list_list
 
 
-def set_overlaps_for_document(max_len: int, doc_section_byte_list):
-    section_with_overlaps_list = []
+# ZZZZZZZZZZZZZZZZZ compute the offset here - offset of target - length of prev
+def set_overlaps_for_plot(
+    max_len: int,
+    plot_index: int,
+    plot_segment_byte_list
+):
+    plot_segment_with_overlaps_list = []
 
-    section_count = len(doc_section_byte_list)
-    prev_section_bytes = None
-    for i in range(section_count):
-        target_section_bytes = doc_section_byte_list[i]
-        if i < section_count - 1:
-            next_section_bytes = doc_section_byte_list[i + 1]
+    segment_count = len(plot_segment_byte_list)
+    prev_segment_bytes = None
+    for i in range(segment_count):
+        target_segment_bytes = plot_segment_byte_list[i]
+        if i < segment_count - 1:
+            next_segment_bytes = plot_segment_byte_list[i + 1]
         else:
-            next_section_bytes = None
+            next_segment_bytes = None
 
-        section_with_overlaps = OverlapSetter.add_overlaps(
+        before_overlap, after_overlap = OverlapSetter.get_overlaps(
             max_len,
-            target_section_bytes,
-            prev_section_bytes,
-            next_section_bytes
+            target_segment_bytes,
+            prev_segment_bytes,
+            next_segment_bytes
         )
+        if plot_index <= 500000:
+            segment_with_overlaps = before_overlap + target_segment_bytes + after_overlap
+        else:
+            segment_with_overlaps = target_segment_bytes
 
-        section_with_overlaps_list.append(section_with_overlaps)
+        plot_segment_with_overlaps_list.append(segment_with_overlaps)
 
-    return section_with_overlaps_list
+        prev_segment_bytes = target_segment_bytes
+
+    return plot_segment_with_overlaps_list
 
 
 # for debugging
-def dump_document_section_list_list(plots_dir, max_len, document_byte_section_list_list):
-    document_section_list_list = [
-        [section.decode('utf-8') for section in doc_section_list]
-        for doc_section_list in document_byte_section_list_list
+def dump_plot_segment_list_list(plots_dir, max_len, plot_byte_segment_list_list):
+    plot_segment_list_list = [
+        [segment.decode('utf-8') for segment in plot_segment_list]
+        for plot_segment_list in plot_byte_segment_list_list
     ]
-    sections_json_path = plots_dir / f"sections_{max_len}.json"
-    with open(sections_json_path, 'w') as json_file:
-        json.dump(document_section_list_list, json_file)
+    segment_json_path = plots_dir / f"segments_{max_len}.json"
+    with open(segment_json_path, 'w') as json_file:
+        json.dump(plot_segment_list_list, json_file)
 
 
-def describe_document_sections(document_section_list_list, max_len):
-    section_per_document = [len(section_list) for section_list in document_section_list_list]
-    section_per_document_series = pd.Series(section_per_document)
+def describe_plot_segments(plot_segment_list_list, max_len):
+    segment_per_plot = [len(segment_list) for segment_list in plot_segment_list_list]
+    segment_per_plot_series = pd.Series(segment_per_plot)
 
     segment_lengths = [
-        len(section)
-        for doc_section_list in document_section_list_list
-        for section in doc_section_list
+        len(segment)
+        for plot_segment_list in plot_segment_list_list
+        for segment in plot_segment_list
     ]
     segment_lengths_series = pd.Series(segment_lengths)
 
     print("base length:", max_len)
-    print("sections per document:\n", section_per_document_series.describe())
+    print("segments per plot:\n", segment_per_plot_series.describe())
     print("segment lengths:\n", segment_lengths_series.describe())
 
 
-def get_section_records(document_section_list_list):
+def get_segment_records(plot_segment_list_list):
     # create a dataframe with columns:
-    # section index, document index, section offset, section length
+    # segment index, plot index, segment offset, segment length
     offset = 0
-    section_records = []
-    section_index = 0
-    for doc_index, doc_section_list in enumerate(document_section_list_list):
-        for rel_index, section_bytes in enumerate(doc_section_list):
-            sec_length = len(section_bytes)
-            section_data = (section_index, doc_index, rel_index, offset, sec_length)
-            section_records.append(section_data)
-            offset += sec_length
-            section_index += 1
+    segment_records = []
+    segment_index = 0
+    for plot_index, plot_segment_list in enumerate(plot_segment_list_list):
+        for rel_index, segment_bytes in enumerate(plot_segment_list):
+            segment_length = len(segment_bytes)
+            segment_data = (segment_index, plot_index, rel_index, offset, segment_length)
+            segment_records.append(segment_data)
+            offset += segment_length
+            segment_index += 1
         offset += 6
-    return section_records
+    return segment_records
 
 
-def verify_sections(plots_dir, document_section_list_list, section_records):
+def verify_segments(plots_dir, plot_segment_list_list, segment_records):
     text_file_path = plots_dir / "plots"
     byte_reader = ByteReader(text_file_path)
-    # keep: sample_records = section_records[:10]
+    # keep: sample_records = segment_records[:10]
 
     sample_records = []
-    for record in section_records:
-        # relative-index == 0 -> first section of document
+    for record in segment_records:
+        # relative-index == 0 -> first segment of plot
         if record[2] == 0:
             sample_records.append(record)
             if len(sample_records) >= 20:
                 break
-    random_sample = random.sample(section_records, 20)
+    random_sample = random.sample(segment_records, 20)
     sample_records.extend(random_sample)
 
-    for (sec_ind, doc_ind, rel_ind, offset, length) in sample_records:
+    for (segment_ind, plot_ind, rel_ind, offset, length) in sample_records:
         reader_bytes = byte_reader.read_bytes(offset, length)
-        doc_section_list = document_section_list_list[doc_ind]
-        section_bytes = doc_section_list[rel_ind]
-
-        is_match = section_bytes == reader_bytes
+        plot_segment_list = plot_segment_list_list[plot_ind]
+        try:
+            segment_bytes = plot_segment_list[rel_ind]
+        except IndexError:
+            logger.error("IndexError: segment %s of plot %s rel index %s",
+                         segment_ind, plot_ind, rel_ind)
+            raise
+        is_match = segment_bytes == reader_bytes
         if is_match:
-            logger.debug("+ section %s of document %s rel index %s match",
-                         sec_ind, doc_ind, rel_ind)
+            logger.debug("+ segment %s of plot %s rel index %s match",
+                         segment_ind, plot_ind, rel_ind)
         else:
             logger.info("""
-- section %s of document %s rel index %s does not match
+- segment %s of plot %s rel index %s does not match
 
 expected: %s
 
 actual  : %s
-            """, sec_ind, doc_ind, rel_ind, section_bytes, reader_bytes)
+            """, segment_ind, plot_ind, rel_ind, segment_bytes, reader_bytes)
 
 
-def save_section_records(records, max_len):
-    section_df = pd.DataFrame(
+def save_segment_records(records, max_len):
+    segment_df = pd.DataFrame(
         records,
-        columns=["section_index", "doc_index", "rel_index", "offset", "length"]
+        columns=["segment_index", "plot_index", "rel_index", "offset", "length"]
     )
-    section_file_path = args.plots_dir / f"sections_{max_len}.csv"
-    section_df.to_csv(section_file_path, index=False)
-    logger.info("*** saved to %s", section_file_path)
+    segment_file_path = args.plots_dir / f"segments_{max_len}.csv"
+    segment_df.to_csv(segment_file_path, index=False)
+    logger.info("*** saved to %s", segment_file_path)
 
 
 def main(args):
@@ -303,29 +295,31 @@ def main(args):
     byte_reader = ByteReader(plots_file_path)
     plots_df = pd.read_csv(plots_record_path, index_col=False)
 
-    document_list = []
+    plot_list = []
     for record in plots_df.values:
-        document_data = DocumentData(*record)
-        document = Document(document_data, byte_reader)
-        document_list.append(document)
+        plot_data = PlotData(*record)
+        plot = Plot(plot_data, byte_reader)
+        plot_list.append(plot)
 
     max_len = args.max_len
     segment_builder = SegmentBuilder(max_len)
-    document_section_list_list = segment_builder.segmentize_documents(document_list)
-    # dump_document_section_list_list(args.plots_dir, max_len, document_section_list_list)
+    plot_segment_list_list = segment_builder.segmentize_plots(plot_list)
 
-    describe_document_sections(document_section_list_list, max_len)
+    describe_plot_segments(plot_segment_list_list, max_len)
 
-    document_section_list_list = set_overlaps_for_document_list(
+    plot_segment_list_list = set_overlaps_for_plot_list(
         max_len,
-        document_section_list_list
+        plot_segment_list_list
     )
 
-    describe_document_sections(document_section_list_list, max_len)
+    describe_plot_segments(plot_segment_list_list, max_len)
 
-    section_records = get_section_records(document_section_list_list)
-    verify_sections(args.plots_dir, document_section_list_list, section_records)
-    save_section_records(section_records, max_len)
+    if args.dump_segments:
+        dump_plot_segment_list_list(args.plots_dir, max_len, plot_segment_list_list)
+
+    segment_records = get_segment_records(plot_segment_list_list)
+    verify_segments(args.plots_dir, plot_segment_list_list, segment_records)
+    save_segment_records(segment_records, max_len)
 
 
 if __name__ == "__main__":
@@ -334,6 +328,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-pd", "--plots-dir", type=str, required=True)
     parser.add_argument("-m", "--max-len", type=int, required=True)
+    parser.add_argument("--dump-segments", default=False, action="store_true",
+                        help="Dump segment bytes to a json file to be used by verify_segments.py")
     args = parser.parse_args()
 
     plots_dir = Path(args.plots_dir)
