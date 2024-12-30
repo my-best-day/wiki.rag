@@ -27,9 +27,10 @@ class SegmentBuilder:
         for plot_data in plot_data_list:
             plot_segments = self.segmentize_plot(base_length, plot_data)
             plot_segment_bytes_list_list.append(plot_segments)
+
             if len(plot_segment_bytes_list_list) % 5000 == 0:
                 msg = f"processed {len(plot_segment_bytes_list_list)} / {len(plot_data_list)} plots"
-                logger.info(msg)
+                logger.debug(msg)
 
         return plot_segment_bytes_list_list
 
@@ -61,8 +62,8 @@ class SegmentBuilder:
                     )
                     raise
                 sentence_iterator.extendleft(fragments)
-                logger.info(f"... sentence too long at plot {plot_data.uid}, fragments: "
-                            f"{len(fragments)}")
+                logger.debug(f"... sentence too long at plot {plot_data.uid}, fragments: "
+                             f"{len(fragments)}")
 
             elif self.is_there_enough_room_in_mean_length(average_length, segment_byte, sentence):
                 segment_byte += sentence
@@ -113,7 +114,7 @@ class SegmentBuilder:
         split a sentence into fragments of a target length
         attempting to avoid splitted words between fragments.
         """
-        logger.info("splitting sentence, length = %s", length)
+        logger.debug("splitting sentence, length = %s", length)
 
         max_extend = 24
         frag_count = (len(sentence) + length - 1) // length
@@ -232,6 +233,7 @@ def dump_plot_segment_list_list(plots_dir, max_len, plot_byte_segment_list_list)
     ]
     segment_json_path = plots_dir / f"segments_{max_len}.json"
     with open(segment_json_path, 'w') as json_file:
+
         json.dump(plot_segment_list_list, json_file)
 
 
@@ -246,9 +248,9 @@ def describe_plot_segments(plot_segment_list_list, max_len):
     ]
     segment_lengths_series = pd.Series(segment_lengths)
 
-    print("base length:", max_len)
-    print("segments per plot:\n", segment_per_plot_series.describe())
-    print("segment lengths:\n", segment_lengths_series.describe())
+    logger.info("base length: %s", max_len)
+    logger.debug("segments per plot:\n%s", segment_per_plot_series.describe())
+    logger.info("segment lengths:\n%s", segment_lengths_series.describe())
 
 
 def verify_segments(plots_dir, plot_segment_list_list, segment_records):
