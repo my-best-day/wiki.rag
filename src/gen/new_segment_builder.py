@@ -3,7 +3,7 @@ import random
 import logging
 import argparse
 import pandas as pd
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 
 from gen.plots.plot import PlotData, Plot
@@ -23,6 +23,7 @@ class SegmentBuilder:
     def segmentize_plots(self, plot_data_list: List[PlotData]) -> List[List[bytes]]:
         plot_segment_bytes_list_list = []
         base_length = int(0.8 * self.max_len)
+
         for plot_data in plot_data_list:
             plot_segments = self.segmentize_plot(base_length, plot_data)
             plot_segment_bytes_list_list.append(plot_segments)
@@ -153,21 +154,44 @@ class SegmentBuilder:
         return fragments
 
 
-def set_overlaps_for_plot_list(max_len: int, plot_segment_byte_list_list) -> List[List[bytes]]:
+def set_overlaps_for_plot_list(
+    max_len: int,
+    plot_list,
+    plot_segment_byte_list_list
+) -> Tuple[List[List[bytes]], List[Tuple[int, int, int, int, int]]]:
+
     segment_with_overlaps_list_list = []
+    segment_records = []
+
+    segment_index = 0
+
     for plot_index, plot_segment_byte_list in enumerate(plot_segment_byte_list_list):
-        plot_with_overlaps_list = set_overlaps_for_plot(max_len, plot_index, plot_segment_byte_list)
+        plot = plot_list[plot_index]
+        base_offset = plot.offset
+
+        plot_with_overlaps_list, plot_segment_records = set_overlaps_for_plot(
+            max_len,
+            segment_index,
+            plot_index,
+            base_offset,
+            plot_segment_byte_list
+        )
         segment_with_overlaps_list_list.append(plot_with_overlaps_list)
-    return segment_with_overlaps_list_list
+        segment_records.extend(plot_segment_records)
+        segment_index += len(plot_segment_byte_list)
+
+    return segment_with_overlaps_list_list, segment_records
 
 
-# ZZZZZZZZZZZZZZZZZ compute the offset here - offset of target - length of prev
 def set_overlaps_for_plot(
     max_len: int,
+    base_segment_index: int,
     plot_index: int,
+    base_offset: int,
     plot_segment_byte_list
 ):
     plot_segment_with_overlaps_list = []
+    segment_records = []
 
     segment_count = len(plot_segment_byte_list)
     prev_segment_bytes = None
@@ -184,16 +208,20 @@ def set_overlaps_for_plot(
             prev_segment_bytes,
             next_segment_bytes
         )
-        if plot_index <= 500000:
-            segment_with_overlaps = before_overlap + target_segment_bytes + after_overlap
-        else:
-            segment_with_overlaps = target_segment_bytes
+        segment_with_overlaps = before_overlap + target_segment_bytes + after_overlap
+        segment_index = base_segment_index + i
+        offset = base_offset - len(before_overlap)
+        length = len(segment_with_overlaps)
+        segment_record = (segment_index, plot_index, i, offset, length)
+        segment_records.append(segment_record)
+
+        base_offset += len(target_segment_bytes)
 
         plot_segment_with_overlaps_list.append(segment_with_overlaps)
 
         prev_segment_bytes = target_segment_bytes
 
-    return plot_segment_with_overlaps_list
+    return plot_segment_with_overlaps_list, segment_records
 
 
 # for debugging
@@ -221,23 +249,6 @@ def describe_plot_segments(plot_segment_list_list, max_len):
     print("base length:", max_len)
     print("segments per plot:\n", segment_per_plot_series.describe())
     print("segment lengths:\n", segment_lengths_series.describe())
-
-
-def get_segment_records(plot_segment_list_list):
-    # create a dataframe with columns:
-    # segment index, plot index, segment offset, segment length
-    offset = 0
-    segment_records = []
-    segment_index = 0
-    for plot_index, plot_segment_list in enumerate(plot_segment_list_list):
-        for rel_index, segment_bytes in enumerate(plot_segment_list):
-            segment_length = len(segment_bytes)
-            segment_data = (segment_index, plot_index, rel_index, offset, segment_length)
-            segment_records.append(segment_data)
-            offset += segment_length
-            segment_index += 1
-        offset += 6
-    return segment_records
 
 
 def verify_segments(plots_dir, plot_segment_list_list, segment_records):
@@ -307,8 +318,9 @@ def main(args):
 
     describe_plot_segments(plot_segment_list_list, max_len)
 
-    plot_segment_list_list = set_overlaps_for_plot_list(
+    plot_segment_list_list, segment_records = set_overlaps_for_plot_list(
         max_len,
+        plot_list,
         plot_segment_list_list
     )
 
@@ -317,7 +329,7 @@ def main(args):
     if args.dump_segments:
         dump_plot_segment_list_list(args.plots_dir, max_len, plot_segment_list_list)
 
-    segment_records = get_segment_records(plot_segment_list_list)
+    # remove segment_records = get_segment_records(plot_segment_list_list)
     verify_segments(args.plots_dir, plot_segment_list_list, segment_records)
     save_segment_records(segment_records, max_len)
 
