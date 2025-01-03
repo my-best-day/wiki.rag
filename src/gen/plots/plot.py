@@ -1,9 +1,8 @@
-from dataclasses import dataclass
+from typing import NamedTuple
 from xutils.byte_reader import ByteReader
 
 
-@dataclass
-class PlotData:
+class PlotData(NamedTuple):
     uid: str
     title: str
     offset: int
