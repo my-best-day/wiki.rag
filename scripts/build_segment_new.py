@@ -4,6 +4,7 @@ import logging
 import argparse
 import pandas as pd
 from pathlib import Path
+
 from xutils.byte_reader import ByteReader
 from gen.new_segment_builder import SegmentBuilder
 from gen.segment_overlap_setter import SegmentOverlapSetter
@@ -12,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 # for debugging
-def dump_raw_segments(plots_dir, max_len, plot_byte_segment_list_list):
+def dump_raw_segments(plots_dir, max_len, segments_per_plot):
     segments_per_plot = [
         [segment.decode('utf-8') for segment in plot_segment_list]
-        for plot_segment_list in plot_byte_segment_list_list
+        for plot_segment_list in segments_per_plot
     ]
     segment_json_path = plots_dir / f"segments_{max_len}.json"
     with open(segment_json_path, 'w') as json_file:
@@ -87,21 +88,26 @@ def save_segment_records(records, max_len):
     logger.info("*** saved to %s", segment_file_path)
 
 
+def get_plot_text_generator(plot_data_list, byte_reader):
+    for plot_data in plot_data_list:
+        text = byte_reader.read_bytes(plot_data.offset, plot_data.byte_length)
+        yield text
+
+
 def main(args):
     plots_file_path = args.plots_dir / "plots"
     plots_record_path = args.plots_dir / "plots_data.csv"
 
     byte_reader = ByteReader(plots_file_path)
 
-    def plot_reader(plot_data):
-        payload = byte_reader.read_bytes(plot_data.offset, plot_data.byte_length)
-        return payload
-
     plots_df = pd.read_csv(plots_record_path, index_col=False)
     plot_data_list = list(plots_df.itertuples(index=False, name="PlotData"))
+    plot_count = len(plot_data_list)
 
     max_len = args.max_len
-    segments_per_plot = SegmentBuilder.segmentize_plots(max_len, plot_data_list, plot_reader)
+    plot_text_generator = get_plot_text_generator(plot_data_list, byte_reader)
+    segments_per_plot = SegmentBuilder.segmentize_text_list(
+        max_len, plot_text_generator, plot_count)
 
     describe_plot_segments(segments_per_plot, max_len)
 
@@ -129,7 +135,11 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--max-len", type=int, required=True)
     parser.add_argument("--dump-segments", default=False, action="store_true",
                         help="Dump segment bytes to a json file to be used by verify_segments.py")
+    parser.add_argument("--debug", default=False, action="store_true")
     args = parser.parse_args()
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     plots_dir = Path(args.plots_dir)
     if not plots_dir.exists():

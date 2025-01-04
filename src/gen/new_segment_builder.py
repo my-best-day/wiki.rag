@@ -1,7 +1,5 @@
 import logging
-from typing import List
-
-from gen.plots.plot import PlotData
+from typing import List, Optional
 
 from xutils.iterator_deque import IteratorDeque
 from xutils.sentence_utils import SentenceUtils
@@ -12,34 +10,35 @@ logger = logging.getLogger(__name__)
 class SegmentBuilder:
 
     @staticmethod
-    def segmentize_plots(
+    def segmentize_text_list(
         max_length: int,
-        plot_data_list: List[PlotData],
-        plot_reader: callable,
+        text_generator: List[bytes],
+        text_count: Optional[int] = None,
     ) -> List[List[bytes]]:
-        plot_segment_bytes_list_list = []
+        segments_per_text = []
         base_length = int(0.8 * max_length)
 
-        for plot_data in plot_data_list:
-            plot_segments = SegmentBuilder.segmentize_plot(base_length, plot_data, plot_reader)
-            plot_segment_bytes_list_list.append(plot_segments)
+        count_part = f" of {text_count}" if text_count else " of unknown"
 
-            if len(plot_segment_bytes_list_list) % 5000 == 0:
-                msg = f"processed {len(plot_segment_bytes_list_list)} / {len(plot_data_list)} plots"
+        for text in text_generator:
+            text_segments = SegmentBuilder.segmentize_text(base_length, text)
+            segments_per_text.append(text_segments)
+
+            if len(segments_per_text) % 5000 == 0:
+                msg = f"processed {len(segments_per_text)}{count_part} texts"
                 logger.debug(msg)
 
-        return plot_segment_bytes_list_list
+        return segments_per_text
 
     @staticmethod
-    def segmentize_plot(
+    def segmentize_text(
         base_length: int,
-        plot_data: PlotData,
-        plot_reader: callable,
+        text: bytes,
     ) -> List[bytes]:
 
-        balanced_length = SegmentBuilder.get_balanced_seg_length(plot_data.byte_length, base_length)
-        plot_bytes = plot_reader(plot_data)
-        sentences = SegmentBuilder.get_plot_sentences(plot_bytes)
+        text_length = len(text)
+        balanced_length = SegmentBuilder.get_balanced_seg_length(text_length, base_length)
+        sentences = SegmentBuilder.get_text_sentences(text)
         sentence_deque = IteratorDeque(iter(sentences))
         segments = []
         segment = b''
@@ -66,10 +65,10 @@ class SegmentBuilder:
         return balanced_length
 
     @staticmethod
-    def get_plot_sentences(plot_bytes: bytes) -> List[bytes]:
-        """Split plot bytes into sentences."""
+    def get_text_sentences(text: bytes) -> List[bytes]:
+        """Split text bytes into sentences."""
         delimiter = b'\n'
-        sentences = plot_bytes.split(delimiter)
+        sentences = text.split(delimiter)
         sentences = [sentence + delimiter for sentence in sentences if sentence]
         return sentences
 
