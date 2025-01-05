@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import List
 from pandas import DataFrame
 
-from gen.plots.plot import PlotData, Plot
+from gen.data.plot import PlotData, Plot
 from xutils.byte_reader import ByteReader
 
 logger = logging.getLogger(__name__)

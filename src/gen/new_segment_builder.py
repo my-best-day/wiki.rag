@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Iterator
 
 from xutils.iterator_deque import IteratorDeque
 from xutils.sentence_utils import SentenceUtils
@@ -10,18 +10,18 @@ logger = logging.getLogger(__name__)
 class SegmentBuilder:
 
     @staticmethod
-    def segmentize_text_list(
+    def segmentize_documents(
         max_length: int,
-        text_generator: List[bytes],
-        text_count: Optional[int] = None,
+        sentences_per_document: Iterator[bytes],
+        document_count: Optional[int] = None,
     ) -> List[List[bytes]]:
         segments_per_text = []
         base_length = int(0.8 * max_length)
 
-        count_part = f" of {text_count}" if text_count else " of unknown"
+        count_part = f" of {document_count}" if document_count else " of unknown"
 
-        for text in text_generator:
-            text_segments = SegmentBuilder.segmentize_text(base_length, text)
+        for sentences in sentences_per_document:
+            text_segments = SegmentBuilder.segmentize_document(base_length, sentences)
             segments_per_text.append(text_segments)
 
             if len(segments_per_text) % 5000 == 0:
@@ -31,21 +31,24 @@ class SegmentBuilder:
         return segments_per_text
 
     @staticmethod
-    def segmentize_text(
+    def segmentize_document(
         base_length: int,
-        text: bytes,
+        sentences: List[bytes],
+        split_sentence: callable = None,
     ) -> List[bytes]:
 
-        text_length = len(text)
+        split_sentence = split_sentence or SegmentBuilder.split_sentence
+
+        text_length = sum([len(sentence) for sentence in sentences])
         balanced_length = SegmentBuilder.get_balanced_seg_length(text_length, base_length)
-        sentences = SegmentBuilder.get_text_sentences(text)
         sentence_deque = IteratorDeque(iter(sentences))
         segments = []
         segment = b''
 
         for sentence in sentence_deque:
             if len(sentence) > base_length:
-                SegmentBuilder.handle_sentence_split(sentence, base_length, sentence_deque)
+                fragments = split_sentence(sentence, base_length)
+                sentence_deque.extendleft(fragments)
             elif SegmentBuilder.can_add_sentence(base_length, balanced_length, segment, sentence):
                 segment += sentence
             else:
@@ -65,24 +68,27 @@ class SegmentBuilder:
         return balanced_length
 
     @staticmethod
-    def get_text_sentences(text: bytes) -> List[bytes]:
-        """Split text bytes into sentences."""
+    def split_text(text: bytes) -> List[bytes]:
+        """
+        Split text into sentences, ensuring "".join(sentences) == text.
+        """
         delimiter = b'\n'
         sentences = text.split(delimiter)
         sentences = [sentence + delimiter for sentence in sentences if sentence]
         return sentences
 
     @staticmethod
-    def handle_sentence_split(
+    def split_sentence(
         sentence: bytes,
-        base_length: int,
-        sentence_deque: IteratorDeque
-    ) -> None:
-        """Split the sentence if it is too long."""
+        base_length: int
+    ) -> List[bytes]:
+        """
+        Split the sentence to (balanced) fragments fitting within base_length.
+        Expecting "".join(fragments) == sentence
+        """
         assert len(sentence) > base_length
         fragments = SentenceUtils.split_sentence(sentence, base_length)
-        sentence_deque.extendleft(fragments)
-        return fragments[0]
+        return fragments
 
     @staticmethod
     def is_sentence_too_long(base_length: int, sentence: str) -> bool:

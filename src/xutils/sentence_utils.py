@@ -1,7 +1,10 @@
+from typing import List
+
+
 class SentenceUtils:
 
     @staticmethod
-    def split_sentence(sentence, max_length):
+    def split_sentence(sentence: bytes, max_length: int) -> List[bytes]:
         """
         split a sentence into fragments of a target length
         attempting to avoid splitted words between fragments.

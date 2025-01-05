@@ -1,5 +1,5 @@
 import unittest
-from gen.plots.plot import Plot, PlotData
+from gen.data.plot import Plot, PlotData
 from ..element.byte_reader_tst import TestByteReader
 
 

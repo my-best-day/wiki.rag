@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 
 from xutils.byte_reader import ByteReader
-from gen.plots.plot import PlotData, Plot
+from gen.data.plot import PlotData, Plot
 
 logger = logging.getLogger(__name__)
 

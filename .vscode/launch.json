@@ -99,10 +99,10 @@
             ]
         },
         {
-            "name": "New Segment Builder",
+            "name": "Build Plots Segments",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/gen/new_segment_builder.py",
+            "program": "${workspaceFolder}/scripts/build_plot_segments.py",
             "console": "integratedTerminal",
             "args": [
                 "--plots-dir",

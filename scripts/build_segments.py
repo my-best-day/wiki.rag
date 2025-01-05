@@ -28,11 +28,11 @@ def main(args):
     max_len = args.max_len
     segment_builder = SegmentBuilder(max_len, articles)
     print(f"Built {len(segment_builder.segments)} segments")
-    # segments created segments = segment_builder.segments
 
-    segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
     store = Store()
-    store.store_elements(segment_path, Element.instances.values())
+    if args.store_elements:
+        segment_path = Path(f"{args.path_prefix}_{args.max_len}_segments.json")
+        store.store_elements(segment_path, Element.instances.values())
 
     flat_extended_segments: List[FlatExtendedSegment] = \
         [ext_seg.to_flat_extended_segment() for ext_seg in segment_builder.segments]
@@ -55,6 +55,8 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--text", type=str, help="Path to the text file")
     parser.add_argument("-pp", "--path-prefix", type=str, help="Prefix of element files")
     parser.add_argument("-m", "--max-len", type=int, help="Maximum segment length")
+    parser.add_argument("--store-elements", default=False, action="store_true",
+                        help="creates a <prefix>_<max-len>_segment.json file")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
     args = parser.parse_args()
 
