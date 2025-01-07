@@ -6,14 +6,14 @@ from gen.element.article import Article
 from gen.element.segment import Segment
 from gen.element.section import Section
 from gen.element.extended_segment import ExtendedSegment
-from gen.segment_builder import SegmentBuilder
+from xutils.overlap_setter import OverlapSetter
 
 marker = "no article"
 
-# Tests here are identical to those in test_overlap_setter.py
 
+# Tests here are identical to those in test_segment_builder_set_overlaps.py
 
-class TestSegmentBuilderSetOverlaps(unittest.TestCase):
+class TestOverlapSetter(unittest.TestCase):
     def setUp(self):
         header = Header(0, b'')
         self.article = Article(header)
@@ -25,15 +25,12 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def get_overlaps(self, max_len, before_element, target_element, after_element):
-        SegmentBuilder.set_overlaps(
+        return OverlapSetter.get_overlaps(
             max_len,
-            before_element,
-            target_element,
-            after_element
+            target_element.bytes,
+            before_element.bytes if before_element else None,
+            after_element.bytes if after_element else None
         )
-        before = target_element.before_overlap.bytes if target_element.before_overlap else None
-        after = target_element.after_overlap.bytes if target_element.after_overlap else None
-        return before, after
 
     def test_set_overlaps_enough_room(self):
         prev_sec = self._create(0, b'0123456789')
@@ -128,8 +125,8 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         next_sec = self._create(20, b'ABCDEFGHIJ')
 
         before, after = self.get_overlaps(10, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')
 
     def test_set_overlaps_first_segment(self):
         prev_sec = None
@@ -137,34 +134,34 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         next_sec = self._create(20, b'ABCDEFGHIJ')
 
         before, after = self.get_overlaps(20, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
+        self.assertEqual(before, b'')
         self.assertEqual(after, b'ABCD')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(18, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
+        self.assertEqual(before, b'')
         self.assertEqual(after, b'ABC')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(15, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
+        self.assertEqual(before, b'')
         self.assertEqual(after, b'ABC')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(14, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
+        self.assertEqual(before, b'')
         self.assertEqual(after, b'AB')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(12, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
+        self.assertEqual(before, b'')
         self.assertEqual(after, b'AB')
 
         curr_sec = self._create(10, b'abcdefghij')
 
         before, after = self.get_overlaps(10, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')
 
     def test_set_overlaps_last_segment(self):
         prev_sec = self._create(0, b'0123456789')
@@ -173,33 +170,33 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
 
         before, after = self.get_overlaps(20, prev_sec, curr_sec, next_sec)
         self.assertEqual(before, b'6789')
-        self.assertIsNone(after)
+        self.assertEqual(after, b'')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(18, prev_sec, curr_sec, next_sec)
         self.assertEqual(before, b'789')
-        self.assertIsNone(after)
+        self.assertEqual(after, b'')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(15, prev_sec, curr_sec, next_sec)
         self.assertEqual(before, b'789')
-        self.assertIsNone(after)
+        self.assertEqual(after, b'')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(14, prev_sec, curr_sec, next_sec)
         self.assertEqual(before, b'89')
-        self.assertIsNone(after)
+        self.assertEqual(after, b'')
 
         curr_sec = self._create(10, b'abcdefghij')
         before, after = self.get_overlaps(12, prev_sec, curr_sec, next_sec)
         self.assertEqual(before, b'89')
-        self.assertIsNone(after)
+        self.assertEqual(after, b'')
 
         curr_sec = self._create(10, b'abcdefghij')
 
         before, after = self.get_overlaps(10, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')
 
     def test_too_long_for_overlap(self):
         prev_sec = self._create(0, b'0123456789')
@@ -207,8 +204,8 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         next_sec = self._create(20, b'ABCDEFGHIJ')
 
         before, after = self.get_overlaps(18, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')
 
     def test_too_long_for_overlap_before(self):
         prev_sec = self._create(0, b'0123456789')
@@ -216,8 +213,8 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         next_sec = None
 
         before, after = self.get_overlaps(18, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')
 
     def test_too_long_for_overlap_after(self):
         prev_sec = None
@@ -225,5 +222,5 @@ class TestSegmentBuilderSetOverlaps(unittest.TestCase):
         next_sec = self._create(20, b'ABCDEFGHIJ')
 
         before, after = self.get_overlaps(18, prev_sec, curr_sec, next_sec)
-        self.assertIsNone(before)
-        self.assertIsNone(after)
+        self.assertEqual(before, b'')
+        self.assertEqual(after, b'')

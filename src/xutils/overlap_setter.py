@@ -8,38 +8,6 @@ opt_bytes_or_str = Union[bytes_or_str, None]
 class OverlapSetter:
 
     @staticmethod
-    def add_overlaps(
-        max_len: int,
-        target_seg_text: bytes_or_str,
-        prev_seg_text: opt_bytes_or_str,
-        next_seg_text: opt_bytes_or_str
-    ) -> bytes_or_str:
-        """
-        Compute overlaps for the target segment and concatenate them with the segment text.
-
-        Args:
-            max_len (int): The maximum allowed length for the combined text.
-            target_seg_text (Union[str, bytes]): The target segment text.
-            prev_seg_text (opt_bytes_or_str): The previous segment text, if any.
-            next_seg_text (opt_bytes_or_str): The next segment text, if any.
-
-        Returns:
-            bytes_or_str: The resulting text with the overlaps from the previous and next segments
-            added before and after the target segment.
-        """
-
-        before_overlap_text, after_overlap_text = OverlapSetter.get_overlaps(
-            max_len,
-            target_seg_text,
-            prev_seg_text,
-            next_seg_text
-        )
-
-        result = before_overlap_text + target_seg_text + after_overlap_text
-
-        return result
-
-    @staticmethod
     def get_overlaps(
         max_len: int,
         target_seg_text: bytes_or_str,
@@ -99,7 +67,7 @@ class OverlapSetter:
 
         target_seg_len = len(target_seg_text)
         if target_seg_len >= max_len:
-            return None, None
+            return b'', b''
 
         prev_seg_len = len(prev_seg_text) if prev_seg_text else 0
         next_seg_len = len(next_seg_text) if next_seg_text else 0
