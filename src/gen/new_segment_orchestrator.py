@@ -9,13 +9,13 @@ In essence:
 5. save the segment records to a csv file
 """
 import json
-import random
 import logging
 import pandas as pd
 from pathlib import Path
 from typing import List, Iterator, Optional
 
 from xutils.byte_reader import ByteReader
+from gen.segment_verifier import SegmentVerifier
 from gen.data.segment_record import SegmentRecord
 from gen.new_segment_builder import SegmentBuilder
 from gen.segment_overlap_setter import SegmentOverlapSetter
@@ -34,9 +34,13 @@ class SegmentOrchestrator:
         text_file_path: Optional[Path],
         segment_dump_path: Optional[Path] = None,
         document_count: Optional[int] = None,
-    ):
+    ) -> None:
         segments_per_document = SegmentBuilder.segmentize_documents(
-            max_len, sentences_per_document, document_count)
+            max_len,
+            sentences_per_document,
+            split_sentence=None,
+            document_count=document_count
+        )
 
         SegmentOrchestrator.describe_segments(segments_per_document, max_len)
 
@@ -100,36 +104,14 @@ class SegmentOrchestrator:
         segments_per_document: List[List[bytes]],
         segment_records: List[SegmentRecord]
     ):
-        sample_records = []
-        for record in segment_records:
-            if record[2] == 0:
-                sample_records.append(record)
-                if len(sample_records) >= 20:
-                    break
-        random_sample = random.sample(segment_records, 20)
-        sample_records.extend(random_sample)
 
-        for (segment_ind, doc_ind, rel_ind, offset, length) in sample_records:
-            reader_bytes = byte_reader.read_bytes(offset, length)
-            document_segments = segments_per_document[doc_ind]
-            try:
-                segment_bytes = document_segments[rel_ind]
-            except IndexError:
-                logger.error("IndexError: segment %s of document %s rel index %s",
-                             segment_ind, doc_ind, rel_ind)
-                raise
-            is_match = segment_bytes == reader_bytes
-            if is_match:
-                logger.debug("+ segment %s of document %s rel index %s match",
-                             segment_ind, doc_ind, rel_ind)
-            else:
-                logger.info("""
-    - segment %s of document %s rel index %s does not match
-
-    expected: %s
-
-    actual  : %s
-                """, segment_ind, doc_ind, rel_ind, segment_bytes, reader_bytes)
+        SegmentVerifier.verify(
+            byte_reader,
+            segment_records,
+            segments_per_document,
+            mode="all",
+            n=-10
+        )
 
     @staticmethod
     def save_segment_records(

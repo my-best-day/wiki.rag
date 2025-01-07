@@ -1,9 +1,13 @@
-import argparse
-import logging
 import time
+import logging
+import argparse
 from pathlib import Path
+from typing import List
+
 from gen.element.store import Store
 from gen.element.element import Element
+from gen.element.article import Article
+from gen.element.flat.flat_article import FlatArticle
 from gen.index_builder import IndexBuilder
 from gen.element_validator import ElementValidator
 
@@ -26,6 +30,12 @@ def main(args):
     element_file_path = Path(args.path_prefix + "_elements.json")
     element_store = Store()
     element_store.store_elements(element_file_path, Element.instances.values())
+
+    flat_article_list: List[FlatArticle] = \
+        [article.to_flat_article() for article in Element.instances.values()
+         if isinstance(article, Article)]
+    flat_article_path = Path(f"{args.path_prefix}_flat_articles.json")
+    element_store.store_elements(flat_article_path, flat_article_list)
 
 
 if __name__ == '__main__':

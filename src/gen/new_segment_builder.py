@@ -13,6 +13,7 @@ class SegmentBuilder:
     def segmentize_documents(
         max_length: int,
         sentences_per_document: Iterator[bytes],
+        split_sentence: callable = None,
         document_count: Optional[int] = None,
     ) -> List[List[bytes]]:
         segments_per_text = []
@@ -21,7 +22,11 @@ class SegmentBuilder:
         count_part = f" of {document_count}" if document_count else " of unknown"
 
         for sentences in sentences_per_document:
-            text_segments = SegmentBuilder.segmentize_document(base_length, sentences)
+            text_segments = SegmentBuilder.segmentize_document(
+                base_length,
+                sentences,
+                split_sentence
+            )
             segments_per_text.append(text_segments)
 
             if len(segments_per_text) % 5000 == 0:
@@ -66,16 +71,6 @@ class SegmentBuilder:
         segment_count = (byte_length + base_length - 1) // base_length
         balanced_length = byte_length // segment_count if segment_count else base_length
         return balanced_length
-
-    @staticmethod
-    def split_text(text: bytes) -> List[bytes]:
-        """
-        Split text into sentences, ensuring "".join(sentences) == text.
-        """
-        delimiter = b'\n'
-        sentences = text.split(delimiter)
-        sentences = [sentence + delimiter for sentence in sentences if sentence]
-        return sentences
 
     @staticmethod
     def split_sentence(

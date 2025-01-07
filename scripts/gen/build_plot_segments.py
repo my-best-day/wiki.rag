@@ -5,17 +5,28 @@ import logging
 import argparse
 import pandas as pd
 from pathlib import Path
+from typing import List
 
 from xutils.byte_reader import ByteReader
 from gen.new_segment_orchestrator import SegmentOrchestrator
-from gen.new_segment_builder import SegmentBuilder
 
 
 def get_plot_sentences_generator(plot_data_list, byte_reader):
     for plot_data in plot_data_list:
         text = byte_reader.read_bytes(plot_data.offset, plot_data.byte_length)
-        sentences = SegmentBuilder.split_text(text)
+        sentences = split_plot_text(text)
         yield sentences
+
+
+@staticmethod
+def split_plot_text(text: bytes) -> List[bytes]:
+    """
+    Split text into sentences, ensuring "".join(sentences) == text.
+    """
+    delimiter = b'\n'
+    sentences = text.split(delimiter)
+    sentences = [sentence + delimiter for sentence in sentences if sentence]
+    return sentences
 
 
 def parse_args() -> argparse.Namespace:

@@ -13,9 +13,9 @@
             "console": "integratedTerminal",
             "args": [
                 "-t",
-                "ignore/wiki.test.tokens",
+                "ignore/wiki.tiny.tokens",
                 "-pp",
-                "data/test",
+                "data/tiny",
             ]
         },
         {

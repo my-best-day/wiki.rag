@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 
@@ -43,3 +44,73 @@ class SentenceUtils:
             fragments[i] = fragment[j:]
 
         return fragments
+
+    @staticmethod
+    def split_bytes_into_sentences(text: bytes) -> list[bytes]:
+        """
+        Split the text into sentences (handles bytes instead of strings).
+
+        If the text contains substrings "<prd>" or "<stop>", they would lead
+        to incorrect splitting because they are used as markers for splitting.
+
+        source: https://stackoverflow.com/questions/4576077/how-can-i-split-a-text-into-sentences
+
+        Args:
+            text (bytes): Text to be split into sentences.
+
+        Returns:
+            list[bytes]: List of sentences as bytes.
+        """
+        PRD = b'<prd>'
+
+        def sub(pattern, repl, text):
+            return re.sub(pattern, repl, text)
+
+        # prefixes
+        text = sub(br'(Mr|St|Mrs|Ms|Dr)\.(?=\b)', br'\1<prd>', text)
+
+        # sub/domains (.com |google.com | io.google.com, etc.)
+        text = sub(
+            br'\b(?:[a-z0-9.-]+\.)+(com|net|org|io|gov|edu|me)\b',
+            lambda m: m.group(0).replace('.', PRD),
+            text
+        )
+
+        # decimal point
+        text = sub(
+            br'((?:[0-9])\.)+([0-9])',
+            lambda m: m.group(0).replace('.', PRD),
+            text
+        )
+
+        # Ph.D and Ph.D.
+        text = sub(rb'\bPh\.D\.', b'Ph<prd>D<prd>', text)  # okay
+        text = sub(rb'\bPh\.D\b', b'Ph<prd>D', text)  # okay
+
+        # abbreviations and initials. e.g. John F. Kennedy, U.S. is best, the u.s.s.r. is lit
+        text = sub(
+            rb'(\b)((?:[A-Za-z]\.)+)(\s)',
+            lambda m: m.group(1) + m.group(2).replace(b'.', PRD) + m.group(3),
+            text
+        )
+
+        # suffixes
+        text = sub(br'(\s)(Inc|Ltd|Jr|Sr|Co)\.', br'\1\2<prd>', text)
+
+        # get .!? out of the quotes
+        # \xe2\x80\x9d is the closing (windows) double quote
+        text = sub(br'([.!?])(["\xe2\x80\x9d])', br'\2\1', text)
+
+        # multiple dots
+        text = sub(br'(\.+)\.', lambda match: PRD * len(match.group(1)) + b'.<stop>', text)
+
+        # remaining dots are sentence terminators
+        text = sub(br'([.?!])', br'\1<stop>', text)
+
+        # bring back the dots
+        text = sub(PRD, b'.', text)
+
+        # split the text into sentences
+        sentences = text.split(b'<stop>')
+
+        return sentences
