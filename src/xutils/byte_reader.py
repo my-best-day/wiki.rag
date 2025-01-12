@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import Union
 
 
 class ByteReader:
     """
     Reads a length of bytes from a file at a given offset.
     """
-    def __init__(self, path: Path):
+    def __init__(self, path: Union[Path, str]):
         self.path = path
         self._file = None
 

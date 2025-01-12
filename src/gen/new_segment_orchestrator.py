@@ -35,6 +35,29 @@ class SegmentOrchestrator:
         segment_dump_path: Optional[Path] = None,
         document_count: Optional[int] = None,
     ) -> None:
+        """
+        Builds segments from the provided sentences, sets overlaps between segments,
+        and optionally performs various operations such as dumping segments to a file,
+        verifying segments against the original text, and saving segment records to a CSV file.
+
+        Parameters:
+        max_len (int): The maximum length of each segment.
+        sentences_per_document (Iterator[List[bytes]]): An iterator that yields lists of byte
+            strings, where each list represents the sentences of a document.
+        document_offsets (List[int]): A list of offsets for each document, indicating where each
+            document starts in the original text.
+        segment_file_path (Path): The file path where the segment records will be saved.
+        text_file_path (Optional[Path]): The file path of the original text for verification
+            purposes.
+        segment_dump_path (Optional[Path]): The file path where raw segments will be dumped for
+            debugging.
+        document_count (Optional[int]): The number of documents to process; if None, all documents
+            will be processed.
+
+        Returns:
+        None: This method does not return any value. It performs operations that affect the file
+        system and logs information about the segment building process.
+        """
         segments_per_document = SegmentBuilder.segmentize_documents(
             max_len,
             sentences_per_document,

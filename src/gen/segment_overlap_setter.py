@@ -51,7 +51,7 @@ class SegmentOverlapSetter:
         base_segment_index: int,
         document_index: int,
         base_offset: int,
-        segments
+        segments: List[bytes]
     ) -> Tuple[List[SegmentRecord], List[bytes]]:
         """
         Set overlaps on a list of related segments.
