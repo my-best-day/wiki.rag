@@ -12,7 +12,7 @@ from gen.element.flat.flat_article import FlatArticle
 
 
 from xutils.sentence_utils import SentenceUtils
-from gen.new_segment_orchestrator import SegmentOrchestrator
+from gen.segment_orchestrator import SegmentOrchestrator
 
 
 def load_flat_articles(

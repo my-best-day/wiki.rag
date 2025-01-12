@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List
 
 from xutils.byte_reader import ByteReader
-from gen.new_segment_orchestrator import SegmentOrchestrator
+from gen.segment_orchestrator import SegmentOrchestrator
 
 
 def get_plot_sentences_generator(plot_data_list, byte_reader):
