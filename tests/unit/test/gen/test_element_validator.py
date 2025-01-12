@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from gen.element.section import Section
 from gen.element_validator import ElementValidator
 # relative import
-from .element.byte_reader_tst import TestByteReader
+from ..xutils.byte_reader_tst import TestByteReader
 
 
 class TestElementValidator(unittest.TestCase):

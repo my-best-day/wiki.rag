@@ -13,7 +13,7 @@ from gen.element.paragraph import Paragraph
 from gen.element.list_container import ListContainer
 from gen.element.extended_segment import ExtendedSegment
 
-from .byte_reader_tst import TestByteReader
+from ...xutils.byte_reader_tst import TestByteReader
 
 
 class TestElement(unittest.TestCase):

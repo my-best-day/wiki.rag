@@ -1,6 +1,6 @@
 import unittest
 from gen.data.plot import Plot, PlotData
-from ..element.byte_reader_tst import TestByteReader
+from ...xutils.byte_reader_tst import TestByteReader
 
 
 class TestPlot(unittest.TestCase):

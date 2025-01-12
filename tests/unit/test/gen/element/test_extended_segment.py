@@ -10,7 +10,7 @@ from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 
 from .common_container_tests import common_container_tests
 
-from .byte_reader_tst import TestByteReader
+from ...xutils.byte_reader_tst import TestByteReader
 
 
 class TestExtendedSegment(unittest.TestCase):

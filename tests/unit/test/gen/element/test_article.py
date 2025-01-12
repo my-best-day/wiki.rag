@@ -6,7 +6,7 @@ from gen.element.flat.flat_article import FlatArticle
 from gen.element.header import Header
 from gen.element.element import Element
 
-from .byte_reader_tst import TestByteReader
+from ...xutils.byte_reader_tst import TestByteReader
 
 
 class TestArticle(unittest.TestCase):

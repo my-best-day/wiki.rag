@@ -10,7 +10,7 @@ from gen.element.element import Element
 from gen.element.section import Section
 from gen.element.segment import Segment
 from gen.element.extended_segment import ExtendedSegment
-from .byte_reader_tst import TestByteReader
+from ...xutils.byte_reader_tst import TestByteReader
 
 
 class TestStore(unittest.TestCase):
