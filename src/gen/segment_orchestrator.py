@@ -17,7 +17,7 @@ from typing import List, Iterator, Optional
 from xutils.byte_reader import ByteReader
 from gen.segment_verifier import SegmentVerifier
 from gen.data.segment_record import SegmentRecord
-from gen.new_segment_builder import SegmentBuilder
+from gen.segment_builder import SegmentBuilder
 from gen.segment_overlap_setter import SegmentOverlapSetter
 
 logger = logging.getLogger(__name__)
