@@ -1,3 +1,10 @@
+2025-01-10
+- unittest coverage
+- encode plots and wiki
+- search
+- plan forward
+- look for a streaming / updatedable case
+
 2025-01-03
 
 New Segment Builder:

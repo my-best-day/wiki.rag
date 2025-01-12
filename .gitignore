@@ -1,4 +1,5 @@
 # files to be ignored
+**/deleteme*
 **/*.pyc
 .ipynb_checkpoints
 .env
