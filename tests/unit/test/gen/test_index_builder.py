@@ -2,13 +2,13 @@ import unittest
 from unittest.mock import Mock, patch, mock_open
 from gen.element.header import Header
 from gen.element.article import Article
-from gen.index_builder import IndexBuilder, Chunk
+from gen.index_builder_wiki import IndexBuilderWiki, Chunk
 
 
 class TestIndexBuilder(unittest.TestCase):
     def test_init(self):
         args = Mock()
-        builder = IndexBuilder(args)
+        builder = IndexBuilderWiki(args)
         self.assertIs(builder.args, args)
         self.assertEqual(builder.articles, [])
 
@@ -26,7 +26,7 @@ class TestIndexBuilder(unittest.TestCase):
 
         mock_process_chunk.side_effect = [b'hij', b'89', b'']
 
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         builder.build_index()
 
         self.assertEqual(mock_process_chunk.call_count, 3)
@@ -48,7 +48,7 @@ class TestIndexBuilder(unittest.TestCase):
         # process chunk until the end of the chunk
         # return the remainder of the text that belongs to the next chunk
 
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         out_remainder = builder.process_chunk(chunk)
 
         mock_handle_header.assert_called_once_with(0, b' = Header 1 =\n')
@@ -60,7 +60,7 @@ class TestIndexBuilder(unittest.TestCase):
     @patch('gen.index_builder.IndexBuilder.handle_header')
     def test_exhausted_bytes_in_chunk(self, mock_handle_header, mock_handle_paragraph):
         chunk = Chunk(0, b' = Header 1 =\n')
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         out_remainder = builder.process_chunk(chunk)
 
         mock_handle_header.assert_called_once_with(0, b' = Header 1 =\n')
@@ -71,7 +71,7 @@ class TestIndexBuilder(unittest.TestCase):
     @patch('gen.index_builder.IndexBuilder.handle_header')
     def test_no_match(self, mock_handle_header, mock_handle_paragraph):
         chunk = Chunk(0, b'there is no complete paragraph here')
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         out_remainder = builder.process_chunk(chunk)
 
         mock_handle_header.assert_not_called()
@@ -81,7 +81,7 @@ class TestIndexBuilder(unittest.TestCase):
     def test_handle_header(self):
         # an article is created with the header
         # forward is called with the header
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         builder.handle_header(12, b' = Header 1 =\n')
         self.assertEqual(len(builder.articles), 1)
         self.assertIsInstance(builder.articles[0], Article)
@@ -94,7 +94,7 @@ class TestIndexBuilder(unittest.TestCase):
     def test_handle_paragraph(self):
         # test that paragraph is created, associated with an article
         # for the article
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         builder.articles.append(Article(Header(12, b' = Header 1 =\n')))
         builder.handle_paragraph(26, b'Paragraph X\n')
         article0 = builder.articles[0]
@@ -110,7 +110,7 @@ class TestIndexBuilder(unittest.TestCase):
         mock_open_func.return_value.read = Mock(side_effect=[b"chunk1", b"chunk2", b"chun", b""])
         mock_open_func.return_value.tell = Mock(side_effect=[0, 6, 12, 16])
 
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         with patch.object(builder, 'CHUNK_SIZE_BYTES', 6):
             chunks = list(builder.read_chunks())
         self.assertEqual(len(chunks), 3)
@@ -128,7 +128,7 @@ class TestIndexBuilder(unittest.TestCase):
             Mock(side_effect=[b"chunk\xE2", b"\x82\xACchk2", b"chun", b""])
         mock_open_func.return_value.tell = Mock(side_effect=[0, 6, 12, 16])
 
-        builder = IndexBuilder(Mock())
+        builder = IndexBuilderWiki(Mock())
         with patch.object(builder, 'CHUNK_SIZE_BYTES', 6):
             chunks = list(builder.read_chunks())
         self.assertEqual(len(chunks), 3)

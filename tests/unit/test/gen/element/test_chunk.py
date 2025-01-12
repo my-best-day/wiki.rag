@@ -1,5 +1,5 @@
 import unittest
-from gen.index_builder import Chunk
+from gen.index_builder_wiki import Chunk
 
 
 class TestChunk(unittest.TestCase):

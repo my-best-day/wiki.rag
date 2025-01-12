@@ -8,7 +8,7 @@ from gen.element.store import Store
 from gen.element.element import Element
 from gen.element.article import Article
 from gen.element.flat.flat_article import FlatArticle
-from gen.index_builder import IndexBuilder
+from gen.index_builder_wiki import IndexBuilderWiki
 from gen.element_validator import ElementValidator
 
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
-    builder: IndexBuilder = IndexBuilder(args)
+    builder: IndexBuilderWiki = IndexBuilderWiki(args)
 
     validator: ElementValidator = ElementValidator(args)
     validator.validate_elements(Element.instances.values())

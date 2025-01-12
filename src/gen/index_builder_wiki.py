@@ -65,7 +65,7 @@ class Chunk:
         assert self._offset >= 0, 'offset cannot be negative'
 
 
-class IndexBuilder:
+class IndexBuilderWiki:
     CHUNK_SIZE_BYTES = 2 ** 15  # 32KB
 
     # looks for lines that looks like ' = Heading 1 = '
