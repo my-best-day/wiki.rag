@@ -68,6 +68,17 @@ class TestExtendedSegment(unittest.TestCase):
         self.assertEqual(self.ext_segment.bytes,
                          b'end of previous segment. hello world. newstart of next segment. ')
 
+    def test_element_count(self):
+        self.ext_segment: ExtendedSegment = ExtendedSegment(Segment(self.article, self.section1))
+        self.assertEqual(self.ext_segment.element_count, 1)
+        self.ext_segment.before_overlap = self.before_overlap
+        self.assertEqual(self.ext_segment.element_count, 2)
+        # we count the segment of the ext segment is a single element
+        self.ext_segment.append_element(self.section2)
+        self.assertEqual(self.ext_segment.element_count, 2)
+        self.ext_segment.after_overlap = self.after_overlap
+        self.assertEqual(self.ext_segment.element_count, 3)
+
     def test_to_flat_extended_segment(self):
         byte_reader = TestByteReader.from_element(self.ext_segment)
         flat = self.ext_segment.to_flat_extended_segment()
