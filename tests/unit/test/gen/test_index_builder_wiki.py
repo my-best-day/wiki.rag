@@ -5,15 +5,15 @@ from gen.element.article import Article
 from gen.index_builder_wiki import IndexBuilderWiki, Chunk
 
 
-class TestIndexBuilder(unittest.TestCase):
+class TestIndexBuilderWiki(unittest.TestCase):
     def test_init(self):
         args = Mock()
         builder = IndexBuilderWiki(args)
         self.assertIs(builder.args, args)
         self.assertEqual(builder.articles, [])
 
-    @patch('gen.index_builder.IndexBuilder.process_chunk')
-    @patch('gen.index_builder.IndexBuilder.read_chunks')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.process_chunk')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.read_chunks')
     def test_build_index(self, mock_read_chunks, mock_process_chunk):
         # iterate over all chunks
         # remainder is passed from chunk to chunk
@@ -39,8 +39,8 @@ class TestIndexBuilder(unittest.TestCase):
         mock_process_chunk.assert_any_call(chunk2)
         mock_process_chunk.assert_any_call(chunk3)
 
-    @patch('gen.index_builder.IndexBuilder.handle_paragraph')
-    @patch('gen.index_builder.IndexBuilder.handle_header')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_paragraph')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_header')
     def test_process_chunk(self, mock_handle_header, mock_handle_paragraph):
         # header, paragraph1, paragraph2 are processed, Para is returned as remainder
         # test offsets
@@ -56,8 +56,8 @@ class TestIndexBuilder(unittest.TestCase):
         mock_handle_paragraph.assert_any_call(26, b'Paragraph 2\n')
         self.assertEqual(out_remainder, b'Para')
 
-    @patch('gen.index_builder.IndexBuilder.handle_paragraph')
-    @patch('gen.index_builder.IndexBuilder.handle_header')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_paragraph')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_header')
     def test_exhausted_bytes_in_chunk(self, mock_handle_header, mock_handle_paragraph):
         chunk = Chunk(0, b' = Header 1 =\n')
         builder = IndexBuilderWiki(Mock())
@@ -67,8 +67,8 @@ class TestIndexBuilder(unittest.TestCase):
         mock_handle_paragraph.assert_not_called()
         self.assertEqual(out_remainder, b'')
 
-    @patch('gen.index_builder.IndexBuilder.handle_paragraph')
-    @patch('gen.index_builder.IndexBuilder.handle_header')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_paragraph')
+    @patch('gen.index_builder_wiki.IndexBuilderWiki.handle_header')
     def test_no_match(self, mock_handle_header, mock_handle_paragraph):
         chunk = Chunk(0, b'there is no complete paragraph here')
         builder = IndexBuilderWiki(Mock())

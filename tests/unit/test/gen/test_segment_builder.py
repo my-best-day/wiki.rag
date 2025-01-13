@@ -1,126 +1,179 @@
-# cSpell:disable
-
 import unittest
+from unittest.mock import patch
+
 from gen.segment_builder import SegmentBuilder
-from gen.element.header import Header
-from gen.element.segment import Segment
-from gen.element.section import Section
-from gen.element.article import Article
-from gen.element.fragment import Fragment
-from gen.element.paragraph import Paragraph
-from gen.element.extended_segment import ExtendedSegment
-
-# TODO: add test for section which is 0.8 of the max_len
-
-marker = "no article"
+from xutils.sentence_utils import SentenceUtils
 
 
 class TestSegmentBuilder(unittest.TestCase):
 
     def setUp(self):
-        self.header = Header(0, b'')
-        self.article = Article(self.header)
-        return super().setUp()
+        self.sentences_per_document = [
+            [b'This is a test sentence 11.', b'This is another test sentence 12.'],
+            [b'Test sentence 21.', b'Another test sentence 22.'],
+            [b'single sentence 31.'],
+            [b'Sentence 41.', b'Sentence 42.'],
+        ]
 
-    def _create(self, byte_length: int, _bytes: bytes,
-                article: Article = marker) -> ExtendedSegment:
-        if article is marker:
-            article = self.article
-        return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
+    def test_log_interval_override(self):
+        with patch.object(SegmentBuilder, 'LOG_INTERVAL', 2):
+            self.assertEqual(SegmentBuilder.LOG_INTERVAL, 2)  # Ensure override works
 
-    def test_basic(self):
-        """three short articles -> three segments"""
+    @patch.object(SegmentBuilder, 'LOG_INTERVAL', 2)
+    @patch.object(SegmentBuilder, 'segmentize_document')
+    def test_segmentize_documents(self, mock_segmentize_document):
 
-        article1 = Article(Header(0, b'Article 1'))
-        Paragraph(article1.header.byte_length, b'Paragraph 1', article1)
+        max_length = 30
+        sentences_per_document = self.sentences_per_document
 
-        article2 = Article(Header(0, b'Article 2'))
-        Paragraph(article2.header.byte_length, b'Paragraph 2', article2)
+        mock_segmentize_document.side_effect = [
+            [b'This is a test sentence 11.', b'This is another test sentence 12.'],
+            [b'Test sentence 21.', b'Another test sentence 22.'],
+            [b'single sentence 31.'],
+            [b'Sentence 41.Sentence 42.'],
+        ]
 
-        article3 = Article(Header(0, b'Article 3'))
-        Paragraph(article3.header.byte_length, b'Paragraph 3', article3)
+        segments_per_document = SegmentBuilder.segmentize_documents(
+            max_length,
+            sentences_per_document
+        )
 
-        articles = [article1, article2, article3]
+        self.assertEqual(segments_per_document, [
+            [b'This is a test sentence 11.', b'This is another test sentence 12.'],
+            [b'Test sentence 21.', b'Another test sentence 22.'],
+            [b'single sentence 31.'],
+            [b'Sentence 41.Sentence 42.'],
+        ])
 
-        builder = SegmentBuilder(max_len=30, articles=articles)
+    @patch.object(SegmentBuilder, 'split_sentence')
+    @patch.object(SegmentBuilder, 'get_balanced_seg_length')
+    @patch.object(SegmentBuilder, 'can_add_sentence')
+    def test_segmentize_document(
+        self,
+        mock_can_add_sentence,
+        mock_get_balanced_seg_length,
+        mock_split_sentence,
+    ):
+        base_length = 25
+        sentences = [
+            b'This is a test sentence 11.',   # 27
+            b'Short ',
+            b'sentence 12.'  # 19
+        ]
+        mock_get_balanced_seg_length.return_value = 23
+        mock_split_sentence.return_value = [b'This is a test ', b'sentence 11.']
+        mock_can_add_sentence.side_effect = [True, False, True, False]
+        expected_segments = [b'This is a test ', b'sentence 11.Short ', b'sentence 12.']
+        segments = SegmentBuilder.segmentize_document(
+            base_length,
+            sentences
+        )
+        self.assertEqual(segments, expected_segments)
 
-        self.assertEqual(len(builder.segments), 3)
-        self.assertEqual(builder.segments[0].bytes, b'Article 1Paragraph 1')
-        self.assertEqual(builder.segments[1].bytes, b'Article 2Paragraph 2')
-        self.assertEqual(builder.segments[2].bytes, b'Article 3Paragraph 3')
+    @patch.object(SegmentBuilder, 'split_sentence')
+    @patch.object(SegmentBuilder, 'get_balanced_seg_length')
+    @patch.object(SegmentBuilder, 'can_add_sentence')
+    def test_segmentize_document_custom_split_sentence(
+        self,
+        mock_can_add_sentence,
+        mock_get_balanced_seg_length,
+        mock_split_sentence,
+    ):
+        base_length = 25
+        sentences = [
+            b'This is a test sentence 11.',   # 27
+            b'Short ',
+            b'sentence 12.'  # 19
+        ]
+        mock_get_balanced_seg_length.return_value = 23
+        mock_split_sentence.return_value = [b'This is a test ', b'sentence 11.']
+        mock_can_add_sentence.side_effect = [True, False, True, False]
+        expected_segments = [b'This is a test ', b'sentence 11.Short ', b'sentence 12.']
+        segments = SegmentBuilder.segmentize_document(
+            base_length,
+            sentences,
+            split_sentence=mock_split_sentence
+        )
+        self.assertEqual(segments, expected_segments)
 
-        # test empty segment is ignored
-        segment = Segment(article1, Section(0, b''))
-        extended_segment = ExtendedSegment(segment)
-        builder.segment = extended_segment
-        before_length = len(builder.segments)
-        builder.close_segment_start_segment(article1)
-        self.assertEqual(len(builder.segments), before_length)
+    @patch.object(SegmentBuilder, 'split_sentence')
+    @patch.object(SegmentBuilder, 'get_balanced_seg_length')
+    @patch.object(SegmentBuilder, 'can_add_sentence')
+    def test_segmentize_document_custom_split_empty(
+        self,
+        mock_can_add_sentence,
+        mock_get_balanced_seg_length,
+        mock_split_sentence,
+    ):
+        base_length = 25
+        sentences = []
+        mock_get_balanced_seg_length.return_value = 25
+        expected_segments = []
+        segments = SegmentBuilder.segmentize_document(
+            base_length,
+            sentences,
+            split_sentence=mock_split_sentence
+        )
+        mock_split_sentence.assert_not_called()
+        mock_can_add_sentence.assert_not_called()
+        self.assertEqual(segments, expected_segments)
 
-        # test last empty segment is ignored
-        segment = Segment(article1, Section(0, b''))
-        extended_segment = ExtendedSegment(segment)
-        builder.segment = extended_segment
-        before_length = len(builder.segments)
-        builder.close_last_segment()
-        self.assertEqual(len(builder.segments), before_length)
+    def test_get_balanced_seg_length(self):
+        # 100 / 24 => 4, 100 / 4 => 25
+        balanced = SegmentBuilder.get_balanced_seg_length(100, 25)
+        self.assertEqual(balanced, 25)
 
-    def test_long_first_section(self):
-        """one long article -> two segments"""
+        # 99 / 25 => 4, 99 / 4 => 24.75 => 25
+        balanced = SegmentBuilder.get_balanced_seg_length(99, 25)
+        self.assertEqual(balanced, 25)
 
-        h = b'012345678901234567890123456789'
-        p = b'abcdefghijklmnopqrstuvwxyzABCD'
-        article = Article(Header(0, h))
-        Paragraph(article.header.byte_length, p, article)
+        # 77 / 25 => 4, 77 / 4 => 19.25 => 20
+        balanced = SegmentBuilder.get_balanced_seg_length(77, 25)
+        self.assertEqual(balanced, 20)
 
-        max_len = int(len(h) / 1.8)  # 16 is 30 / 1.8
-        builder = SegmentBuilder(max_len=max_len, articles=[article])
+        # 76 / 25 => 4, 76 / 4 => 19
+        balanced = SegmentBuilder.get_balanced_seg_length(76, 25)
+        self.assertEqual(balanced, 19)
 
-        # we start with the header '012345678901234567890123456789'
-        # which we split into '012345678901' |12| and '234567890...9' |18|
-        # first fragment becomes the first segment
-        # there is no room for the next fragment, so we close the segment
-        # second framgment becomes a first section and since it is long,
-        # we split it into '234567890' |9| and '123456789' |9|
-        # first section becomes a second segment
-        # there is no room for the next section, so we close the segment
-        # after that, we set overlaps for the first segment, take '234'
-        # and 1st segment becomes '012345678901234'
-        self.assertEqual(builder.segments[0].segment.bytes, b'012345678901')
-        self.assertEqual(builder.segments[0].bytes, b'012345678901234')
+        # 75 / 25 => 3, 75 / 3 => 25
+        balanced = SegmentBuilder.get_balanced_seg_length(75, 25)
+        self.assertEqual(balanced, 25)
 
-        # now we have 1st segment '012345678901' + '234'
-        # second segment is '234567890'
-        # current segment section is '123456789'
-        # current section is 'abc...BCD'
-        # there is no room for it, we close the current segment
-        # room is 3 -> before overlap is '901', after overlap is '123'
-        self.assertEqual(builder.segments[1].segment.bytes, b'234567890')   # 9
-        self.assertEqual(builder.segments[1].before_overlap.bytes, b'901')  # 3
-        self.assertIsInstance(builder.segments[1].after_overlap, Fragment)
-        self.assertEqual(builder.segments[1].before_overlap.offset,
-                         builder.segments[0].segment.offset + 9)
-        self.assertEqual(builder.segments[1].after_overlap.bytes, b'123')   # 3
-        self.assertEqual(builder.segments[1].after_overlap.offset,
-                         builder.segments[2].segment.offset)
-        self.assertEqual(builder.segments[1].bytes, b'901234567890123')     # 15
+    @patch.object(SentenceUtils, 'split_sentence')
+    def test_split_sentence(self, mock_split_sentence):
+        sentence = b'does not matter'
+        base_length = 4
+        mock_split_sentence.return_value = [b'one ', b'two']
+        fragments = SegmentBuilder.split_sentence(sentence, base_length)
+        self.assertEqual(fragments, mock_split_sentence.return_value)
 
-        # now section is the first one. split it to 'abcd..jkl' and a reminder
-        # it becomes the current segment. next we look at the reminder, there
-        # is no room for it, we close the segment
-        # previous segment '123456789' gets '890' and 'abc'
-        self.assertEqual(builder.segments[2].segment.bytes, b'123456789')
-        self.assertEqual(builder.segments[2].before_overlap.bytes, b'890')
-        self.assertEqual(builder.segments[2].after_overlap.bytes, b'abc')
-        self.assertEqual(builder.segments[2].bytes, b'890123456789abc')
+    def test_is_sentence_too_long(self):
+        sentence = b'does not matter'
+        result = SegmentBuilder.is_sentence_too_long(len(sentence), sentence)
+        self.assertFalse(result)
 
-        # current segment is 'abc...jkl'. next section is 'mno...BCD' it is the
-        # first section and too long, we split it into
-        # 'mno...stu' |9| and 'vwx...'BCD' |9|
-        # 'mno...stu' becomes the current segment
-        # there is no room for 'vwxyz...BCD', we close the segment
-        # room now is 2 -> before overlap is 'kl' and after overlap is 'mn'
-        self.assertEqual(builder.segments[3].segment.bytes, b'abcdefghijkl')  # 12
-        self.assertEqual(builder.segments[3].before_overlap.bytes, b'89')     # 2
-        self.assertEqual(builder.segments[3].after_overlap.bytes, b'mn')
-        self.assertEqual(builder.segments[3].bytes, b'89abcdefghijklmn')
+        result = SegmentBuilder.is_sentence_too_long(len(sentence) + 1, sentence)
+        self.assertFalse(result)
+
+        result = SegmentBuilder.is_sentence_too_long(len(sentence) - 1, sentence)
+        self.assertTrue(result)
+
+    def test_can_add_sentence(self):
+        result = SegmentBuilder.can_add_sentence(10, 6, b'one', b'two')
+        self.assertTrue(result)
+
+        result = SegmentBuilder.can_add_sentence(10, 6, b'one', b'two123')
+        self.assertTrue(result)
+
+        result = SegmentBuilder.can_add_sentence(10, 6, b'one', b'two1234')
+        self.assertTrue(result)
+
+        result = SegmentBuilder.can_add_sentence(10, 6, b'one', b'two12345')
+        self.assertFalse(result)
+
+        result = SegmentBuilder.can_add_sentence(10, 6, b'two1237', b'on')
+        self.assertFalse(result)
+
+
+if __name__ == '__main__':
+    unittest.main()

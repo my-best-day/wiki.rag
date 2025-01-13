@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class IndexBuilderPlots:
+    LOG_INTERVAL = 10000
+
     def __init__(
         self,
         plots_dir: Path
@@ -49,11 +51,14 @@ class IndexBuilderPlots:
         new_plot = True
         while True:
             if new_plot:
-                offset = plots_handle.tell()
+                offset = plots_handle.tell()  # x
                 byte_length = 0
                 new_plot = False
 
-            line = plots_handle.readline()
+            try:
+                line = plots_handle.readline()
+            except StopIteration:
+                line = b''
 
             if not line:
                 break
@@ -63,7 +68,7 @@ class IndexBuilderPlots:
                 title = titles[uid]
                 plot_data = PlotData(uid, title, offset, byte_length)
                 plot_data_list.append(plot_data)
-                if len(plot_data_list) % 10000 == 0:
+                if len(plot_data_list) % self.LOG_INTERVAL == 0:
                     logger.info(f"processed {len(plot_data_list)} / {len(titles)} plots")
                 new_plot = True
 

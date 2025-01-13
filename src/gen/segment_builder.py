@@ -1,3 +1,4 @@
+import math
 import logging
 from typing import List, Optional, Iterator
 
@@ -8,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class SegmentBuilder:
+    """
+    This class responsible for the segmentization of documents.
+
+    Document's sentences are split into segments that match the max length, attempting to
+    balance the length of the segments, leaving room for overlaps.
+    Overlaps are not handled here.
+    """
+    LOG_INTERVAL = 5000
 
     @staticmethod
     def segmentize_documents(
@@ -16,7 +25,24 @@ class SegmentBuilder:
         split_sentence: callable = None,
         document_count: Optional[int] = None,
     ) -> List[List[bytes]]:
-        segments_per_text = []
+        """
+        Segments sentences from documents into chunks based on a maximum length.
+
+        This method splits documents into segments that do not exceed the specified maximum length,
+        aiming for balanced segment lengths while allowing for overlaps.
+
+        Args:
+            max_length (int): The maximum length of each segment.
+            sentences_per_document (Iterator[bytes]): An iterator yielding lists of byte strings
+                representing document sentences.
+            split_sentence (callable, optional): Function to split long sentences. Defaults to a
+                standard method if not provided.
+            document_count (Optional[int]): The number of documents to process; None if unknown.
+
+        Returns:
+            List[List[bytes]]: A list of segments for each document.
+        """
+        segments_per_document = []
         base_length = int(0.8 * max_length)
 
         count_part = f" of {document_count}" if document_count else " of unknown"
@@ -27,13 +53,13 @@ class SegmentBuilder:
                 sentences,
                 split_sentence
             )
-            segments_per_text.append(text_segments)
+            segments_per_document.append(text_segments)
 
-            if len(segments_per_text) % 5000 == 0:
-                msg = f"processed {len(segments_per_text)}{count_part} texts"
+            if len(segments_per_document) % SegmentBuilder.LOG_INTERVAL == 0:
+                msg = f"processed {len(segments_per_document)}{count_part} texts"
                 logger.debug(msg)
 
-        return segments_per_text
+        return segments_per_document
 
     @staticmethod
     def segmentize_document(
@@ -69,7 +95,7 @@ class SegmentBuilder:
     def get_balanced_seg_length(byte_length: int, base_length: int) -> int:
         """Calculate the length of evenly divided segments."""
         segment_count = (byte_length + base_length - 1) // base_length
-        balanced_length = byte_length // segment_count if segment_count else base_length
+        balanced_length = math.ceil(byte_length / segment_count) if segment_count else base_length
         return balanced_length
 
     @staticmethod
