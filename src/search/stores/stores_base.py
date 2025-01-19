@@ -84,7 +84,7 @@ class StoresBase(ABC):
 
     def _load_segments(self):
         """
-        Caller is responsible for locking.s
+        Caller is responsible for locking.
         """
         if not self._segments_loaded:
             text_file_path = Path(self.text_file_path)
@@ -94,7 +94,7 @@ class StoresBase(ABC):
 
     def _load_embeddings(self):
         """
-        Caller is responsible for locking.s
+        Caller is responsible for locking.
         """
         if self._embeddings is None:
             embedding_store_path_str = EmbeddingStore.get_store_path(self.embed_config)
@@ -147,6 +147,11 @@ class StoresBase(ABC):
 
     def get_article(self, uid: UUID) -> FlatArticle:
         article = Element.instances.get(uid)
+        return article
+
+    def get_article_by_index(self, article_index: int) -> FlatArticle:
+        articles = self.articles
+        article = articles[article_index]
         return article
 
     def get_segment(self, uid: UUID) -> FlatExtendedSegment:

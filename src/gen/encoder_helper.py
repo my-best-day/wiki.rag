@@ -34,7 +34,7 @@ if Utils.is_env_var_truthy("UNIT_TESTING"):
         except Exception as e:
             logger.warning(f"Load failed: {e}")
 
-        timer.total("Background load complete", "INFO")
+        timer.total(None, "INFO")
 
     load_thread = threading.Thread(target=background_load, daemon=True)
     load_thread.start()
