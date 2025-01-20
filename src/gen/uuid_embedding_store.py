@@ -15,7 +15,7 @@ class UUIDEmbeddingStore(EmbeddingStore):
     # Indirection allows easier substitution for testing purposes
     file_lock_class = CleanFileLock
 
-    def extend_uuid_embeddings(self, uids: List[UUID], embeddings: np.ndarray) -> None:
+    def extend_embeddings(self, uids: List[UUID], embeddings: np.ndarray) -> None:
         """
         Add embeddings to the store.
         Args:
@@ -23,7 +23,7 @@ class UUIDEmbeddingStore(EmbeddingStore):
             embeddings: List of embeddings (the output of a sentence_transformer.encode())
         """
         str_uids = [str(uid) for uid in uids]
-        self.extend_embeddings(str_uids, embeddings)
+        super().extend_embeddings(str_uids, embeddings)
 
     def load_uuid_embeddings(
         self,

@@ -218,15 +218,15 @@ class CombinedService:
     ) -> List[ElementResult]:
         results = []
         for segment_id, similarity in segment_id_similarity_tuple_list:
-            flat_segment = self.stores.get_segment(segment_id)
-            article_uid = flat_segment.article_uid
-            article = self.stores.get_article(article_uid)
+            segment_record = self.stores.get_segment(segment_id)
+            article_index = segment_record.article_index
+            article = self.stores.get_article_by_index(article_index)
             header_text = article.header.text
             caption_text = (
                 f"{header_text} : "
-                f"{flat_segment.text[:60]}{'...' if len(flat_segment.text) > 60 else ''}"
+                f"{segment_record.text[:60]}{'...' if len(segment_record.text) > 60 else ''}"
             )
-            results.append(ElementResult(similarity, flat_segment, caption_text))
+            results.append(ElementResult(similarity, segment_record, caption_text))
         return results
 
     def get_elements_text(self, element_results: List[ElementResult]) -> str:

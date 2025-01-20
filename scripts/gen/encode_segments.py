@@ -2,17 +2,24 @@ import time
 import logging
 import argparse
 import numpy as np
+import pandas as pd
 from uuid import UUID
 from pathlib import Path
-from typing import List
+from typing import List, Union
+from numpy.typing import NDArray
 
 from gen.encoder import Encoder
 from gen.embedding_store import EmbeddingConfig
+from gen.embedding_store import EmbeddingStore, StoreMode
 from gen.uuid_embedding_store import UUIDEmbeddingStore
 
 from gen.element.store import Store
 from gen.element.element import Element
+
 from gen.element.extended_segment import ExtendedSegment
+from gen.element.flat.flat_extended_segment import FlatExtendedSegment
+from xutils.byte_reader import ByteReader
+from gen.data.segment_record import SegmentRecord
 
 __import__("gen.element.article")
 __import__("gen.element.extended_segment")
@@ -29,10 +36,17 @@ class SegmentEncoder:
         self.args = args
         self.encoder = Encoder(batch_size=args.batch_size)
         self.config = EmbeddingConfig(prefix=args.path_prefix, max_len=args.max_len)
-        embedding_store_path = UUIDEmbeddingStore.get_store_path(self.config)
-        self.embedding_store = UUIDEmbeddingStore(embedding_store_path, allow_empty=True)
-        if not args.incremental and self.embedding_store.does_store_exist():
-            self.embedding_store.delete()
+
+        embedding_store_path = EmbeddingStore.get_store_path(self.config)
+        incremental = self.args.incremental
+        mode = StoreMode.INCREMENTAL if incremental else StoreMode.WRITE
+        embedding_store_class = EmbeddingStore if self.args.records else UUIDEmbeddingStore
+        self.embedding_store = embedding_store_class(
+            embedding_store_path,
+            mode=mode,
+            allow_empty=True
+        )
+        self.byte_reader = ByteReader(args.text)
 
     @property
     def extended_segments(self):
@@ -44,12 +58,40 @@ class SegmentEncoder:
                              if isinstance(element, ExtendedSegment)]
         return extended_segments
 
+    def get_flat_extended_segments(self):
+        text_path = Path(self.args.text)
+        path_prefix = self.args.path_prefix
+        max_len = self.args.max_len
+        flat_segment_file_path_str = f"{path_prefix}_{max_len}_flat_segments.json"
+        flat_segment_store_path = Path(flat_segment_file_path_str)
+
+        store = Store()
+        store.load_elements(Path(text_path), flat_segment_store_path)
+        flat_segments = [element for element in Element.instances.values()
+                         if isinstance(element, FlatExtendedSegment)]
+        return flat_segments
+
+    @staticmethod
+    def read_segment_records(segment_file_path: str) -> List[SegmentRecord]:
+        """reads segment records from a csv file"""
+        segment_df = pd.read_csv(segment_file_path, index_col=False)
+        segment_records = list(segment_df.itertuples(index=False,
+                                                     name="SegmentRecord"))
+        return segment_records
+
+    @property
+    def segments_to_encode(self):
+        if self.args.records:
+            segments = self.segment_records_to_encode
+        else:
+            segments = self.extended_segments_to_encode
+        return segments
+
     @property
     def extended_segments_to_encode(self):
         assert self.args.max_items >= 0, "max_items must be non-negative"
 
-        all_extended_segments = self.extended_segments
-
+        all_extended_segments = self.get_flat_extended_segments()
         count = 0
         if self.args.incremental:
             count = self.embedding_store.get_count(allow_empty=True)
@@ -68,9 +110,79 @@ class SegmentEncoder:
 
         return extended_segments
 
+    @property
+    def segment_records_to_encode(self):
+        assert self.args.max_items >= 0, "max_items must be non-negative"
+
+        segments_file_path = self.args.records
+        all_segments = self.read_segment_records(segments_file_path)
+
+        count = 0
+        if self.args.incremental:
+            count = self.embedding_store.get_count(allow_empty=True)
+            extended_segments = all_segments[count:]
+        else:
+            extended_segments = all_segments
+
+        if self.args.max_items > 0:
+            extended_segments = extended_segments[:self.args.max_items]
+
+        msg = (
+            f"{len(all_segments)} total segments, {count} processed, "
+            f"{len(extended_segments)} pending"
+        )
+        logger.info(msg)
+
+        return extended_segments
+
+    def get_batch_text(self, segments: List[Union[ExtendedSegment, SegmentRecord]]) -> List[str]:
+        example = segments[0]
+        if isinstance(example, FlatExtendedSegment):
+            batch_text = self.get_batch_text_from_flat_extended_segments(segments)
+        elif self.is_segment_record_like(example):
+            batch_text = self.get_batch_text_from_records(segments)
+        else:
+            raise ValueError(f"Unknown segment type: {type(example)}")
+        return batch_text
+
+    @staticmethod
+    def is_segment_record_like(object):
+        """Check if an object is a SegmentRecord or a SegmentRecord-like NamedTuple"""
+        if isinstance(object, SegmentRecord):
+            return True
+        if isinstance(object, tuple) and hasattr(object, "_fields"):
+            if object._fields == SegmentRecord._fields:
+                return True
+        return False
+
+    def get_batch_text_from_flat_extended_segments(
+        self,
+        extended_segments: List[ExtendedSegment]
+    ) -> List[str]:
+        batch_text = [segment.text for segment in extended_segments]
+        return batch_text
+
+    def get_batch_text_from_records(self, segment_records: List[SegmentRecord]) -> List[str]:
+        batch_text = []
+        for record in segment_records:
+            _bytes = self.byte_reader.read_bytes(record.offset, record.length)
+            text = _bytes.decode("utf-8")
+            batch_text.append(text)
+        return batch_text
+
+    def get_batch_uids(self, segments: List[Union[ExtendedSegment, SegmentRecord]]) -> List[UUID]:
+        example = segments[0]
+        if isinstance(example, FlatExtendedSegment):
+            batch_uids = [segment.uid for segment in segments]
+        elif self.is_segment_record_like(example):
+            batch_uids = [segment.segment_index for segment in segments]
+        else:
+            raise ValueError(f"Unknown segment type: {type(example)}")
+        return batch_uids
+
     def encode_segments(self):
-        extended_segments = self.extended_segments_to_encode
-        if not extended_segments:
+        segments = self.segments_to_encode
+        if not segments:
             logger.info("No segments to encode")
             return
 
@@ -78,10 +190,10 @@ class SegmentEncoder:
         buffer_length = self.args.buffer_length
         uids_buffer = []
         embedding_buffer = []
-        for i in range(0, len(extended_segments), batch_size):
-            batch = extended_segments[i:i + batch_size]
-            batch_text = [segment.text for segment in batch]
-            batch_uids = [segment.uid for segment in batch]
+        for i in range(0, len(segments), batch_size):
+            batch = segments[i:i + batch_size]
+            batch_text = self.get_batch_text(batch)
+            batch_uids = self.get_batch_uids(batch)
             batch_embeddings = self.encode_search_sentences(batch_text)
             uids_buffer.extend(batch_uids)
             embedding_buffer.extend(batch_embeddings)
@@ -92,20 +204,20 @@ class SegmentEncoder:
 
             # Process the batch here
             current_batch = i // batch_size + 1
-            total_batches = (len(extended_segments) + batch_size - 1) // batch_size
+            total_batches = (len(segments) + batch_size - 1) // batch_size
             logger.info(f"Processing batch {current_batch} / {total_batches}")
 
         if uids_buffer:
             self.persist_embeddings(uids_buffer, embedding_buffer)
 
-    def encode_search_sentences(self, sentences):
+    def encode_search_sentences(self, sentences: List[str]) -> NDArray:
         # prepend "search_document: " to each sentence
         sentences = [f"search_document: {sentence}" for sentence in sentences]
         result = self.encoder.encode(sentences)
         return result
 
     def persist_embeddings(self, uids: List[UUID], embeddings: List[np.ndarray]) -> None:
-        self.embedding_store.extend_uuid_embeddings(uids, embeddings)
+        self.embedding_store.extend_embeddings(uids, embeddings)
 
 
 def main(args):
@@ -129,6 +241,7 @@ if __name__ == '__main__':
     parser.add_argument("-mi", "--max-items", type=int, default=0,
                         help="Maximum number of items to process (zero means no limit)")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="Debug mode")
+    parser.add_argument("--records", type=str, help="Path to the segment records file")
     args = parser.parse_args()
 
     if args.debug:

@@ -73,9 +73,9 @@ def main():
 
     max_len = args.max_len
     document_offsets = [document.offset for document in articles]
-    segment_file_path = f"{args.path_prefix}_{max_len}_flat_segments.json"
+    segment_records_path = f"{args.path_prefix}_{max_len}_flat_segments.csv"
     if args.dump_segments:
-        segment_dump_path = f"{args.path_prefix}_{max_len}_flat_segments_dump.json"
+        segment_dump_path = f"{args.path_prefix}_{max_len}_segments_dump.json"
     else:
         segment_dump_path = None
     document_count = len(articles)
@@ -84,7 +84,7 @@ def main():
         max_len,
         sentences_generator,
         document_offsets,
-        segment_file_path,
+        segment_records_path,
         text_file_path,
         segment_dump_path,
         document_count
