@@ -4,7 +4,7 @@ import sys
 def seek(path, n, a):
     # seek stdin to position n
     with open(path, 'rb') as f:
-        f.seek(n - 80)
+        f.seek(max(0, n - 80))
         before = f.read(80)
         overlap = f.read(20)
         f.seek(n)

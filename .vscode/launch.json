@@ -112,6 +112,21 @@
             ]
         },
         {
+            "name": "Encode Plots Segments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/gen/encode_segments.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-t", "plots/plots",
+                "-m", "1500",
+                "-bs", "4",
+                "-bl", "8",
+                "--records", "plots/segments_1500.csv",
+                "-pp", "plots/"
+            ]
+        },
+        {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
