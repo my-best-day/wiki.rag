@@ -3,9 +3,10 @@ import logging
 import numpy as np
 from pathlib import Path
 from filelock import FileLock
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Union
 from numpy.typing import NDArray
 from xutils.embedding_config import EmbeddingConfig
+from enum import Enum, auto
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,13 @@ class CleanFileLock(FileLock):
             os.unlink(self.lock_file)
 
 
+class StoreMode(Enum):
+    """Mode for opening the embedding store"""
+    READ = auto()         # Read-only mode, requires existing store unless allow_empty
+    INCREMENTAL = auto()  # Allow both reading and writing, store may or may not exist
+    WRITE = auto()        # Write mode, creates new store (deletes existing)
+
+
 class EmbeddingStore:
     """
     Simple incremental store for embeddings.
@@ -37,15 +45,33 @@ class EmbeddingStore:
     # Indirection allows easier substitution for testing purposes
     file_lock_class = CleanFileLock
 
-    def __init__(self, path, allow_empty: bool):
+    def __init__(
+        self,
+        path: Union[str, Path],
+        mode: StoreMode,
+        allow_empty: bool,
+    ):
         logger.info(f"EmbeddingStore: {path}")
         self.path = Path(path)
         self.allow_empty = allow_empty
-        logger.debug("EmbeddingStore(path=%s, allow_empty=%s)", path, allow_empty)
 
-        if not self.does_store_exist():
-            if not allow_empty:
-                raise RuntimeError(f"Embedding store {path} does not exist")
+        logger.debug("EmbeddingStore: mode=%s, allow_empty=%s", mode, allow_empty)
+
+        store_exists = self.path.exists()
+        store_does_not_exist = not store_exists
+
+        if mode == StoreMode.READ:
+            require_store = not allow_empty
+            if require_store and store_does_not_exist:
+                raise RuntimeError(f"Embedding store {path} already exists")
+        elif mode == StoreMode.INCREMENTAL:
+            # ok whether store exists or not
+            pass
+        elif mode == StoreMode.WRITE:
+            if store_exists:
+                self.path.unlink()
+        else:
+            raise RuntimeError(f"Invalid mode: {mode}")
 
     @property
     def lock_path(self):

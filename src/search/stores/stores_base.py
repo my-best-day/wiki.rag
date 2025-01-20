@@ -14,7 +14,7 @@ from xutils.timer import LoggingTimer
 from gen.element.element import Element
 from gen.element.article import Article
 from gen.element.extended_segment import ExtendedSegment
-from gen.uuid_embedding_store import EmbeddingStore
+from gen.embedding_store import EmbeddingStore, StoreMode
 from xutils.embedding_config import EmbeddingConfig
 from gen.element.flat.flat_article import FlatArticle
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment
@@ -99,7 +99,11 @@ class StoresBase(ABC):
         if self._embeddings is None:
             embedding_store_path_str = EmbeddingStore.get_store_path(self.embed_config)
             embedding_store_path = Path(embedding_store_path_str)
-            embedding_store = EmbeddingStore(embedding_store_path, allow_empty=False)
+            embedding_store = EmbeddingStore(
+                path=embedding_store_path,
+                mode=StoreMode.READ,
+                allow_empty=False
+            )
             self._uids, self._embeddings = embedding_store.load_embeddings()
 
     @staticmethod
