@@ -50,7 +50,7 @@ class TestSegmentVerifier(unittest.TestCase):
 
         SegmentVerifier.verify_files(
             text_file_path='test.txt',
-            segment_file_path='test.seg',
+            segment_records_path='test.seg',
             dump_file_path='test.dump',
             mode='random',
             n=10

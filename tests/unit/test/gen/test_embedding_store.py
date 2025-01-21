@@ -227,7 +227,7 @@ class TestEmbeddingStore(unittest.TestCase):
     @patch.object(UUIDEmbeddingStore, "does_store_exist", return_value=False)
     def test_protected_load_embeddings_no_file_ctor(self, does_store_exist_mock):
         path = "/dev/null/store.json"
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=False)
 
     def test_protected_load_embeddings_stores_does_not_exist(self):

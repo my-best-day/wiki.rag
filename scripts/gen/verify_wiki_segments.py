@@ -54,12 +54,12 @@ def main():
     number = args.number
 
     text_file_path = args.text
-    segment_file_path = f"{path_prefix}_{max_len}_flat_segments.json"
+    segment_records_path = f"{path_prefix}_{max_len}_flat_segments.csv"
     segment_dump_path = f"{args.path_prefix}_{max_len}_segments_dump.json"
 
     SegmentVerifier.verify_files(
         text_file_path,
-        segment_file_path,
+        segment_records_path,
         segment_dump_path,
         mode,
         number

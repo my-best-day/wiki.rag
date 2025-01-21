@@ -63,7 +63,7 @@ class EmbeddingStore:
         if mode == StoreMode.READ:
             require_store = not allow_empty
             if require_store and store_does_not_exist:
-                raise RuntimeError(f"Embedding store {path} already exists")
+                raise ValueError(f"Embedding store {path} does not exist")
         elif mode == StoreMode.INCREMENTAL:
             # ok whether store exists or not
             pass
@@ -71,7 +71,7 @@ class EmbeddingStore:
             if store_exists:
                 self.path.unlink()
         else:
-            raise RuntimeError(f"Invalid mode: {mode}")
+            raise ValueError(f"Invalid mode: {mode}")
 
     @property
     def lock_path(self):

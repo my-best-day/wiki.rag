@@ -25,7 +25,7 @@ class SegmentVerifier:
     @staticmethod
     def verify_files(
         text_file_path: str,
-        segment_file_path: str,
+        segment_records_path: str,
         dump_file_path: str,
         mode: str,
         n: int
@@ -41,7 +41,7 @@ class SegmentVerifier:
             n (int): Number of segments to verify.
         """
         byte_reader = ByteReader(text_file_path)
-        segment_records = SegmentVerifier.read_segment_records(segment_file_path)
+        segment_records = SegmentVerifier.read_segment_records(segment_records_path)
         segments_per_document = SegmentVerifier.read_segment_dump(dump_file_path)
 
         SegmentVerifier.verify(
