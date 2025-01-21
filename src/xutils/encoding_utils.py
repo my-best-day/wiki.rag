@@ -46,8 +46,8 @@ class EncodingUtils:
     @staticmethod
     def adjust_split_point(
         text: bytes_or_str,
-        index: int, after_char:
-        bool,
+        index: int,
+        after_char: bool,
         sign_mode: int = 1
     ) -> int:
         """
