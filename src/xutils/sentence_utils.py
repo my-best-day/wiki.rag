@@ -3,6 +3,8 @@ import math
 import logging
 from typing import List, Tuple
 
+from xutils.encoding_utils import EncodingUtils
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,8 +35,14 @@ class SentenceUtils:
 
         # create the fragments
         fragments = []
-        for i in range(0, len(sentence), target_length):
-            fragments.append(sentence[i:i + target_length])
+
+        start = 0
+        while start < len(sentence):
+            end = min(len(sentence), start + target_length)
+            end = EncodingUtils.adjust_split_point(sentence, end, after_char=True)
+            fragment = sentence[start:end]
+            fragments.append(fragment)
+            start = end
 
         adjusted_fragments = SentenceUtils.adjust_fragments(fragments, max_extend)
 
@@ -90,8 +98,8 @@ class SentenceUtils:
         # word bytes, and potentially the following non-word bytes, from the trailing to the
         # leading segment.
 
-        adjusted_leading = leading
-        adjusted_trailing = trailing
+        adjusted_leading = None
+        adjusted_trailing = None
 
         grab_leading_word_bytes_from_trailer = rb'^(\w{1,%d})\W+\w+' % max_extend
 
@@ -113,6 +121,18 @@ class SentenceUtils:
                     remainder = match.group(1)
                     adjusted_leading = adjusted_leading + remainder
                     adjusted_trailing = adjusted_trailing[len(remainder):]
+
+        if adjusted_leading is None and adjusted_trailing is None:
+            adjusted_leading = leading
+            adjusted_trailing = trailing
+        else:
+            split_point = len(adjusted_leading)
+            sentence = adjusted_leading + adjusted_trailing
+            adjusted_split_point = \
+                EncodingUtils.adjust_split_point(sentence, split_point, after_char=True)
+            if adjusted_split_point != split_point:
+                adjusted_leading = sentence[:adjusted_split_point]
+                adjusted_trailing = sentence[adjusted_split_point:]
 
         return adjusted_leading, adjusted_trailing
 
