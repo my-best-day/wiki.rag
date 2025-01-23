@@ -57,9 +57,9 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input-file', type=str, help='Input file')
     parser.add_argument('-o', '--output-file', type=str, help='Output file')
     parser.add_argument('-pp', '--prefix', type=str, help='Prefix')
-    parser.add_argument('-sd', '--src-dim', type=int, choices=[768, 512, 256, 128, 64],
+    parser.add_argument('-sd', '--src-dim', type=int, choices=[768, 512, 384, 256, 128, 64],
                         help='Source dimension (default: target dimension)')
-    parser.add_argument('-d', '--dim', type=int, choices=[768, 512, 256, 128, 64],
+    parser.add_argument('-d', '--dim', type=int, choices=[768, 512, 384, 256, 128, 64],
                         help='Target dimension')
     parser.add_argument('-m', '--max-len', type=int, help='Max length')
     parser.add_argument('-s', '--stype', type=str, help='Stype'
