@@ -9,8 +9,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from xutils.app_config import AppConfig
-from search.stores.stores_flat import StoresFlat as Stores
 from search.k_nearest_finder import KNearestFinder
+from search.stores import Stores
 
 from .services.combined_service import CombinedService, CombinedRequest, Kind
 
@@ -29,8 +29,11 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 
     embed_config = app_config.embed_config
-    stores = Stores(app_config.text_file_path, embed_config)
+
+    text_file_path = app_config.text_file_path
+    stores = Stores.create_stores(text_file_path, embed_config)
     stores.background_load()
+
     finder = KNearestFinder(stores, embed_config)
 
     app.state.config = app_config

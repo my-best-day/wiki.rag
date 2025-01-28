@@ -9,6 +9,7 @@ from typing import List
 
 from xutils.byte_reader import ByteReader
 from gen.segment_orchestrator import SegmentOrchestrator
+from gen.data.segment_record_store import SegmentRecordStore
 
 
 def get_plot_sentences_generator(plot_data_list, byte_reader):
@@ -63,7 +64,7 @@ def main():
     max_len = args.max_len
     plot_sentences_generator = get_plot_sentences_generator(plot_data_list, byte_reader)
     document_offsets = [plot_data.offset for plot_data in plot_data_list]
-    segment_file_path = args.plots_dir / f"segments_{max_len}.csv"
+    segment_record_store = SegmentRecordStore(args.plots_dir / "plots", max_len)
     segment_dump_path = args.plots_dir / f"segments_{max_len}.json" if args.dump_segments else None
     plot_count = len(plot_data_list)
 
@@ -71,7 +72,7 @@ def main():
         max_len,
         plot_sentences_generator,
         document_offsets,
-        segment_file_path,
+        segment_record_store,
         text_file_path,
         segment_dump_path,
         plot_count

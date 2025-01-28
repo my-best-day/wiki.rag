@@ -19,6 +19,7 @@ from gen.segment_verifier import SegmentVerifier
 from gen.data.segment_record import SegmentRecord
 from gen.segment_builder import SegmentBuilder
 from gen.segment_overlap_setter import SegmentOverlapSetter
+from gen.data.segment_record_store import SegmentRecordStore
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class SegmentOrchestrator:
         max_len: int,
         sentences_per_document: Iterator[List[bytes]],
         document_offsets: List[int],
-        segment_records_path: Path,
+        segment_record_store: SegmentRecordStore,
         text_file_path: Optional[Path],
         segment_dump_path: Optional[Path] = None,
         document_count: Optional[int] = None,
@@ -46,7 +47,8 @@ class SegmentOrchestrator:
             strings, where each list represents the sentences of a document.
         document_offsets (List[int]): A list of offsets for each document, indicating where each
             document starts in the original text.
-        segment_records_path (Path): The file path where the segment records will be saved.
+        segment_record_store (SegmentRecordStore):
+            The store where the segment records will be saved.
         text_file_path (Optional[Path]): The file path of the original text for verification
             purposes.
         segment_dump_path (Optional[Path]): The file path where raw segments will be dumped for
@@ -82,7 +84,7 @@ class SegmentOrchestrator:
             byte_reader = ByteReader(text_file_path)
             SegmentOrchestrator.verify_segments(byte_reader, segments_per_document, segment_records)
 
-        SegmentOrchestrator.save_segment_records(segment_records_path, segment_records)
+        segment_record_store.save_segment_records(segment_records)
 
     @staticmethod
     def describe_segments(
@@ -135,15 +137,3 @@ class SegmentOrchestrator:
             mode="all",
             n=-10
         )
-
-    @staticmethod
-    def save_segment_records(
-        segment_file_path: Path,
-        records: List[SegmentRecord],
-    ) -> None:
-        segment_df = pd.DataFrame(
-            records,
-            columns=SegmentRecord._fields
-        )
-        segment_df.to_csv(segment_file_path, index=False)
-        logger.info("*** saved to %s", segment_file_path)

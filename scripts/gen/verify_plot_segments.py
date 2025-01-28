@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 
 from gen.segment_verifier import SegmentVerifier
+from gen.data.segment_record_store import SegmentRecordStore
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +45,12 @@ def main():
     number = args.number
 
     text_file_path = plots_dir / "plots"
-    segment_file_path = plots_dir / f"segments_{max_len}.csv"
+    segment_record_store = SegmentRecordStore(plots_dir / "plots", max_len)
     segment_dump_path = plots_dir / f"segments_{max_len}.json"
 
     SegmentVerifier.verify_files(
         text_file_path,
-        segment_file_path,
+        segment_record_store,
         segment_dump_path,
         mode,
         number

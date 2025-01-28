@@ -115,7 +115,7 @@ class TestKNearestFinder(unittest.TestCase):
 
         # Instantiate the class with mocked encoder
         mock_stores_instance = MagicMock()
-        mock_stores_instance.get_embeddings_article_ids.return_value = uids
+        mock_stores_instance.get_embeddings_article_indexes.return_value = uids
         finder = KNearestFinder(mock_stores_instance, self.embed_config)
         finder._uids = uids
         finder._embeddings = embeddings

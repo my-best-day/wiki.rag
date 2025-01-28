@@ -13,10 +13,15 @@ class _Proxy:
 
 
 class FlatArticle(Element):
-    def __init__(self, uid: UUID,
-                 header_offset: int, header_byte_length: int,
-                 body_offset: int, body_byte_length: int,
-                 byte_reader: ByteReader) -> None:
+    def __init__(
+        self,
+        uid: UUID,
+        header_offset: int,
+        header_byte_length: int,
+        body_offset: int,
+        body_byte_length: int,
+        byte_reader: ByteReader
+    ) -> None:
         super().__init__(uid=uid)
         self._header_offset: int = header_offset
         self._header_byte_length: int = header_byte_length

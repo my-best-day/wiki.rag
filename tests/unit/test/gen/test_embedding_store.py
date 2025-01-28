@@ -224,6 +224,28 @@ class TestEmbeddingStore(unittest.TestCase):
         npt.assert_array_equal(out_uids, uids)
         npt.assert_array_equal(out_embeddings, embeddings)
 
+    @patch('gen.embedding_store.Path', autospec=True)
+    def test_mode_write(self, mock_path):
+        # test: mode write
+        path = "/dev/null"
+
+        mock_path_instance = mock_path.return_value
+        mock_path_instance.exists.return_value = False
+
+        UUIDEmbeddingStore(path, mode=StoreMode.WRITE, allow_empty=True)
+        mock_path_instance.unlink.assert_not_called()
+
+        mock_path_instance.exists.return_value = True
+
+        UUIDEmbeddingStore(path, mode=StoreMode.WRITE, allow_empty=True)
+        mock_path_instance.unlink.assert_called_once()
+
+    def test_mode_invalid(self):
+        # test: mode invalid
+        path = "/dev/null"
+        with self.assertRaises(ValueError):
+            UUIDEmbeddingStore(path, mode=MagicMock(), allow_empty=True)
+
     @patch.object(UUIDEmbeddingStore, "does_store_exist", return_value=False)
     def test_protected_load_embeddings_no_file_ctor(self, does_store_exist_mock):
         path = "/dev/null/store.json"

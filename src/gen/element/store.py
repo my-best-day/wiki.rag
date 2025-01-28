@@ -58,9 +58,17 @@ class Store:
         element_store_path: Path
     ) -> None:
         """Load elements from a file using a byte reader."""
-        byte_reader = ByteReader(text_file_path)
+        text_byte_reader = ByteReader(text_file_path)
+        self.load_elements_byte_reader(text_byte_reader, element_store_path)
+
+    def load_elements_byte_reader(
+        self,
+        text_byte_reader: ByteReader,
+        element_store_path: Path
+    ) -> None:
+        """Load elements from a file using a byte reader."""
         with open(element_store_path, 'r') as file:
-            self.load_elements_from_handle(byte_reader, file)
+            self.load_elements_from_handle(text_byte_reader, file)
 
     def load_elements_from_handle(self, byte_reader, file) -> None:
         """Load elements from a file handle and resolve their dependencies."""

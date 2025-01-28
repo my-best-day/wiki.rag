@@ -37,7 +37,7 @@ def create_search_app(app_config: AppConfig) -> FastAPI:
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 
     embed_config = app_config.embed_config
-    stores = Stores(app_config.text_file_path, embed_config)
+    stores = Stores.create_stores(app_config.text_file_path, embed_config)
     stores.background_load()
     finder = KNearestFinder(stores, embed_config)
 

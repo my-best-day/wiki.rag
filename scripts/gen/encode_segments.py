@@ -2,7 +2,6 @@ import time
 import logging
 import argparse
 import numpy as np
-import pandas as pd
 from uuid import UUID
 from pathlib import Path
 from typing import List, Union
@@ -12,10 +11,10 @@ from gen.encoder import Encoder
 from gen.embedding_store import EmbeddingConfig
 from gen.embedding_store import EmbeddingStore, StoreMode
 from gen.uuid_embedding_store import UUIDEmbeddingStore
-
 from gen.element.store import Store
 from gen.element.element import Element
 
+from gen.data.segment_record_store import SegmentRecordStore
 from gen.element.extended_segment import ExtendedSegment
 from gen.element.flat.flat_extended_segment import FlatExtendedSegment
 from xutils.byte_reader import ByteReader
@@ -58,25 +57,12 @@ class SegmentEncoder:
                              if isinstance(element, ExtendedSegment)]
         return extended_segments
 
-    def get_flat_extended_segments(self):
-        text_path = Path(self.args.text)
+    def read_segment_records(self, segment_records_path: str) -> List[SegmentRecord]:
+        """reads segment records from a csv file"""
         path_prefix = self.args.path_prefix
         max_len = self.args.max_len
-        flat_segment_file_path_str = f"{path_prefix}_{max_len}_flat_segments.json"
-        flat_segment_store_path = Path(flat_segment_file_path_str)
-
-        store = Store()
-        store.load_elements(Path(text_path), flat_segment_store_path)
-        flat_segments = [element for element in Element.instances.values()
-                         if isinstance(element, FlatExtendedSegment)]
-        return flat_segments
-
-    @staticmethod
-    def read_segment_records(segment_file_path: str) -> List[SegmentRecord]:
-        """reads segment records from a csv file"""
-        segment_df = pd.read_csv(segment_file_path, index_col=False)
-        segment_records = list(segment_df.itertuples(index=False,
-                                                     name="SegmentRecord"))
+        segment_record_store = SegmentRecordStore(path_prefix, max_len)
+        segment_records = segment_record_store.load_segment_records_from_path(segment_records_path)
         return segment_records
 
     @property

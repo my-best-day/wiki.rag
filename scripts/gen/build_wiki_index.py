@@ -7,9 +7,10 @@ from typing import List
 from gen.element.store import Store
 from gen.element.element import Element
 from gen.element.article import Article
-from gen.element.flat.flat_article import FlatArticle
-from gen.index_builder_wiki import IndexBuilderWiki
 from gen.element_validator import ElementValidator
+from gen.index_builder_wiki import IndexBuilderWiki
+from gen.element.flat.flat_article import FlatArticle
+from gen.element.flat.flat_article_store import FlatArticleStore
 
 
 logger = logging.getLogger(__name__)
@@ -34,8 +35,9 @@ def main(args):
     flat_article_list: List[FlatArticle] = \
         [article.to_flat_article() for article in Element.instances.values()
          if isinstance(article, Article)]
-    flat_article_path = Path(f"{args.path_prefix}_flat_articles.json")
-    element_store.store_elements(flat_article_path, flat_article_list)
+
+    flat_article_write_store = FlatArticleStore(args.path_prefix, None)
+    flat_article_write_store.write_flat_articles(flat_article_list)
 
 
 if __name__ == '__main__':

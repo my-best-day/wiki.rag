@@ -1,3 +1,16 @@
+2025-01-28
++ see that wiki search works
+- see that wiki RAG works
+- see that plots search works
+- see that plots RAG works
+- make
+
+2025-01-26
+- revive unit tests
+- revive coverage
+- gen and encode segments
+
+
 2025-01-10
 - unittest coverage
 - encode plots and wiki
@@ -440,3 +453,49 @@ get segment
 get article
 get article.header.text
 element-result = similarity, segment, header-text + segment.text[:60] + "..."
+
+
+2025-01-23
+
+Stores:
+  def get_uids_and_embeddings()
+
+
+k_nearest_finder:
+  - stores.uids_and_embeddings
+  - stores.get_embeddings_article_ids
+
+combined_service:
+  - get_article(article_id)  # to be replaced with get_article_by_index
+  - get_segment(segment_id)
+  - get_article_by_index(article_index)
+
+  * ignore get_article, replace it with get_article_by_index
+  * get_segment is used to a) get the article (id) off the record, and b) get the segment text
+  * add get_segment_text(segment_record) to stores
+
+combined_app:
+  - stores.background_load
+  - KNearestFinder(stores, embed_config)
+
+run_app:
+  - stores.background_load
+  - KNearestFinder(stores, embed_config)
+  - stores.get_article(article_id) (--> get_article_by_index)
+
+search_app:
+  - ditto
+
+
+1. load_embeddings can be replaced with EmbeddingStore.load_embeddings()
+2. get_embeddings_article_ids:
+     get segment records
+     [segment_record.document_index for segment_record in segment_records]
+3. segment_records_path = f"{path_prefix}_{max_len}_flat_segments.csv"
+   segment_records = SegmentVerifier.read_segment_records(segment_records_path)
+
+
+
+
+EmbeddingStore:
+   - uids, embeddings = load_embeddings()

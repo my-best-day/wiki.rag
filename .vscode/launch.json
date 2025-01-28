@@ -6,6 +6,18 @@
     "configurations": [
 
         {
+            "name": "combined service",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/run/run_app_wrapper.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--port", "8023",
+                "--app", "combined",
+                "--log-level", "DEBUG"
+            ]
+        },
+        {
             "name": "Debug: build index",
             "type": "debugpy",
             "request": "launch",

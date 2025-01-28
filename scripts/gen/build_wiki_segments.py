@@ -6,25 +6,18 @@ import argparse
 from typing import List
 from pathlib import Path
 
-from gen.element.store import Store
-from gen.element.element import Element
+from xutils.byte_reader import ByteReader
 from gen.element.flat.flat_article import FlatArticle
-
-
+from gen.data.segment_record_store import SegmentRecordStore
+from gen.element.flat.flat_article_store import FlatArticleStore
 from xutils.sentence_utils import SentenceUtils
 from gen.segment_orchestrator import SegmentOrchestrator
 
 
-def load_flat_articles(
-    text_path: Path,
-    path_prefix: str
-) -> List[FlatArticle]:
-    flat_article_store_path = Path(f"{path_prefix}_flat_articles.json")
-    store = Store()
-    store.load_elements(Path(text_path), flat_article_store_path)
-
-    flat_articles = [element for element in Element.instances.values()
-                     if isinstance(element, FlatArticle)]
+def read_flat_articles(text_file_path: Path, path_prefix: str) -> List[FlatArticle]:
+    text_byte_reader = ByteReader(text_file_path)
+    flat_article_store = FlatArticleStore(path_prefix, text_byte_reader)
+    flat_articles = flat_article_store.load_flat_articles()
     return flat_articles
 
 
@@ -68,12 +61,12 @@ def main():
 
     text_file_path = args.text
     path_prefix = args.path_prefix
-    articles = load_flat_articles(text_file_path, path_prefix)
+    articles = read_flat_articles(text_file_path, path_prefix)
     sentences_generator = get_article_sentences_generator(articles)
 
     max_len = args.max_len
     document_offsets = [document.offset for document in articles]
-    segment_records_path = f"{args.path_prefix}_{max_len}_flat_segments.csv"
+    segment_record_store = SegmentRecordStore(args.path_prefix, max_len)
     if args.dump_segments:
         segment_dump_path = f"{args.path_prefix}_{max_len}_segments_dump.json"
     else:
@@ -84,7 +77,7 @@ def main():
         max_len,
         sentences_generator,
         document_offsets,
-        segment_records_path,
+        segment_record_store,
         text_file_path,
         segment_dump_path,
         document_count

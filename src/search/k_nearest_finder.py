@@ -10,7 +10,7 @@ from xutils.embedding_config import EmbeddingConfig
 from gen.encoder import Encoder
 from gen.embedding_utils import EmbeddingUtils
 
-from search.stores.stores import Stores
+from search.stores import Stores
 from xutils.timer import LoggingTimer, log_timeit
 
 logger = logging.getLogger(__name__)
@@ -69,10 +69,10 @@ class KNearestFinder:
             'seg_id': uids,
             'similarity': similarities
         }
-        df = pl.DataFrame(df_data)
+        polars_df = pl.DataFrame(df_data)
         timer.restart("created df")
 
-        result_tuples = self.pick_results(k, threshold, max_results, df, by='similarity')
+        result_tuples = self.pick_results(k, threshold, max_results, polars_df, by='similarity')
 
         return result_tuples
 
@@ -90,13 +90,13 @@ class KNearestFinder:
         uids, similarities = self.get_similarities(query)
 
         # Get article ids - for aggregation by article
-        article_ids = self.stores.get_embeddings_article_ids()
+        article_indexes = self.stores.get_embeddings_article_indexes()
 
         # Create a DataFrame for aggregation
         timer = LoggingTimer('find_k_nearest_articles', logger=logger, level="DEBUG")
         df_data = {
             'seg_id': uids,
-            'art_id': article_ids,
+            'art_id': article_indexes,
             'similarity': similarities
         }
         df = pl.DataFrame(df_data)
@@ -127,11 +127,11 @@ class KNearestFinder:
 
         return uids, similarities
 
-    def pick_results(self, k, threshold, max_results, df, by):
+    def pick_results(self, k, threshold, max_results, polars_df, by):
         timer = LoggingTimer('pick_results', logger=logger, level="DEBUG")
 
         q = max(k, max_results)
-        top_q = df.top_k(q, by=by)
+        top_q = polars_df.top_k(q, by=by)
         timer.restart("top k")
 
         filtered_top_q = top_q.filter(pl.col(by) > threshold)
@@ -139,13 +139,13 @@ class KNearestFinder:
 
         if len(filtered_top_q) >= k:
             # if filtered results has enough elements, use them
-            result_df = filtered_top_q.head(q)
+            polars_result_df = filtered_top_q.head(q)
         else:
             # otherwise, use unfiltered top k
-            result_df = top_q.head(k)
+            polars_result_df = top_q.head(k)
         timer.restart("picked results")
 
-        result_tuples = result_df.to_numpy()
+        result_tuples = polars_result_df.rows()
         timer.restart("selected results")
 
         return result_tuples

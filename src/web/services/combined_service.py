@@ -6,17 +6,18 @@ from typing import List, Tuple
 from dataclasses import dataclass
 
 from xutils.timer import LoggingTimer
-from gen.element.element import Element
+from gen.data.segment_record import SegmentRecord
 
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ElementResult:
+class ResultElement:
     similarity: float
-    element: Element
+    record: SegmentRecord
     caption: str
+    text: str
 
 
 class Kind:
@@ -58,7 +59,7 @@ class CombinedRequest:
 @dataclass
 class CombinedResponse:
     prompt: str
-    results: List[ElementResult]
+    results: List[ResultElement]
     answer: str
     total_length: int
 
@@ -98,7 +99,7 @@ class CombinedService:
 
         total_length = 0
         for element_result in element_results:
-            total_length += element_result.element.char_length
+            total_length += len(element_result.text)
         timer.restart(f"total length: {total_length}")
 
         if combined_request.action == "rag":
@@ -119,7 +120,7 @@ class CombinedService:
 
         return combined_response
 
-    def do_rag(self, query: str, element_results: List[ElementResult]):
+    def do_rag(self, query: str, element_results: List[ResultElement]):
         timer = LoggingTimer('do_rag', logger=logger, level="INFO")
         elements_text = self.get_elements_text(element_results)
 
@@ -191,7 +192,7 @@ class CombinedService:
         self,
         kind: Kind,
         element_id_similarity_tuple_list: List[Tuple[UUID, float]]
-    ) -> List[ElementResult]:
+    ) -> List[ResultElement]:
 
         if kind is Kind.Article:
             element_results = self.get_article_results(element_id_similarity_tuple_list)
@@ -203,35 +204,36 @@ class CombinedService:
     def get_article_results(
         self,
         article_id_similarity_tuple_list: List[Tuple[UUID, float]]
-    ) -> List[ElementResult]:
+    ) -> List[ResultElement]:
         results = []
         for article_id, similarity in article_id_similarity_tuple_list:
             article = self.stores.get_article(article_id)
             header_text = article.header.text
             caption_text = header_text
-            results.append(ElementResult(similarity, article, caption_text))
+            results.append(ResultElement(similarity, article, caption_text))
         return results
 
     def get_segment_results(
         self,
         segment_id_similarity_tuple_list: List[Tuple[UUID, float]]
-    ) -> List[ElementResult]:
+    ) -> List[ResultElement]:
         results = []
-        for segment_id, similarity in segment_id_similarity_tuple_list:
-            segment_record = self.stores.get_segment(segment_id)
-            article_index = segment_record.article_index
+        for segment_ind, similarity in segment_id_similarity_tuple_list:
+            segment_record = self.stores.get_segment_record_by_index(segment_ind)
+            segment_text = self.stores.get_segment_text(segment_record)
+            article_index = segment_record.document_index
             article = self.stores.get_article_by_index(article_index)
             header_text = article.header.text
             caption_text = (
                 f"{header_text} : "
-                f"{segment_record.text[:60]}{'...' if len(segment_record.text) > 60 else ''}"
+                f"{segment_text[:60]}{'...' if len(segment_text) > 60 else ''}"
             )
-            results.append(ElementResult(similarity, segment_record, caption_text))
+            results.append(ResultElement(similarity, segment_record, caption_text, segment_text))
         return results
 
-    def get_elements_text(self, element_results: List[ElementResult]) -> str:
+    def get_elements_text(self, element_results: List[ResultElement]) -> str:
         element_texts = []
         for i, (element_result) in enumerate(element_results):
-            element_texts.append(f"Context document {i}: {element_result.element.text[:15000]}")
+            element_texts.append(f"Context document {i}: {element_result.record.text[:15000]}")
         elements_text = "\n\n".join(element_texts)
         return elements_text

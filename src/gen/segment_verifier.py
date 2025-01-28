@@ -6,6 +6,7 @@ import pandas as pd
 
 from xutils.byte_reader import ByteReader
 from gen.data.segment_record import SegmentRecord
+from gen.data.segment_record_store import SegmentRecordStore
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class SegmentVerifier:
     @staticmethod
     def verify_files(
         text_file_path: str,
-        segment_records_path: str,
+        segment_record_store: SegmentRecordStore,
         dump_file_path: str,
         mode: str,
         n: int
@@ -35,13 +36,14 @@ class SegmentVerifier:
 
         Args:
             text_file_path (str): Path to the text file.
-            segment_file_path (str): Path to the segment records file.
+            segment_record_store (SegmentRecordStore): The store where the segment records are
+                saved.
             dump_file_path (str): Path to the segment dump file.
             mode (str): Mode to select segments to verify.
             n (int): Number of segments to verify.
         """
         byte_reader = ByteReader(text_file_path)
-        segment_records = SegmentVerifier.read_segment_records(segment_records_path)
+        segment_records = segment_record_store.load_segment_records()
         segments_per_document = SegmentVerifier.read_segment_dump(dump_file_path)
 
         SegmentVerifier.verify(

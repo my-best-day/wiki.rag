@@ -89,12 +89,12 @@
                         <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
                     </div>
                     <div class="article-stats">
-                        Offset: {{ result.element.offset }} |
-                        Length: {{ result.element.char_length }} |
+                        Offset: {{ result.record.offset }} |
+                        Length: {{ result.record.length }} |
                         Similarity: {{ result.similarity | round(3) }}
                     </div>
                     <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
-                        {{ result.element.text }}
+                        {{ result.text }}
                     </div>
                 </div>
                 {% endfor %}

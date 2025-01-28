@@ -56,7 +56,6 @@ class TestSegmentOrchestrator(unittest.TestCase):
             [b'', b'br'], [b'da', b'']
         ]
 
-    @patch('gen.segment_orchestrator.SegmentOrchestrator.save_segment_records')
     @patch('gen.segment_orchestrator.SegmentOrchestrator.verify_segments')
     @patch('gen.segment_orchestrator.SegmentOrchestrator.dump_raw_segments')
     @patch('gen.segment_overlap_setter.SegmentOverlapSetter.set_overlaps_for_documents')
@@ -69,12 +68,10 @@ class TestSegmentOrchestrator(unittest.TestCase):
         mock_set_overlaps_for_documents,
         mock_dump_raw_segments,
         mock_verify_segments,
-        mock_save_segment_records
     ):
         max_len = 10
         sentences_per_document = MagicMock()
         document_offsets = [record.offset for record in self.records]
-        segment_file_path = Path('segment_file.csv')
         text_file_path = Path('text_file.txt')
         segment_dump_path = Path('segment_dump.txt')
         document_count = 8
@@ -83,11 +80,13 @@ class TestSegmentOrchestrator(unittest.TestCase):
         mock_set_overlaps_for_documents.return_value = \
             self.adjusted_records, self.adjusted_segments_per_document
 
+        segment_record_store = MagicMock()
+
         SegmentOrchestrator.build_segments(
             max_len,
             sentences_per_document,
             document_offsets,
-            segment_file_path,
+            segment_record_store,
             text_file_path,
             segment_dump_path,
             document_count
@@ -123,12 +122,10 @@ class TestSegmentOrchestrator(unittest.TestCase):
         self.assertEqual(args[1], self.adjusted_segments_per_document)
         self.assertEqual(args[2], self.adjusted_records)
 
-        mock_save_segment_records.assert_called_once_with(
-            segment_file_path,
+        segment_record_store.save_segment_records.assert_called_once_with(
             self.adjusted_records
         )
 
-    @patch('gen.segment_orchestrator.SegmentOrchestrator.save_segment_records')
     @patch('gen.segment_orchestrator.SegmentOrchestrator.verify_segments')
     @patch('gen.segment_orchestrator.SegmentOrchestrator.dump_raw_segments')
     @patch('gen.segment_overlap_setter.SegmentOverlapSetter.set_overlaps_for_documents')
@@ -141,12 +138,10 @@ class TestSegmentOrchestrator(unittest.TestCase):
         mock_set_overlaps_for_documents,
         mock_dump_raw_segments,
         mock_verify_segments,
-        mock_save_segment_records
     ):
         max_len = 10
         sentences_per_document = MagicMock()
         document_offsets = [record.offset for record in self.records]
-        segment_file_path = Path('segment_file.csv')
         text_file_path = None
         segment_dump_path = None
         document_count = None
@@ -155,11 +150,13 @@ class TestSegmentOrchestrator(unittest.TestCase):
         mock_set_overlaps_for_documents.return_value = \
             self.adjusted_records, self.adjusted_segments_per_document
 
+        segment_record_store = MagicMock()
+
         SegmentOrchestrator.build_segments(
             max_len,
             sentences_per_document,
             document_offsets,
-            segment_file_path,
+            segment_record_store,
             text_file_path,
             segment_dump_path,
             document_count
@@ -187,8 +184,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
 
         mock_verify_segments.assert_not_called()
 
-        mock_save_segment_records.assert_called_once_with(
-            segment_file_path,
+        segment_record_store.save_segment_records.assert_called_once_with(
             self.adjusted_records
         )
 
@@ -246,24 +242,6 @@ class TestSegmentOrchestrator(unittest.TestCase):
         self.assertIs(args[0], byte_reader)
         self.assertIs(args[1], self.adjusted_records)
         self.assertIs(args[2], self.adjusted_segments_per_document)
-
-    @patch('gen.segment_orchestrator.pd.DataFrame')
-    def test_save_segment_records(self, mock_dataframe):
-        segment_file_path = Path('segment_file.csv')
-        SegmentOrchestrator.save_segment_records(
-            segment_file_path,
-            self.adjusted_records
-        )
-
-        mock_dataframe.assert_called_once_with(
-            self.adjusted_records,
-            columns=SegmentRecord._fields
-        )
-
-        mock_dataframe.return_value.to_csv.assert_called_once_with(
-            segment_file_path,
-            index=False
-        )
 
 
 if __name__ == "__main__":

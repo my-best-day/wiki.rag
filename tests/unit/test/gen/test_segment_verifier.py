@@ -36,27 +36,28 @@ class TestSegmentVerifier(unittest.TestCase):
         ]
 
     # test that calls verify with the output of read_segment_records and read_segment_dump
-    @patch('gen.segment_verifier.SegmentVerifier.read_segment_records')
     @patch('gen.segment_verifier.SegmentVerifier.read_segment_dump')
     @patch('gen.segment_verifier.SegmentVerifier.verify')
-    def test_verify_files(self, mock_verify, mock_read_dump, mock_read_records):
+    def test_verify_files(self, mock_verify, mock_read_dump):
         mock_records = MagicMock()
         mock_dump = MagicMock()
         mock_verify_result = MagicMock()
 
-        mock_read_records.return_value = mock_records
         mock_read_dump.return_value = mock_dump
         mock_verify.return_value = mock_verify_result
 
+        segment_record_store = MagicMock()
+        segment_record_store.load_segment_records.return_value = mock_records
+
         SegmentVerifier.verify_files(
             text_file_path='test.txt',
-            segment_records_path='test.seg',
+            segment_record_store=segment_record_store,
             dump_file_path='test.dump',
             mode='random',
             n=10
         )
 
-        mock_read_records.assert_called_once_with('test.seg')
+        segment_record_store.load_segment_records.assert_called_once()
         mock_read_dump.assert_called_once_with('test.dump')
         mock_verify.assert_called_once()
         argc, _ = mock_verify.call_args
@@ -305,7 +306,7 @@ class TestSegmentVerifier(unittest.TestCase):
 
     @patch("gen.segment_verifier.SegmentVerifier.convert_segment_strings_to_bytes")
     @patch("builtins.open", new_callable=mock_open)
-    def test_read_ssegment_dump(self, mock_open, mock_convert_segment_strings_to_bytes):
+    def test_read_segment_dump(self, mock_open, mock_convert_segment_strings_to_bytes):
         string_dump = [[text.decode() for text in doc_sentences] for
                        doc_sentences in self.segments_per_document]
         json_dump = json.dumps(string_dump)
