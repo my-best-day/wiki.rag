@@ -12,7 +12,7 @@ from xutils.app_config import AppConfig
 from search.k_nearest_finder import KNearestFinder
 from search.stores import Stores
 
-from .services.combined_service import CombinedService, CombinedRequest, Kind
+from search.services.combined_service import CombinedService, CombinedRequest, Kind
 
 logger = logging.getLogger(__name__)
 
