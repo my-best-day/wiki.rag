@@ -3,11 +3,11 @@ Build segments for the plots dataset.
 """
 import logging
 import argparse
-import pandas as pd
 from pathlib import Path
 from typing import List
 
 from xutils.byte_reader import ByteReader
+from gen.data.plot_store import PlotStore
 from gen.segment_orchestrator import SegmentOrchestrator
 from gen.data.segment_record_store import SegmentRecordStore
 
@@ -53,13 +53,11 @@ def parse_args() -> argparse.Namespace:
 def main():
     args = parse_args()
 
-    plots_record_path = args.plots_dir / "plots_data.csv"
-
     text_file_path = args.plots_dir / "plots"
     byte_reader = ByteReader(text_file_path)
 
-    plots_df = pd.read_csv(plots_record_path, index_col=False)
-    plot_data_list = list(plots_df.itertuples(index=False, name="PlotData"))
+    plot_store = PlotStore(args.plots_dir)
+    plot_data_list = plot_store.load_plot_data_list()
 
     max_len = args.max_len
     plot_sentences_generator = get_plot_sentences_generator(plot_data_list, byte_reader)

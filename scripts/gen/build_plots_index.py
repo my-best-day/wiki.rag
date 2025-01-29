@@ -16,16 +16,17 @@ Here we have
 import argparse
 import logging
 from pathlib import Path
-from pandas import DataFrame
+import pandas as pd
 
 from gen.data.plot import PlotData, Plot
 from xutils.byte_reader import ByteReader
 from gen.index_builder_plots import IndexBuilderPlots
+from gen.data.plot_store import PlotStore
 
 logger = logging.getLogger(__name__)
 
 
-def list_long_and_short_plots(plots_df: DataFrame):
+def list_long_and_short_plots(plots_df: pd.DataFrame):
     # get the 5 shortest and 5 longest plots
     short_plots = plots_df.nsmallest(5, 'byte_length')
     long_plots = plots_df.nlargest(5, 'byte_length')
@@ -50,10 +51,12 @@ def main(args):
 
     plot_data_list = builder.build_index()
 
-    plot_records = [plot_data._asdict() for plot_data in plot_data_list]
-    plots_df = DataFrame(plot_records)
-    logger.info(plots_df['byte_length'].describe())
-    plots_df.to_csv(args.plots_dir / "plots_data.csv", index=False)
+    plot_store = PlotStore(plots_dir)
+
+    plots_df = plot_store.build_plots_dataframe(plot_data_list)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(plots_df['byte_length'].describe())
+    plot_store.write_plots_dataframe(plots_df)
 
     if args.debug:
         list_long_and_short_plots(plots_df)

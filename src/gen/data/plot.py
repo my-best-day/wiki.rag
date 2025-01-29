@@ -1,6 +1,8 @@
 from typing import NamedTuple
 from xutils.byte_reader import ByteReader
 
+# TODO: rename to PlotRecord to match SegmentRecord
+
 
 class PlotData(NamedTuple):
     uid: str
