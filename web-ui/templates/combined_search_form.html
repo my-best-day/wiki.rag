@@ -1,0 +1,36 @@
+<section class="search-container">
+    <form method="POST" action="/combined" class="search-form" id="search-form">
+        <label for="query">Search Query:</label>
+        <textarea id="query" name="query" placeholder="Enter your search query here...">{{ app_request.query if app_request else '' }}</textarea>
+        <div class="button-group">
+            <div class="submit-button-group">
+                <button type="submit" class="btn-submit" name="action" value="search">Search!</button>
+                <button type="submit" class="btn-submit" name="action" value="rag">RAG!</button>
+            </div>
+            <div class="clear-button-group">
+                <button type="button" class="btn-clear-query" onclick="clearQuery()">Clear Query</button>
+                <button type="button" class="btn-clear" onclick="clearQueryAndReset()">Clear</button>
+            </div>
+        </div>
+        <div class="result-filtering">
+            <label for="k">Show:</label>
+            <input type="number" id="k" name="k" value="{{ app_request.k if app_request else 3 }}" min="1">
+            <label for="threshold">Threshold</label>
+            <input type="number" id="threshold" name="threshold" value="{{ app_request.threshold if app_request else 0.65 }}" step="0.05" min="0" max="1">
+            <label for="max">Max:</label>
+            <input type="number" id="max" name="max" value="{{ app_request.max if app_request else 3 }}" min="-1">
+            <label for="kind">Kind:</label>
+            <select id="kind" name="kind">
+                {% set kindly = app_request.kind if app_request else Kind.Segment %}
+                <option value="segment" {% if kindly == Kind.Segment %}selected{% endif %}>Segment</option>
+                <option value="article" {% if kindly == Kind.Article %}selected{% endif %}>Article</option>
+            </select>
+        </div>
+        <div class="expand-collapse-buttons">
+            <div>
+                <button type="button" class="btn-expand-all" onclick="expandAllArticles()">Expand All</button>
+                <button type="button" class="btn-collapse-all" onclick="collapseAllArticles()">Collapse All</button>
+            </div>
+        </div>
+    </form>
+</section>

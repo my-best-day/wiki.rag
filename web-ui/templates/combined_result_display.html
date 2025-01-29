@@ -1,0 +1,58 @@
+{% if app_request %}
+<div class="env-info">
+    {{text_file}}, {{ max_len }}
+</div>
+
+<div class="query-info">
+    <span id="completed-display" title="completed {{ completed.isoformat() if completed else 'N/A' }}"
+                data-completed="{{ completed.isoformat() if completed else 'N/A' }}"></span> |
+    {{ (completed - received).total_seconds() | default(0.0) | round(3) }} sec |
+    {{ app_response.results | length }} results |
+    in: {{ ( app_response.prompt | length / 4.5) | round }} tokens,
+    {{ (app_response.prompt | length / 4.5) * (15 / 1e6) | round(4) }} cents |
+    out: {{ (app_response.answer | length / 4.5) | round }} tokens,
+    {{ ((app_response.answer | length / 4.5) * (60 / 1e6)) | round(4) }} cents |
+    Query: "{{ app_request.query }}"
+</div>
+{% endif %}
+
+{% if app_response and app_response.answer %}
+<section class="result-container answer-container">
+    <div id="markdown-content" style="display: none;">
+        {{ app_response.answer }}
+    </div>
+    <div id="html-output" class="html-output"></div>
+</section>
+{% else %}
+<p>No answer found.</p>
+{% endif %}
+
+{% if app_response %}
+    <section class="result-container">
+        <h3>Search Results:</h3>
+        <div id="total-search-result-length">Total length:
+                {{ app_response.total_length }} chars,
+                {{ (app_response.total_length /  4.5) | round() }} tokens
+        </div>
+        {% for result in app_response.results %}
+        <div class="article">
+            <div class="article-header">
+                {{ result.caption | clean_header }}
+                <button type="button" class="btn-toggle" onclick="toggleArticleBody(this)">Toggle</button>
+            </div>
+            <div class="article-stats">
+                Offset: {{ result.record.offset }} |
+                Length: {{ result.record.length }} |
+                Similarity: {{ result.similarity | round(3) }}
+            </div>
+            <div class="article-body" {% if loop.index >= 4 %}style="display: none;"{% endif %}>
+                {{ result.text }}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+{% elif app_request %}
+    <p>No {{ app_request.kind | capitalize }} found.</p>
+{% else %}
+    <p>... waiting ...</p>
+{% endif %}
