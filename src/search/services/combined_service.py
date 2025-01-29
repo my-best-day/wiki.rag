@@ -241,6 +241,7 @@ class CombinedService:
     def get_elements_text(self, element_results: List[ResultElement]) -> str:
         element_texts = []
         for i, (element_result) in enumerate(element_results):
-            element_texts.append(f"Context document {i}: {element_result.record.text[:15000]}")
+            text = element_result.text
+            element_texts.append(f"Context document {i}: {text[:15000]}")
         elements_text = "\n\n".join(element_texts)
         return elements_text
