@@ -7,7 +7,9 @@ from dataclasses import dataclass
 
 from xutils.timer import LoggingTimer
 from gen.data.segment_record import SegmentRecord
-
+from xutils.embedding_config import EmbeddingConfig
+from search.stores import Stores
+from search.k_nearest_finder import KNearestFinder
 
 logger = logging.getLogger(__name__)
 
@@ -66,11 +68,16 @@ class CombinedResponse:
 
 class CombinedService:
 
-    def __init__(self, state):
-        self.state = state
-        self.stores = state.stores
-        self.embed_config = state.config.embed_config
-        self.finder = state.finder
+    def __init__(
+        self,
+        stores: Stores,
+        embed_config: EmbeddingConfig,
+        finder: KNearestFinder
+    ) -> None:
+        self.stores = stores
+        self.embed_config = embed_config
+        self.finder = finder
+
         self._client = None
 
     @property

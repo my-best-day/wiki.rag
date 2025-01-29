@@ -36,12 +36,10 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
 
     finder = KNearestFinder(stores, embed_config)
 
-    app.state.config = app_config
     app.state.templates = templates
-    app.state.stores = stores
-    app.state.finder = finder
+    embedding_config = app_config.embed_config
 
-    service = CombinedService(app.state)
+    service = CombinedService(stores, embedding_config, finder)
 
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request):
