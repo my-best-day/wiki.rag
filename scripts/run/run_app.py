@@ -2,15 +2,13 @@ import os
 import uvicorn
 import logging
 import argparse
-import configparser
 
-from xutils.app_config import AppConfig
-from xutils.embedding_config import EmbeddingConfig
+from xutils.app_config import AppConfig, load_app_config
 
 
 def get_search_app(logger):
     from web.search_app import create_search_app
-    app_config = load_app_config(logger)
+    app_config = get_app_config(logger)
     search_app = create_search_app(app_config)
     return search_app
 
@@ -20,7 +18,7 @@ def get_rag_app(logger):
         raise ValueError("OPENAI_API_KEY is not set")
 
     from web.rag_app import create_rag_app
-    app_config = load_app_config(logger)
+    app_config = get_app_config(logger)
     rag_app = create_rag_app(app_config)
     return rag_app
 
@@ -30,44 +28,18 @@ def get_combined_app(logger):
         raise ValueError("OPENAI_API_KEY is not set")
 
     from web.combined_app import create_combined_app
-    app_config = load_app_config(logger)
+    app_config = get_app_config(logger)
     combined_app = create_combined_app(app_config)
     return combined_app
 
 
-def load_app_config(logger) -> AppConfig:
+def get_app_config(logger) -> AppConfig:
     config_file = "config.ini"
     if "CONFIG_FILE" in os.environ:
         config_file = os.environ["CONFIG_FILE"]
     logger.debug(f"Using config file: {config_file}")
 
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    embed_sec = config["SEARCH-APP.EMBEDDINGS"]
-    prefix = embed_sec.get("prefix")
-    max_len = embed_sec.getint("max-len")
-    dim = embed_sec.getint("dim", None)
-    stype = embed_sec.get("stype", "float32")
-    norm_type = embed_sec.get("norm-type", None)
-    l2_normalize = embed_sec.getboolean("l2-normalize", None)
-
-    embed_config = EmbeddingConfig(
-        prefix=prefix,
-        max_len=max_len,
-        dim=dim,
-        stype=stype,
-        norm_type=norm_type,
-        l2_normalize=l2_normalize,
-    )
-
-    search_sec = config["SEARCH-APP"]
-    text_file_path = search_sec.get("text-file-path")
-    app_config = AppConfig(
-        text_file_path=text_file_path,
-        embed_config=embed_config,
-    )
-
+    app_config = load_app_config(config_file)
     logger.info(f"AppConfig: {app_config}")
 
     return app_config
