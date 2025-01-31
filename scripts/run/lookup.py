@@ -10,8 +10,14 @@ from search.stores import Stores
 from xutils.app_config import AppConfig, load_app_config
 from gen.element.element import Element
 from search.k_nearest_finder import KNearestFinder
-from search.services.combined_service import CombinedService, CombinedRequest, Kind
-from search.services.combined_service import CombinedResponse
+from search.services.combined_service import (
+    CombinedService,
+    CombinedRequest,
+    Kind,
+    Action,
+    parse_enum,
+    CombinedResponse
+)
 
 
 class LookupCLI:
@@ -70,9 +76,12 @@ class LookupCLI:
         threshold = self.threshold
         max_documents = self.max_documents
 
+        kind = Kind.SEGMENT
+        action = Action.SEARCH
+
         combined_request = CombinedRequest(
-            action="search",
-            kind=Kind.Segment,
+            action=action,
+            kind=kind,
             query=query,
             k=k_nearest,
             threshold=threshold,

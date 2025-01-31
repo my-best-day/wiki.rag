@@ -21,9 +21,9 @@
             <input type="number" id="max" name="max" value="{{ app_request.max if app_request else 3 }}" min="-1">
             <label for="kind">Kind:</label>
             <select id="kind" name="kind">
-                {% set kindly = app_request.kind if app_request else Kind.Segment %}
-                <option value="segment" {% if kindly == Kind.Segment %}selected{% endif %}>Segment</option>
-                <option value="article" {% if kindly == Kind.Article %}selected{% endif %}>Article</option>
+                {% set kindly = app_request.kind if app_request else Kind.SEGMENT %}
+                <option value="segment" {% if kindly == Kind.SEGMENT %}selected{% endif %}>Segment</option>
+                <option value="article" {% if kindly == Kind.ARTICLE %}selected{% endif %}>Article</option>
             </select>
         </div>
         <div class="expand-collapse-buttons">

@@ -1,5 +1,6 @@
 import os
 import logging
+from enum import Enum
 from uuid import UUID
 from openai import OpenAI
 from typing import List, Tuple
@@ -22,31 +23,28 @@ class ResultElement:
     text: str
 
 
-class Kind:
-    _instances = {}
-
-    def __init__(self, name: str):
-        self.name = name
-        Kind._instances[name] = self
-
-    @classmethod
-    def parse(cls, str):
-        kind = Kind._instances.get(str, None)
-        if kind is None:
-            raise ValueError(f"Invalid kind: {str}")
-        return kind
-
-    def __str__(self):
-        return self.name
+class Kind(Enum):
+    ARTICLE = "article"
+    SEGMENT = "segment"
 
 
-Kind.Article = Kind("article")
-Kind.Segment = Kind("segment")
+class Action(Enum):
+    SEARCH = "search"
+    RAG = "rag"
+
+
+def parse_enum(enum_class, value):
+    assert issubclass(enum_class, Enum)
+    assert isinstance(value, str)
+    try:
+        return enum_class[value.upper()]
+    except KeyError:
+        raise ValueError(f"Invalid kind: {value}")
 
 
 @dataclass
 class CombinedRequest:
-    action: str
+    action: Action
     kind: Kind
     query: str
     k: int
@@ -109,10 +107,13 @@ class CombinedService:
             total_length += len(element_result.text)
         timer.restart(f"total length: {total_length}")
 
-        if combined_request.action == "rag":
+        if combined_request.action == Action.RAG:
             prompt, answer = self.do_rag(combined_request.query, element_results)
-        else:
+        elif combined_request.action == Action.SEARCH:
             prompt, answer = "na", "na"
+        else:
+            raise ValueError(f"Invalid action: {combined_request.action}")
+
         timer.restart(f"did rag (prompt len: {len(prompt)}, answer len: {len(answer)})")
 
         total_elapsed = timer.total_time()
@@ -186,12 +187,14 @@ class CombinedService:
         threshold = combined_request.threshold
         max_results = combined_request.max
 
-        if kind is Kind.Article:
+        if kind is Kind.ARTICLE:
             element_id_similarity_tuple_list = self.finder.find_k_nearest_articles(
                 query, k=k, threshold=threshold, max_results=max_results)
-        elif kind is Kind.Segment:
+        elif kind is Kind.SEGMENT:
             element_id_similarity_tuple_list = self.finder.find_k_nearest_segments(
                 query, k=k, threshold=threshold, max_results=max_results)
+        else:
+            raise ValueError(f"Invalid kind: {kind}")
 
         return element_id_similarity_tuple_list
 
@@ -201,10 +204,12 @@ class CombinedService:
         element_id_similarity_tuple_list: List[Tuple[UUID, float]]
     ) -> List[ResultElement]:
 
-        if kind is Kind.Article:
+        if kind is Kind.ARTICLE:
             element_results = self.get_article_results(element_id_similarity_tuple_list)
-        elif kind is Kind.Segment:
+        elif kind is Kind.SEGMENT:
             element_results = self.get_segment_results(element_id_similarity_tuple_list)
+        else:
+            raise ValueError(f"Invalid kind: {kind}")
 
         return element_results
 

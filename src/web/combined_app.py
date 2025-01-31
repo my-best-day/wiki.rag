@@ -12,7 +12,13 @@ from xutils.app_config import AppConfig
 from search.k_nearest_finder import KNearestFinder
 from search.stores import Stores
 
-from search.services.combined_service import CombinedService, CombinedRequest, Kind
+from search.services.combined_service import (
+    CombinedService,
+    CombinedRequest,
+    Kind,
+    Action,
+    parse_enum
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +76,10 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
                     f"\nquery: {query})")
 
         kind_str = kind
-        kind = Kind.parse(kind_str)
+        kind = parse_enum(Kind, kind_str)
+
+        action_str = action
+        action = parse_enum(Action, action_str)
 
         combined_request = CombinedRequest(
             action=action,
