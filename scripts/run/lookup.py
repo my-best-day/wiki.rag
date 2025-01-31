@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import re
 import sys
 import time
 import logging
@@ -28,11 +29,13 @@ class LookupCLI:
         k_nearest: int,
         threshold: float,
         max_documents: int,
+        action: Action
     ) -> None:
         self.app_config = app_config
         self.k_nearest = k_nearest
         self.threshold = threshold
         self.max_documents = max_documents
+        self.action = action
 
         text_file_path = app_config.text_file_path
         embedding_config = app_config.embed_config
@@ -59,10 +62,11 @@ class LookupCLI:
 
             t0 = time.time()
             response = self.get_response(query)
+            answer = response.answer
             elapsed = time.time() - t0
 
             results = response.results
-            self.display_nearest_segments(query, results, elapsed)
+            self.display_nearest_segments(query, results, answer, elapsed)
 
     def get_query(self) -> str:
         prompt = "Enter a query sentence (or 'exit' to quit): "
@@ -77,7 +81,14 @@ class LookupCLI:
         max_documents = self.max_documents
 
         kind = Kind.SEGMENT
-        action = Action.SEARCH
+        action = self.action
+
+        if query.lower().startswith("search:"):
+            action = Action.SEARCH
+            query = query[len("search:"):].strip()
+        elif query.lower().startswith("rag:"):
+            action = Action.RAG
+            query = query[len("rag:"):].strip()
 
         combined_request = CombinedRequest(
             action=action,
@@ -92,8 +103,8 @@ class LookupCLI:
 
     def run_articles(self):
         while True:
-            prompt = "Enter a query sentence (or 'exit' to quit): "
-            print(prompt, " Press Cmd-D when done: ")
+            print("Enter a query sentence (or 'exit' to quit):")
+            print("Press Cmd-D when done. Use prefix 'search' or 'rag' to override action.")
             query = sys.stdin.read().strip()
             print(".... ... .. .")
             if query.lower() in ("exit", "quit"):
@@ -107,12 +118,17 @@ class LookupCLI:
 
             self.display_nearest_articles(query, top_k_article_similarities, elapsed)
 
-    def display_nearest_segments(self, query, nearest_segments, elapsed):
-        print('\n' * 5)
-        print("Nearest Segments ", ">>>> " * 10)
-        print("Nearest Segments ", ">>>> " * 10)
+    def display_nearest_segments(self, query, nearest_segments, answer, elapsed):
+        print(">" * 100)
+        print('\n' * 3)
         print("QUERY:", query)
-        print(f"query length: {len(query)}, {elapsed:.4f}s" + "---- " * 10)
+        print(f"query length: {len(query)}, {elapsed:.4f}s, found: {len(nearest_segments)} "
+              "results " + "---- " * 10)
+
+        print("\n\nRAG Answer:")
+        print(answer)
+        print("-" * 50)
+        print('\n' * 2)
 
         for i, result_element in enumerate(nearest_segments):
             score = result_element.similarity
@@ -122,14 +138,21 @@ class LookupCLI:
             offset = segment_record.offset
             length = segment_record.length
 
-            caption = result_element.caption
+            caption = self.clean_header(result_element.caption)
             text = result_element.text
 
-            print(f"{i + 1}. Segment Index: {index}, Score: {score:.4f}, "
-                  f"(off: {offset}, len: {length})")
+            print(f"\nResult {i + 1}: Segment Index: {index}, Score: {score:.4f}, "
+                  f"(offset: {offset}, length: {length})")
             print(f"Article: {caption}")
+            print("Text:")
             print(text)
-            print("<--- " * 10, "\n")
+            print('\n' * 2)
+
+        print("-" * 100)
+        print("query:", query)
+        print(f"query length: {len(query)}, {elapsed:.4f}s, found: {len(nearest_segments)} "
+              "results " + "---- " * 10)
+        print("<" * 100)
 
     def display_nearest_articles(self, query, top_k_article_similarities, elapsed):
         print("\n\n\n\n")
@@ -143,6 +166,14 @@ class LookupCLI:
                   f"(off: {article.offset}, len: {len(article.text)})")
             print(article.text)
             print("<--- " * 10, "\n")
+
+    @staticmethod
+    def clean_header(text):
+        text = text.replace("\n", "")
+        text = re.sub(r'(^\s*=\s+)|(\s+=\s*$)', '', text)
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip()
+        return text
 
     @property
     def extended_segment_map(self):
@@ -177,6 +208,8 @@ def main():
     parser.add_argument("--threshold", type=float, default=0.65)
     parser.add_argument("--max-documents", type=int, default=3)
     parser.add_argument("--log-level", type=str, default="INFO")
+    parser.add_argument("--action", type=str, choices=["search", "rag"], default="search",
+                        help="Specify the action: 'search' or 'rag'")
     args, _ = parser.parse_known_args()
 
     log_level_upper = args.log_level.upper()
@@ -189,11 +222,13 @@ def main():
 
     app_config = get_app_config(logger)
 
+    action = parse_enum(Action, args.action)
+
     k_nearest = args.k_nearest
     threshold = args.threshold
     max_documents = args.max_documents
 
-    lookup_cli = LookupCLI(logger, app_config, k_nearest, threshold, max_documents)
+    lookup_cli = LookupCLI(logger, app_config, k_nearest, threshold, max_documents, action)
     lookup_cli.run()
 
 
