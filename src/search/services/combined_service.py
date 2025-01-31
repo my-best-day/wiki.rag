@@ -58,6 +58,7 @@ class CombinedRequest:
 
 @dataclass
 class CombinedResponse:
+    action: Action
     prompt: str
     results: List[ResultElement]
     answer: str
@@ -91,6 +92,7 @@ class CombinedService:
         self,
         combined_request: CombinedRequest
     ) -> CombinedResponse:
+        action = combined_request.action
 
         timer = LoggingTimer('combined', logger=logger, level="INFO")
 
@@ -120,6 +122,7 @@ class CombinedService:
         timer.total(total_elapsed)
 
         combined_response = CombinedResponse(
+            action=action,
             prompt=prompt,
             results=element_results,
             answer=answer,
