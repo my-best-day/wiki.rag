@@ -1,24 +1,14 @@
 import re
-import os
 import logging
-import datetime
 
-from fastapi import FastAPI, Form, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from xutils.app_config import AppConfig
 from search.k_nearest_finder import KNearestFinder
 from search.stores import Stores
-
-from search.services.combined_service import (
-    CombinedService,
-    CombinedRequest,
-    Kind,
-    Action,
-    parse_enum
-)
+from web.combined_router import create_combined_router
+from search.services.combined_service import CombinedService
 
 logger = logging.getLogger(__name__)
 
@@ -30,84 +20,17 @@ def clean_header(text):
 def create_combined_app(app_config: AppConfig) -> FastAPI:
     app = FastAPI()
 
-    templates = Jinja2Templates(directory="web-ui/templates")
-    templates.env.filters['clean_header'] = clean_header
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 
     embed_config = app_config.embed_config
-
     text_file_path = app_config.text_file_path
     stores = Stores.create_stores(text_file_path, embed_config)
     stores.background_load()
 
     finder = KNearestFinder(stores, embed_config)
+    service = CombinedService(stores, embed_config, finder)
 
-    app.state.templates = templates
-    embedding_config = app_config.embed_config
-
-    service = CombinedService(stores, embedding_config, finder)
-
-    @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request):
-        template_vars = {
-            "request": request,
-            "Kind": Kind
-        }
-        return templates.TemplateResponse("combined.html", template_vars)
-
-    @app.get("/combined", response_class=HTMLResponse)
-    async def combined_get(request: Request):
-        return await index(request)
-
-    @app.post("/combined", response_class=HTMLResponse)
-    async def combined(
-        request: Request,
-        action: str = Form(...),
-        query: str = Form(...), k: int = Form(5),
-        threshold: float = Form(0.3),
-        max: int = Form(10),
-        kind: str = Form(...),
-    ) -> HTMLResponse:
-
-        received = datetime.datetime.now()
-
-        logger.info(f"Received query: action: {action}, kind: {kind}, "
-                    f"({k}, {threshold}, {max}, received: {received.isoformat()}"
-                    f"\nquery: {query})")
-
-        kind_str = kind
-        kind = parse_enum(Kind, kind_str)
-
-        action_str = action
-        action = parse_enum(Action, action_str)
-
-        combined_request = CombinedRequest(
-            action=action,
-            kind=kind,
-            query=query,
-            k=k,
-            threshold=threshold,
-            max=max,
-        )
-
-        combined_response = service.combined(combined_request)
-
-        text_file_name = os.path.basename(app_config.text_file_path)
-
-        completed = datetime.datetime.now()
-
-        template_vars = {
-            "request": request,
-            "app_request": combined_request,
-            "app_response": combined_response,
-
-            "text_file": text_file_name,
-            "max_len": app_config.embed_config.max_len,
-            "received": received,
-            "completed": completed,
-
-            'Kind': Kind
-        }
-        return templates.TemplateResponse("combined.html", template_vars)
+    combined_router = create_combined_router(app_config, service)
+    app.include_router(combined_router)
 
     return app

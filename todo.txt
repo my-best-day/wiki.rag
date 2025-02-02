@@ -1,6 +1,14 @@
+
+2025-01-30
++ lookup.py for segments fixed, uses combined_service
+- extend lookup.py to do RAG
+- look into plots - search
+- look into plots - RAG
+- look into articles search / rag
+
 2025-01-28
 + see that wiki search works
-- see that wiki RAG works
++ see that wiki RAG works
 - see that plots search works
 - see that plots RAG works
 - make
