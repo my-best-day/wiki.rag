@@ -36,6 +36,8 @@ class SegmentEncoder:
         self.encoder = Encoder(batch_size=args.batch_size)
         self.config = EmbeddingConfig(prefix=args.path_prefix, max_len=args.max_len)
 
+        self.stop_file_path = Path(self.config.prefix) / "stop"
+
         embedding_store_path = EmbeddingStore.get_store_path(self.config)
         incremental = self.args.incremental
         mode = StoreMode.INCREMENTAL if incremental else StoreMode.WRITE
@@ -177,6 +179,9 @@ class SegmentEncoder:
         uids_buffer = []
         embedding_buffer = []
         for i in range(0, len(segments), batch_size):
+            if len(uids_buffer) == 0 and self.stop_file_path.exists():
+                logger.info("Stop file found, stopping")
+                break
             batch = segments[i:i + batch_size]
             batch_text = self.get_batch_text(batch)
             batch_uids = self.get_batch_uids(batch)
