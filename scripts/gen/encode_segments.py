@@ -36,7 +36,7 @@ class SegmentEncoder:
         self.encoder = Encoder(batch_size=args.batch_size)
         self.config = EmbeddingConfig(prefix=args.path_prefix, max_len=args.max_len)
 
-        self.stop_file_path = Path(self.config.prefix) / "stop"
+        self.stop_file_path = Path(self.config.prefix + ".stop")
 
         embedding_store_path = EmbeddingStore.get_store_path(self.config)
         incremental = self.args.incremental
