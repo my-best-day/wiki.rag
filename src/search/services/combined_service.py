@@ -4,8 +4,7 @@ from enum import Enum
 from uuid import UUID
 from openai import OpenAI
 from typing import List, Tuple
-from dataclasses import dataclass
-
+from pydantic.dataclasses import dataclass
 from xutils.timer import LoggingTimer
 from gen.data.segment_record import SegmentRecord
 from xutils.embedding_config import EmbeddingConfig
@@ -13,14 +12,6 @@ from search.stores import Stores
 from search.k_nearest_finder import KNearestFinder
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ResultElement:
-    similarity: float
-    record: SegmentRecord
-    caption: str
-    text: str
 
 
 class Kind(Enum):
@@ -43,7 +34,17 @@ def parse_enum(enum_class, value):
 
 
 @dataclass
+class ResultElement:
+    """a single search result"""
+    similarity: float
+    record: SegmentRecord
+    caption: str
+    text: str
+
+
+@dataclass
 class CombinedRequest:
+    id: str
     action: Action
     kind: Kind
     query: str
@@ -58,6 +59,7 @@ class CombinedRequest:
 
 @dataclass
 class CombinedResponse:
+    id: str
     action: Action
     prompt: str
     results: List[ResultElement]
@@ -92,18 +94,19 @@ class CombinedService:
         self,
         combined_request: CombinedRequest
     ) -> CombinedResponse:
+        request_id = combined_request.id
         action = combined_request.action
 
         timer = LoggingTimer('combined', logger=logger, level="INFO")
 
         element_id_similarity_tuple_list = self.find_nearest_elements(combined_request)
-
         timer.restart(f"Found {len(element_id_similarity_tuple_list)} results")
 
         element_results = self.get_element_results(
             combined_request.kind, element_id_similarity_tuple_list)
         timer.restart(f"got element results (len: {len(element_results)})")
 
+        # TODO: remove, let the client handle this
         total_length = 0
         for element_result in element_results:
             total_length += len(element_result.text)
@@ -115,13 +118,13 @@ class CombinedService:
             prompt, answer = "na", "na"
         else:
             raise ValueError(f"Invalid action: {combined_request.action}")
-
         timer.restart(f"did rag (prompt len: {len(prompt)}, answer len: {len(answer)})")
 
         total_elapsed = timer.total_time()
         timer.total(total_elapsed)
 
         combined_response = CombinedResponse(
+            id=request_id,
             action=action,
             prompt=prompt,
             results=element_results,

@@ -28,9 +28,19 @@
         </div>
         <div class="expand-collapse-buttons">
             <div>
+                <input type="hidden" name="id" id="request-id-input">
                 <button type="button" class="btn-expand-all" onclick="expandAllArticles()">Expand All</button>
                 <button type="button" class="btn-collapse-all" onclick="collapseAllArticles()">Collapse All</button>
             </div>
         </div>
     </form>
 </section>
+<script type="module">
+    import { ulid } from 'https://cdn.skypack.dev/ulid';
+
+    const form = document.getElementById('search-form');
+    form.addEventListener('submit', () => {
+        const requestIdInput = document.getElementById('request-id-input');
+        requestIdInput.value = ulid();
+    });
+  </script>
