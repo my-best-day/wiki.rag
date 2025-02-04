@@ -83,14 +83,18 @@ class LookupCLI:
         kind = Kind.SEGMENT
         action = self.action
 
-        if query.lower().startswith("search:"):
+        if query.endswith(":search"):
             action = Action.SEARCH
-            query = query[len("search:"):].strip()
-        elif query.lower().startswith("rag:"):
+            query = query[:-len(":search")]
+        elif query.endswith(":rag"):
             action = Action.RAG
-            query = query[len("rag:"):].strip()
+            query = query[:-len(":rag")]
+
+        if action is None:
+            action = Action.SEARCH
 
         combined_request = CombinedRequest(
+            id="13",
             action=action,
             kind=kind,
             query=query,
