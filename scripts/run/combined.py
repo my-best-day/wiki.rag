@@ -4,18 +4,16 @@ A CLI interface to interact with the combined service.
 Usage:
     python scripts/run/combined.py my query
 """
-import os
 import re
 import json
 import httpx
 import datetime
 import logging
-import argparse
 
-from xutils.app_config import AppConfig, load_app_config as _load_app_config
 from xutils.app_config import CombinedConfig
 from search.services.combined_service import Action, Kind
 from web.combined_router import CombinedRequestModel
+from xutils.load_config import get_app_config_and_query
 
 
 def clean_header(text):
@@ -117,89 +115,15 @@ def get_results(config: CombinedConfig, query: str, action: Action) -> list[str]
     url = f"http://{hostname}:{port}/api/combined"
 
     model_dump = request.model_dump()
-    response = httpx.post(url, json=model_dump)
+    response = httpx.post(url, json=model_dump, timeout=45.0)
     app_response = response.json()
     return app_response
-
-
-def load_app_config(logger) -> AppConfig:
-    config_file = "config.ini"
-    if "CONFIG_FILE" in os.environ:
-        config_file = os.environ["CONFIG_FILE"]
-    logger.debug(f"Using config file: {config_file}")
-
-    app_config = _load_app_config(config_file)
-    logger.info(f"AppConfig: {app_config}")
-
-    return app_config
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--hostname", type=str, default=None)
-    parser.add_argument("--port", type=int, default=None)
-    parser.add_argument("--log-level", type=str, default=None)
-    parser.add_argument("-k", type=int, default=None)
-    parser.add_argument("--threshold", type=float, default=None)
-    parser.add_argument("--max-documents", type=int, default=None)
-    parser.add_argument("--action", type=str, default=None)
-    parser.add_argument('query_parts', nargs=argparse.REMAINDER, help='Search query')
-    args = parser.parse_args()
-
-    if not args.query_parts:
-        parser.error("No query provided")
-
-    query = " ".join(args.query_parts)
-
-    if query.endswith(":search"):
-        args.action = Action.SEARCH
-        query = query[:-len(":search")]
-    elif query.endswith(":rag"):
-        args.action = Action.RAG
-        query = query[:-len(":rag")]
-
-    args.query = query
-
-    return args
-
-
-def get_app_config(logger) -> tuple[AppConfig, str, Action]:
-    app_config = load_app_config(logger)
-    args = parse_args()
-
-    # run config
-    if args.log_level is not None:
-        app_config.run_config.log_level = args.log_level
-
-    if args.hostname is not None:
-        app_config.run_config.hostname = args.hostname
-
-    if args.port is not None:
-        app_config.run_config.port = args.port
-
-    if args.log_level is not None:
-        app_config.run_config.log_level = args.log_level
-
-    # app config
-    if args.k is not None:
-        app_config.k = args.k
-
-    if args.threshold is not None:
-        app_config.threshold = args.threshold
-
-    if args.max_documents is not None:
-        app_config.max_documents = args.max_documents
-
-    query = args.query
-    action = args.action or Action.SEARCH
-
-    return app_config, query, action
 
 
 def main():
     logger = logging.getLogger(__name__)
 
-    app_config, query, action = get_app_config(logger)
+    app_config, query, action = get_app_config_and_query(logger)
     run_config = app_config.run_config
 
     log_level = run_config.log_level

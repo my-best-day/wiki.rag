@@ -1,7 +1,6 @@
 import logging
 from typing import List
 from numpy.typing import NDArray
-from xutils.app_config import AppConfig
 
 __import__("gen.encoder_helper")
 
@@ -24,7 +23,7 @@ class Encoder:
             batch_size: int,
             config_id: str = "small"):
 
-        self.config: AppConfig = encoder_configs[config_id]
+        self.encoder_config = encoder_configs[config_id]
         self.batch_size: int = batch_size
         self._model = None
 
@@ -39,7 +38,7 @@ class Encoder:
         return self._model
 
     def get_model(self):
-        model_id = self.config["model_id"]
+        model_id = self.encoder_config["model_id"]
         model = self._get_model(model_id)
         return model
 

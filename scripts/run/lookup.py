@@ -5,10 +5,10 @@ import sys
 import time
 import logging
 import argparse
-import os
 
 from search.stores import Stores
-from xutils.app_config import AppConfig, load_app_config
+from xutils.app_config import AppConfig
+from xutils.load_config import get_app_config
 from gen.element.element import Element
 from search.k_nearest_finder import KNearestFinder
 from search.services.combined_service import (
@@ -187,18 +187,6 @@ class LookupCLI:
 
     def get_article(self, uid):
         return Element.instances[uid]
-
-
-def get_app_config(logger) -> AppConfig:
-    config_file = "config.ini"
-    if "CONFIG_FILE" in os.environ:
-        config_file = os.environ["CONFIG_FILE"]
-    logger.debug(f"Using config file: {config_file}")
-
-    app_config = load_app_config(config_file)
-    logger.info(f"AppConfig: {app_config}")
-
-    return app_config
 
 
 def main():

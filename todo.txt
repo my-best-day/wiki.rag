@@ -1,9 +1,10 @@
 2025-02-03
 - move class definitions to a types package
+- rename app_config.py combined_config.py
 
 2025-01-30
 + lookup.py for segments fixed, uses combined_service
-- extend lookup.py to do RAG
++ extend lookup.py to do RAG
 - look into plots - search
 - look into plots - RAG
 - look into articles search / rag
