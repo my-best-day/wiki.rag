@@ -1,12 +1,10 @@
 import os
 import unittest
 import numpy as np
-from pathlib import Path
 from unittest.mock import patch, MagicMock, call
 
 from gen.element.element import Element
 from search.stores import Stores
-from gen.embedding_store import EmbeddingStore, StoreMode
 from xutils.embedding_config import EmbeddingConfig
 from ...xutils.byte_reader_tst import TestByteReader
 from gen.data.segment_record_store import SegmentRecord
@@ -16,6 +14,9 @@ class TestFlatArticleStore:
     def __init__(self, articles):
         self.articles = articles
         self.load_flat_articles_call_counter = 0
+
+    def load_documents(self):
+        return self.articles
 
     def load_flat_articles(self):
         self.load_flat_articles_call_counter += 1
@@ -48,13 +49,13 @@ class TestStores(unittest.TestCase):
         self,
         text_byte_reader=None ,
         segment_record_store=None,
-        flat_article_store=None,
+        document_store=None,
         embedding_store=None
     ):
         if text_byte_reader is None:
             text_byte_reader = MagicMock()
-        if flat_article_store is None:
-            flat_article_store = MagicMock()
+        if document_store is None:
+            document_store = MagicMock()
         if segment_record_store is None:
             segment_record_store = MagicMock()
         if embedding_store is None:
@@ -62,7 +63,7 @@ class TestStores(unittest.TestCase):
 
         stores = Stores(
             text_byte_reader,
-            flat_article_store,
+            document_store,
             segment_record_store,
             embedding_store
         )
@@ -89,38 +90,6 @@ class TestStores(unittest.TestCase):
         self.mock_embeddings = np.array(
             [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8], [0.9, 1.0]])
         self.mock_uids_and_embeddings = (self.mock_uids, self.mock_embeddings)
-
-    @patch('search.stores.EmbeddingStore', autospec=True)
-    def test_create_stores(self, mock_embedding_store):
-        text_file_path = '/dev/null/text.txt'
-        embedding_config = self.embedding_config
-
-        # Set up the mock EmbeddingStore
-        embedding_store_path_str = EmbeddingStore.get_store_path(embedding_config)
-        embedding_store_path = Path(embedding_store_path_str)
-        mock_embedding_store.get_store_path.return_value = embedding_store_path_str
-        mock_embedding_store_instance = mock_embedding_store.return_value
-
-        # Execute the test
-        stores = Stores.create_stores(
-            text_file_path,
-            embedding_config
-        )
-
-        # Assertions
-        self.assertIsInstance(stores, Stores)
-        self.assertEqual(stores.text_byte_reader.path, text_file_path)
-        path = str(stores.flat_article_store.flat_article_store_path)
-        prefix = embedding_config.prefix
-        self.assertTrue(path.startswith(prefix))
-
-        # Ensure the mock was used
-        mock_embedding_store.assert_called_once_with(
-            path=embedding_store_path,
-            mode=StoreMode.READ,
-            allow_empty=False
-        )
-        self.assertEqual(stores.embedding_store, mock_embedding_store_instance)
 
     @patch('logging.Logger.info')
     def test_background_load_not_called(self, _):
@@ -157,7 +126,7 @@ class TestStores(unittest.TestCase):
                     mock_thread.assert_called_once()
                     mock_thread_instance.start.assert_called_once()
 
-                    stores.flat_article_store.load_flat_articles.assert_called_once()
+                    stores.document_store.load_documents.assert_called_once()
                     stores.segment_record_store.load_segment_records.assert_called_once()
                     stores.embedding_store.load_embeddings.assert_called_once()
 
@@ -173,17 +142,17 @@ class TestStores(unittest.TestCase):
         text = stores.get_segment_text(segment_record)
         self.assertEqual(text, '3456')
 
-    def test_get_article_by_index(self):
+    def test_get_document_by_index(self):
         stores = self.create_stores()
-        stores._articles = self.mock_articles
+        stores._documents = self.mock_articles
 
-        article = stores.get_article_by_index(1)
+        article = stores.get_document_by_index(1)
         self.assertEqual(article, self.mock_article1)
 
-        article = stores.get_article_by_index(2)
+        article = stores.get_document_by_index(2)
         self.assertEqual(article, self.mock_article2)
 
-        article = stores.get_article_by_index(0)
+        article = stores.get_document_by_index(0)
         self.assertEqual(article, self.mock_article0)
 
     def test_get_segment_record_by_index(self):
@@ -207,87 +176,87 @@ class TestStores(unittest.TestCase):
         article_indexes = stores.get_embeddings_article_indexes()
         self.assertEqual(article_indexes, self.mock_uids)
 
-    def test_articles_empty(self):
+    def test_documents_empty(self):
         """
-        when _articles is None, the lock is used and the output of
-        _load_flat_articles is set to _articles
+        when _documents is None, the lock is used and the output of
+        _load_documents is set to _documents
         """
         Element.instances.clear()
         with patch("search.stores.RLock") as mock_rlock:
-            # when _load_flat_articles is called, it sets _articles to mock_articles
-            flat_article_store = TestFlatArticleStore(self.mock_articles)
-            stores = self.create_stores(flat_article_store=flat_article_store)
+            # when _load_documents is called, it sets _documents to mock_articles
+            document_store = TestFlatArticleStore(self.mock_articles)
+            stores = self.create_stores(document_store=document_store)
 
             # assert we start from a clean state
             self.assertIsNotNone(Element.instances)
-            self.assertIsNone(stores._articles)
+            self.assertIsNone(stores._documents)
 
-            # expect the lock to be used and the output of _load_flat_articles to be set
-            articles = stores.articles
+            # expect the lock to be used and the output of _load_documents to be set
+            documents = stores.documents
             mock_rlock_instance = mock_rlock.return_value
             expected_calls = [call.__enter__(), call.__exit__(None, None, None)]
             self.assertEqual(mock_rlock_instance.mock_calls, expected_calls)
-            self.assertIs(articles, self.mock_articles)
+            self.assertIs(documents, self.mock_articles)
 
-    def test_articles_not_empty(self):
+    def test_documents_not_empty(self):
         """
-        when _articles is not None, the lock is not not used and the output of
-        _load_flat_articles is not used
+        when _documents is not None, the lock is not not used and the output of
+        _load_documents is not used
         """
         Element.instances.clear()
-        with patch.object(Stores, '_load_flat_articles', return_value=None) \
-                as mock_load_flat_articles:
+        with patch.object(Stores, '_load_documents', return_value=None) \
+                as mock_load_documents:
             with patch("search.stores.RLock") as mock_rlock:
-                mock_load_flat_articles.side_effect = \
-                    lambda: setattr(stores, '_articles', None)
+                mock_load_documents.side_effect = \
+                    lambda: setattr(stores, '_documents', None)
 
                 stores = self.create_stores()
-                stores._articles = self.mock_articles
+                stores._documents = self.mock_articles
 
                 # Call the articles property to trigger the loading again
-                articles = stores.articles
+                documents = stores.documents
 
-                # Assert that the articles returned are the same as the first call
-                self.assertIs(articles, self.mock_articles)
+                # Assert that the documents returned are the same as the first call
+                self.assertIs(documents, self.mock_articles)
 
                 # Assert that the lock was not used
                 mock_rlock_instance = mock_rlock.return_value
                 mock_rlock_instance.assert_not_called()
                 # Ensure it was not called again
-                mock_load_flat_articles.assert_not_called()
+                mock_load_documents.assert_not_called()
 
-    def test_articles_double_lock(self):
+    def test_documents_double_lock(self):
         """
-        _articles is None, the lock is used, _articles is set when the lock is captured and
-        so _load_flat_articles is not called
+        _documents is None, the lock is used, _documents is set when the lock is captured and
+        so _load_documents is not called
         """
         Element.instances.clear()
-        with patch.object(Stores, '_load_flat_articles', return_value=None) \
-                as mock_load_flat_articles:
+        with patch.object(Stores, '_load_documents', return_value=None) \
+                as mock_load_documents:
             with patch("search.stores.RLock") as mock_rlock:
-                # when the lock is capture, set _articles
+                # when the lock is capture, set _documents
                 mock_rlock_instance = mock_rlock.return_value
                 mock_rlock_instance.__enter__.side_effect = \
-                    lambda: setattr(stores, '_articles', self.mock_articles)
+                    lambda: setattr(stores, '_documents', self.mock_articles)
 
                 # we hope this is not called
-                mock_load_flat_articles.side_effect = \
-                    lambda: setattr(stores, '_articles', None)
+                mock_load_documents.side_effect = \
+                    lambda: setattr(stores, '_documents', None)
 
                 stores = self.create_stores()
                 # start from a clean state
                 self.assertIsNotNone(Element.instances)
-                self.assertIsNone(stores._articles)
+                self.assertIsNone(stores._documents)
 
-                articles = stores.articles
+                documents = stores.documents
 
                 mock_rlock_instance = mock_rlock.return_value
                 expected_calls = [call.__enter__(), call.__exit__(None, None, None)]
                 self.assertEqual(mock_rlock_instance.mock_calls, expected_calls)
 
-                mock_load_flat_articles.assert_not_called()
+                mock_load_documents.assert_not_called()
 
-                self.assertIs(articles, self.mock_articles)
+                self.assertIs(documents, self.mock_articles)
 
     def test_segment_records_empty(self):
         """
@@ -406,14 +375,14 @@ class TestStores(unittest.TestCase):
             mock_rlock_instance.assert_not_called()
             self.assertEqual(embedding_store.load_embeddings_call_counter, 0)
 
-    def test_protected_load_flat_articles(self):
+    def test_protected_load_documents(self):
         test_flat_article_store = TestFlatArticleStore(self.mock_articles)
 
-        stores = self.create_stores(flat_article_store=test_flat_article_store)
+        stores = self.create_stores(document_store=test_flat_article_store)
 
-        self.assertIsNone(stores._articles)
-        stores._load_flat_articles()
-        self.assertIs(stores._articles, self.mock_articles)
+        self.assertIsNone(stores._documents)
+        stores._load_documents()
+        self.assertIs(stores._documents, self.mock_articles)
 
     def test_protected_load_segment_records(self):
         test_segment_record_store = TestSegmentRecordStore(self.segment_records)

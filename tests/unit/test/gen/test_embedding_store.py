@@ -9,6 +9,7 @@ from gen.embedding_store import CleanFileLock, EMPTY_RESULT
 from gen.embedding_store import StoreMode
 from gen.uuid_embedding_store import UUIDEmbeddingStore
 from xutils.embedding_config import EmbeddingConfig
+from gen.embedding_store import EmbeddingStore
 
 
 class CleanFileLockTestCase(unittest.TestCase):
@@ -55,21 +56,37 @@ class TestEmbeddingStore(unittest.TestCase):
     def setUp(self):
         TestCleanFileLock.instances.clear()
         UUIDEmbeddingStore.file_lock_class = TestCleanFileLock
+        self.embedding_config = EmbeddingConfig(
+            prefix="/fake/path",
+            max_len=10,
+            dim=768,
+            stype="float16",
+            norm_type="int8",
+            l2_normalize=True
+        )
+        self.embedding_store_path = EmbeddingStore.get_store_path(self.embedding_config)
 
     def tearDown(self):
         module = importlib.import_module(UUIDEmbeddingStore.__module__)
         importlib.reload(module)
 
     def test_lock_path(self):
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
-        self.assertEqual(str(store.lock_path), f"{path}.lock")
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
+        lock_path = Path(self.embedding_store_path).with_suffix(".lock")
+        self.assertEqual(store.lock_path, lock_path)
         self.assertIsInstance(store.lock_path, Path)
 
     def test_extend_embeddings(self):
         # test: lock is used, _add_embeddings was called, uids were cast to strings
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         store._add_embeddings = MagicMock()
 
         uids = [uuid4(), uuid4()]
@@ -86,8 +103,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_extend_embeddings_empty(self):
         # test: lock is used, _add_embeddings was called, uids were cast to strings
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         store._add_embeddings = MagicMock()
 
         uids = []
@@ -104,8 +124,12 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_add_embeddings_init(self):
         # test: incremental addition... from scratch
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        path = self.embedding_store_path
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
@@ -121,8 +145,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_add_embeddings_init_empty(self):
         # test: incremental addition... from scratch
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
@@ -138,8 +165,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_add_embeddings_append(self):
         # test: incremental addition with existing entries
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         existing_uids = np.array([str(uuid4()), str(uuid4())])
         existing_embeddings = np.array([[7, 8, 9], [10, 11, 12]])
         store._load_embeddings = MagicMock(return_value=(
@@ -160,8 +190,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_add_embeddings_append_empty(self):
         # test: incremental addition with existing entries
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         existing_uids = np.array([str(uuid4()), str(uuid4())])
         existing_embeddings = np.array([[7, 8, 9], [10, 11, 12]])
         store._load_embeddings = MagicMock(return_value=(
@@ -177,8 +210,12 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_add_embeddings_do_not_stringify(self):
         # stringifying uids is the public method responsibility, don't do it here
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        path = self.embedding_store_path
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
         empty_uids, empty_embeddings = EMPTY_RESULT
         store._load_embeddings = MagicMock(return_value=(empty_uids, empty_embeddings))
 
@@ -193,8 +230,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_get_count(self):
         # test count for zero and none zero entries
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.INCREMENTAL, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.INCREMENTAL,
+            allow_empty=True
+        )
 
         store._load_embeddings = MagicMock(return_value=(np.array([]), np.array([])))
         self.assertEqual(store.get_count(), 0)
@@ -204,8 +244,11 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_load_embeddings(self):
         # test: lock is used, _load_embeddings was called, uids were cast to UUIDS
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=True)
+        store = UUIDEmbeddingStore(
+            self.embedding_config,
+            mode=StoreMode.READ,
+            allow_empty=True
+        )
 
         uids = np.array([uuid4(), uuid4()])
         stringified_uids = uids.astype(str)
@@ -227,35 +270,30 @@ class TestEmbeddingStore(unittest.TestCase):
     @patch('gen.embedding_store.Path', autospec=True)
     def test_mode_write(self, mock_path):
         # test: mode write
-        path = "/dev/null"
-
         mock_path_instance = mock_path.return_value
         mock_path_instance.exists.return_value = False
 
-        UUIDEmbeddingStore(path, mode=StoreMode.WRITE, allow_empty=True)
+        UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.WRITE, allow_empty=True)
         mock_path_instance.unlink.assert_not_called()
 
         mock_path_instance.exists.return_value = True
 
-        UUIDEmbeddingStore(path, mode=StoreMode.WRITE, allow_empty=True)
+        UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.WRITE, allow_empty=True)
         mock_path_instance.unlink.assert_called_once()
 
     def test_mode_invalid(self):
         # test: mode invalid
-        path = "/dev/null"
         with self.assertRaises(ValueError):
-            UUIDEmbeddingStore(path, mode=MagicMock(), allow_empty=True)
+            UUIDEmbeddingStore(self.embedding_config, mode=MagicMock(), allow_empty=True)
 
     @patch.object(UUIDEmbeddingStore, "does_store_exist", return_value=False)
     def test_protected_load_embeddings_no_file_ctor(self, does_store_exist_mock):
-        path = "/dev/null/store.json"
         with self.assertRaises(ValueError):
-            UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=False)
+            UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.READ, allow_empty=False)
 
     def test_protected_load_embeddings_stores_does_not_exist(self):
         # test: no store
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=True)
+        store = UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.READ, allow_empty=True)
         store.does_store_exist = MagicMock(return_value=False)
 
         uids, embeddings = store._load_embeddings(allow_empty=True)
@@ -267,8 +305,8 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_protected_load_embeddings_store_exists(self):
         # test: empty store
-        path = "/dev/null"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=True)
+        path = self.embedding_store_path
+        store = UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.READ, allow_empty=True)
         store.does_store_exist = MagicMock(return_value=True)
 
         uids = [uuid4(), uuid4()]
@@ -287,8 +325,7 @@ class TestEmbeddingStore(unittest.TestCase):
 
     def test_does_store_exists(self):
         # test: file exists
-        path = "/fake/path"
-        store = UUIDEmbeddingStore(path, mode=StoreMode.READ, allow_empty=True)
+        store = UUIDEmbeddingStore(self.embedding_config, mode=StoreMode.READ, allow_empty=True)
         with patch.object(Path, "exists", return_value=False):
             self.assertFalse(store.does_store_exist())
 
@@ -302,31 +339,30 @@ class TestEmbeddingStore(unittest.TestCase):
             l2_normalize=True
         )
 
-        store = UUIDEmbeddingStore
-        path = store.get_store_path(config)
+        path = UUIDEmbeddingStore.get_store_path(config)
         expected_path = "/fake/path_10_768_float16_embeddings.npz"
         self.assertEqual(path, expected_path)
 
         config.dim = None
-        path = store.get_store_path(config)
+        path = UUIDEmbeddingStore.get_store_path(config)
         expected_path = "/fake/path_10_float16_embeddings.npz"
         self.assertEqual(path, expected_path)
 
         config.dim = 256
         config.max_len = 20
         config.stype = "float32"
-        path = store.get_store_path(config)
+        path = UUIDEmbeddingStore.get_store_path(config)
         expected_path = "/fake/path_20_256_embeddings.npz"
         self.assertEqual(path, expected_path)
 
         config.stype = "float16"
         config.l2_normalize = False
-        path = store.get_store_path(config)
+        path = UUIDEmbeddingStore.get_store_path(config)
         expected_path = "/fake/path_20_256_float16_int8_embeddings.npz"
         self.assertEqual(path, expected_path)
 
         config.norm_type = None
-        path = store.get_store_path(config)
+        path = UUIDEmbeddingStore.get_store_path(config)
         expected_path = "/fake/path_20_256_float16_embeddings.npz"
         self.assertEqual(path, expected_path)
 

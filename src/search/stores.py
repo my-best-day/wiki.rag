@@ -1,6 +1,5 @@
 import logging
 from uuid import UUID
-from pathlib import Path
 from numpy.typing import NDArray
 from threading import RLock, Thread
 from typing import List, Tuple, Optional
@@ -8,63 +7,32 @@ from typing import List, Tuple, Optional
 
 from xutils.utils import Utils
 from xutils.timer import LoggingTimer
-from gen.embedding_store import EmbeddingStore, StoreMode
 from xutils.byte_reader import ByteReader
-from xutils.embedding_config import EmbeddingConfig
-from gen.element.flat.flat_article import FlatArticle
 from gen.data.segment_record import SegmentRecord
 from gen.data.segment_record_store import SegmentRecordStore
-from gen.element.flat.flat_article_store import FlatArticleStore
-
+from gen.data.document import Document
+from gen.data.document_store import DocumentStore
+from gen.embedding_store import EmbeddingStore
 logger = logging.getLogger(__name__)
 
 
 class Stores:
 
-    @classmethod
-    def create_stores(
-        cls,
-        text_file_path: Path,
-        embed_config: EmbeddingConfig
-    ) -> 'Stores':
-        text_byte_reader = ByteReader(text_file_path)
-
-        path_prefix = embed_config.prefix
-        flat_article_store = FlatArticleStore(path_prefix, text_byte_reader)
-
-        segment_record_store = SegmentRecordStore.from_embed_config(embed_config)
-
-        embedding_store_path_str = EmbeddingStore.get_store_path(embed_config)
-        embedding_store_path = Path(embedding_store_path_str)
-        embedding_store = EmbeddingStore(
-            path=embedding_store_path,
-            mode=StoreMode.READ,
-            allow_empty=False
-        )
-
-        stores = cls(
-            text_byte_reader,
-            flat_article_store,
-            segment_record_store,
-            embedding_store,
-        )
-        return stores
-
     def __init__(
         self,
         text_byte_reader: ByteReader,
-        flat_article_store: FlatArticleStore,
+        document_store: DocumentStore,
         segment_record_store: SegmentRecordStore,
         embedding_store: EmbeddingStore
     ) -> None:
 
         self.text_byte_reader = text_byte_reader
-        self.flat_article_store = flat_article_store
+        self.document_store = document_store
         self.segment_record_store = segment_record_store
         self.embedding_store = embedding_store
 
         self._lock = RLock()
-        self._articles: Optional[List[FlatArticle]] = None
+        self._documents: Optional[List[Document]] = None
         self._segment_records: Optional[List[SegmentRecord]] = None
         self._uids_and_embeddings: Optional[Tuple[List[UUID], NDArray]] = None
 
@@ -76,9 +44,8 @@ class Stores:
             logger.info("background_load starts")
             with self._lock:
                 timer = LoggingTimer('background_load', logger=logger, level="DEBUG")
-                # non-flat articles are loaded along with the segments
-                self._load_flat_articles()
-                timer.restart("flat articles loaded")
+                self._load_documents()
+                timer.restart("documents loaded")
 
                 self._load_segment_records()
                 timer.restart("segment records loaded")
@@ -98,10 +65,10 @@ class Stores:
         text = _bytes.decode("utf-8")
         return text
 
-    def get_article_by_index(self, article_index: int) -> FlatArticle:
-        articles = self.articles
-        article = articles[article_index]
-        return article
+    def get_document_by_index(self, document_index: int) -> Document:
+        documents = self.documents
+        document = documents[document_index]
+        return document
 
     def get_segment_record_by_index(self, segment_index: int) -> SegmentRecord:
         segment_records = self.segment_records
@@ -110,16 +77,16 @@ class Stores:
 
     def get_embeddings_article_indexes(self) -> List[int]:
         segment_records = self.segment_records
-        article_indexes = [record.document_index for record in segment_records]
-        return article_indexes
+        document_indexes = [record.document_index for record in segment_records]
+        return document_indexes
 
     @property
-    def articles(self) -> List[FlatArticle]:
-        if self._articles is None:
+    def documents(self) -> List[Document]:
+        if self._documents is None:
             with self._lock:
-                if self._articles is None:
-                    self._load_flat_articles()
-        return self._articles
+                if self._documents is None:
+                    self._load_documents()
+        return self._documents
 
     @property
     def segment_records(self) -> List[SegmentRecord]:
@@ -137,10 +104,10 @@ class Stores:
                     self._load_uids_and_embeddings()
         return self._uids_and_embeddings
 
-    def _load_flat_articles(self) -> None:
-        flat_article_store = self.flat_article_store
-        flat_articles = flat_article_store.load_flat_articles()
-        self._articles = flat_articles
+    def _load_documents(self) -> None:
+        document_store = self.document_store
+        documents = document_store.load_documents()
+        self._documents = documents
 
     def _load_segment_records(self) -> None:
         """reads segment records from a csv file"""

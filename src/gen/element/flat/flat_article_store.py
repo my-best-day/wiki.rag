@@ -21,6 +21,10 @@ class FlatArticleStore:
         self.text_byte_reader = text_byte_reader
         self.store = store or Store()
 
+    def load_documents(self):
+        documents = self.load_flat_articles()
+        return documents
+
     def load_flat_articles(self):
         if self.text_byte_reader is None:
             raise ValueError("text_byte_reader is required to read flat articles")

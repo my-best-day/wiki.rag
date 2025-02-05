@@ -240,7 +240,7 @@ class CombinedService:
             segment_record = self.stores.get_segment_record_by_index(segment_ind)
             segment_text = self.stores.get_segment_text(segment_record)
             article_index = segment_record.document_index
-            article = self.stores.get_article_by_index(article_index)
+            article = self.stores.get_document_by_index(article_index)
             header_text = article.header.text
             caption_text = (
                 f"{header_text} : "

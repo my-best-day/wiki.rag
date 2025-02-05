@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from pathlib import Path
 from filelock import FileLock
-from typing import List, Tuple, Any, Union
+from typing import List, Tuple, Any
 from numpy.typing import NDArray
 from xutils.embedding_config import EmbeddingConfig
 from enum import Enum, auto
@@ -47,12 +47,12 @@ class EmbeddingStore:
 
     def __init__(
         self,
-        path: Union[str, Path],
+        embedding_config: EmbeddingConfig,
         mode: StoreMode,
         allow_empty: bool,
     ):
-        logger.info(f"EmbeddingStore: {path}")
-        self.path = Path(path)
+        path_str = EmbeddingStore.get_store_path(embedding_config)
+        self.path = Path(path_str)
         self.allow_empty = allow_empty
 
         logger.debug("EmbeddingStore: mode=%s, allow_empty=%s", mode, allow_empty)
@@ -63,7 +63,7 @@ class EmbeddingStore:
         if mode == StoreMode.READ:
             require_store = not allow_empty
             if require_store and store_does_not_exist:
-                raise ValueError(f"Embedding store {path} does not exist")
+                raise ValueError(f"Embedding store {path_str} does not exist")
         elif mode == StoreMode.INCREMENTAL:
             # ok whether store exists or not
             pass

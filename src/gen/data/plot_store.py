@@ -13,6 +13,10 @@ class PlotStore:
     def __init__(self, plots_dir: Path):
         self.plots_dir = plots_dir
 
+    def load_documents(self):
+        documents = self.load_plots()
+        return documents
+
     def load_plots(self):
         plots_text_path = self.get_plots_text_path()
         byte_reader = ByteReader(plots_text_path)
