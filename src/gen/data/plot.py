@@ -19,7 +19,6 @@ class Plot:
         self.header = AttributeProxy(self, '_header')
 
     def __getattr__(self, name):
-        print(f"*** *** *** *** *** in __getattr__ : {name} ***")
         return getattr(self.plot_data, name)
 
     @property
