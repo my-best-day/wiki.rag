@@ -13,7 +13,7 @@ class PlotStore:
     def __init__(self, path_prefix: str):
         # somewhat hacky, but it works
         path_prefix = Path(path_prefix)
-        plots_dir = path_prefix.parent
+        plots_dir = path_prefix  # .parent
         self.plots_dir = plots_dir
 
     def load_documents(self):
@@ -29,6 +29,8 @@ class PlotStore:
 
     def load_plot_data_list(self):
         plots_data_path = self.get_plots_data_path()
+        if not plots_data_path.exists():
+            raise FileNotFoundError(f"Plots data path {plots_data_path} does not exist")
         plots_df = pd.read_csv(plots_data_path, index_col=False)
         # titles are stored as b'title' and are loaded as strings like "b'title'"
         plots_df['title'] = plots_df['title'].apply(lambda x: eval(x))

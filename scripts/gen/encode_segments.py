@@ -38,12 +38,11 @@ class SegmentEncoder:
 
         self.stop_file_path = Path(self.config.prefix + ".stop")
 
-        embedding_store_path = EmbeddingStore.get_store_path(self.config)
         incremental = self.args.incremental
         mode = StoreMode.INCREMENTAL if incremental else StoreMode.WRITE
         embedding_store_class = EmbeddingStore if self.args.records else UUIDEmbeddingStore
         self.embedding_store = embedding_store_class(
-            embedding_store_path,
+            embedding_config=self.config,
             mode=mode,
             allow_empty=True
         )
