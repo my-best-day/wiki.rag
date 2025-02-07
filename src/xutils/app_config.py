@@ -1,11 +1,17 @@
 from typing import Optional
 from dataclasses import dataclass
-
+from enum import Enum
 from xutils.embedding_config import EmbeddingConfig
+
+
+class Domain(Enum):
+    WIKI = "wiki"
+    PLOTS = "plots"
 
 
 @dataclass
 class AppConfig:
+    domain: Domain
     text_file_path: str
     embed_config: Optional[EmbeddingConfig]
 

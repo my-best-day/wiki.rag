@@ -12,9 +12,6 @@
             "program": "${workspaceFolder}/scripts/run/run_app_wrapper.py",
             "console": "integratedTerminal",
             "args": [
-                "--port", "8023",
-                "--app", "combined",
-                "--log-level", "DEBUG"
             ]
         },
         {

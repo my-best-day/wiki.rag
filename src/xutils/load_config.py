@@ -3,7 +3,7 @@ import logging
 import argparse
 import configparser
 
-from xutils.app_config import CombinedConfig, AppConfig, RunConfig, EmbeddingConfig
+from xutils.app_config import CombinedConfig, AppConfig, RunConfig, EmbeddingConfig, Domain
 from search.services.combined_service import Action
 
 
@@ -67,12 +67,15 @@ def load_app_config(logger) -> AppConfig:
     run_config = load_run_config(config)
 
     search_sec = config["SEARCH-APP"]
+    domain_str = search_sec.get("domain", "wiki")
+    domain = Domain[domain_str.upper()]
     text_file_path = search_sec.get("text-file-path")
     k = search_sec.getint("k")
     threshold = search_sec.getfloat("threshold")
     max_documents = search_sec.getint("max-documents")
 
     combined_config = CombinedConfig(
+        domain=domain,
         text_file_path=text_file_path,
         k=k,
         threshold=threshold,

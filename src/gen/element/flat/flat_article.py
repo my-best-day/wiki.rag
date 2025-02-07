@@ -1,22 +1,7 @@
 from uuid import UUID
 from gen.element.element import Element
 from xutils.byte_reader import ByteReader
-
-
-class _Proxy:
-    """A proxy class that facilitates attribute access on a parent object.
-
-    If the parent object has an attribute `_parent_header`, it can be accessed
-    as `article.parent.header` instead of `article._parent_header`. This is useful for
-    maintaining a cleaner interface while encapsulating the underlying attribute naming
-    conventions.
-    """
-    def __init__(self, parent, prefix):
-        self.parent = parent
-        self.prefix = prefix
-
-    def __getattr__(self, name):
-        return getattr(self.parent, f"{self.prefix}_{name}")
+from xutils.attribute_proxy import AttributeProxy
 
 
 class FlatArticle(Element):
@@ -40,8 +25,8 @@ class FlatArticle(Element):
         self.__header_bytes = None
         self.__body_bytes = None
 
-        self.header = _Proxy(self, '_header')
-        self.body = _Proxy(self, '_body')
+        self.header = AttributeProxy(self, '_header')
+        self.body = AttributeProxy(self, '_body')
 
     @property
     def _header_bytes(self):

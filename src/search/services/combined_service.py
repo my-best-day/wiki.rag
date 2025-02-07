@@ -239,13 +239,10 @@ class CombinedService:
         for segment_ind, similarity in segment_id_similarity_tuple_list:
             segment_record = self.stores.get_segment_record_by_index(segment_ind)
             segment_text = self.stores.get_segment_text(segment_record)
-            article_index = segment_record.document_index
-            article = self.stores.get_document_by_index(article_index)
+            document_index = segment_record.document_index
+            article = self.stores.get_document_by_index(document_index)
             header_text = article.header.text
-            caption_text = (
-                f"{header_text} : "
-                f"{segment_text[:60]}{'...' if len(segment_text) > 60 else ''}"
-            )
+            caption_text = header_text
             results.append(ResultElement(similarity, segment_record, caption_text, segment_text))
         return results
 

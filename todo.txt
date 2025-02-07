@@ -1,3 +1,8 @@
+2025-02-05
+- introduced Domain (wiki/plots),
+- used it in combined_app, need to test and see what else need changing
+2025-02-04
+- switched from articles to document to facilitate support of plots
 2025-02-03
 - move class definitions to a types package
 - rename app_config.py combined_config.py

@@ -69,7 +69,8 @@ def print_stats(response: dict, query: str) -> None:
 
 
 def print_answer(response: dict) -> None:
-    print(f"Answer: {response['data']['answer']}")
+    print("Answer:")
+    print(response['data']['answer'])
 
 
 def print_results(response: dict) -> None:

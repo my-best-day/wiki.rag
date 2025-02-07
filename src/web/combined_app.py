@@ -12,6 +12,9 @@ from web.combined_router import create_combined_router
 from gen.embedding_store import EmbeddingStore, StoreMode
 from search.services.combined_service import CombinedService
 from gen.element.flat.flat_article_store import FlatArticleStore
+from gen.data.plot_store import PlotStore
+from gen.data.segment_record_store import SegmentRecordStore
+from xutils.app_config import Domain
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,13 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
 
     text_byte_reader = ByteReader(text_file_path)
     path_prefix = embed_config.prefix
-    document_store = FlatArticleStore(path_prefix, text_byte_reader)
+    domain = app_config.domain
+    if domain == Domain.WIKI:
+        document_store = FlatArticleStore(path_prefix, text_byte_reader)
+    elif domain == Domain.PLOTS:
+        document_store = PlotStore(path_prefix)
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
 
     embedding_store = EmbeddingStore(
         embedding_config=embed_config,
@@ -38,7 +47,10 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
         allow_empty=False
     )
 
-    stores = Stores(text_byte_reader, document_store, embedding_store)
+    max_len = embed_config.max_len
+    segment_record_store = SegmentRecordStore(path_prefix, max_len)
+
+    stores = Stores(text_byte_reader, document_store, segment_record_store, embedding_store)
     stores.background_load()
 
     finder = KNearestFinder(stores, embed_config)
