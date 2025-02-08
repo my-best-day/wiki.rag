@@ -1,6 +1,13 @@
+2025-02-08
+- test newly encoded, 768, embeddings
+- make case / dataset
+2025-02-06
++ plots is working now
+- encode plots with 1024 and 2500
+- try wiki with 2500
 2025-02-05
-- introduced Domain (wiki/plots),
-- used it in combined_app, need to test and see what else need changing
++ introduced Domain (wiki/plots),
++ used it in combined_app, need to test and see what else need changing
 2025-02-04
 - switched from articles to document to facilitate support of plots
 2025-02-03
