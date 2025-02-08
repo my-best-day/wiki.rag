@@ -21,7 +21,7 @@ class Encoder:
     def __init__(
             self,
             batch_size: int,
-            config_id: str = "small"):
+            config_id: str = "big"):
 
         self.encoder_config = encoder_configs[config_id]
         self.batch_size: int = batch_size
