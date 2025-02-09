@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 class SentenceUtils:
 
-    # TODO: test that "".join(fragments) == bytes
     @staticmethod
     def split_sentence(sentence: bytes, max_length: int, max_extend: int = 24) -> List[bytes]:
         """
@@ -45,6 +44,9 @@ class SentenceUtils:
             start = end
 
         adjusted_fragments = SentenceUtils.adjust_fragments(fragments, max_extend)
+
+        if b''.join(adjusted_fragments) != sentence:
+            raise ValueError("adjusted_fragments do not reconstruct the original sentence")
 
         return adjusted_fragments
 
@@ -101,8 +103,8 @@ class SentenceUtils:
         adjusted_leading = None
         adjusted_trailing = None
 
-        # (?:\w|(?:\xC0.)|(?:\xE0..)|(?:\xF0...) - \w capture ascii characters while
-        # the next three terms capture unicode characters with 2, 3, and 4 bytes
+        # (?:\w|(?:\xC0.)|(?:\xE0..)|(?:\xF0...) - \w capture ascii bytes while
+        # the next three terms capture bytes of unicode characters with 2, 3, and 4 bytes
         # respectively
         # the \W makes sure we grab the entire word's end, the \w+ makes sure we
         # don't make trailing an empty fragment
