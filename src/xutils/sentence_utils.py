@@ -19,7 +19,7 @@ class SentenceUtils:
 
         Args:
             sentence (bytes): The input sentence to split.
-            max_length (int): The maximum target length for fragments.
+            max_length (int): The maximum target byte length for fragments.
             max_extend (int): max bytes to grab from one fragment to the other
 
         Returns:
@@ -101,11 +101,18 @@ class SentenceUtils:
         adjusted_leading = None
         adjusted_trailing = None
 
-        grab_leading_word_bytes_from_trailer = rb'^(\w{1,%d})\W+\w+' % max_extend
+        # (?:\w|(?:\xC0.)|(?:\xE0..)|(?:\xF0...) - \w capture ascii characters while
+        # the next three terms capture unicode characters with 2, 3, and 4 bytes
+        # respectively
+        # the \W makes sure we grab the entire word's end, the \w+ makes sure we
+        # don't make trailing an empty fragment
+        grab_leading_word_bytes_from_trailer = \
+            rb'^((?:\w|(?:\xC0.)|(?:\xE0..)|(?:\xF0...)){1,%d})\W+' % max_extend + \
+            rb'(?:\w|(?:\xC0.)|(?:\xE0..)|(?:\xF0...))+'
 
         # leading ends with a word byte
         if re.search(br'\w$', leading):
-            # trailing is \w+\W+\w+
+            # trailing starts with a word byte and matches \w+\W+\w+
             match = re.match(grab_leading_word_bytes_from_trailer, trailing)
             if match:
                 remainder = match.group(1)
@@ -125,14 +132,6 @@ class SentenceUtils:
         if adjusted_leading is None and adjusted_trailing is None:
             adjusted_leading = leading
             adjusted_trailing = trailing
-        else:
-            split_point = len(adjusted_leading)
-            sentence = adjusted_leading + adjusted_trailing
-            adjusted_split_point = \
-                EncodingUtils.adjust_split_point(sentence, split_point, after_char=True)
-            if adjusted_split_point != split_point:
-                adjusted_leading = sentence[:adjusted_split_point]
-                adjusted_trailing = sentence[adjusted_split_point:]
 
         return adjusted_leading, adjusted_trailing
 
