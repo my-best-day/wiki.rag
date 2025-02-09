@@ -10,10 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class PlotStore:
-    def __init__(self, path_prefix: str):
-        # somewhat hacky, but it works
-        path_prefix = Path(path_prefix)
-        plots_dir = path_prefix  # .parent
+    def __init__(self, plots_dir: str):
+        plots_dir = Path(plots_dir)
         self.plots_dir = plots_dir
 
     def load_documents(self):

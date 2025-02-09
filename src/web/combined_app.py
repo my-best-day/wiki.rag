@@ -1,5 +1,6 @@
 import re
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -37,7 +38,8 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
     if domain == Domain.WIKI:
         document_store = FlatArticleStore(path_prefix, text_byte_reader)
     elif domain == Domain.PLOTS:
-        document_store = PlotStore(path_prefix)
+        plots_dir = Path(path_prefix).parent
+        document_store = PlotStore(plots_dir)
     else:
         raise ValueError(f"Invalid domain: {domain}")
 

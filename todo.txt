@@ -1,6 +1,11 @@
 2025-02-08
-- test newly encoded, 768, embeddings
-- make case / dataset
++ test newly encoded, 768, embeddings
+- make domain a .... not sure what I wanted to say, instead:
+- support multiple configs, by Namespace
+- make the encoder config configurable
+- get article level search to work (kind?)
+- search query, rag prompt?
+- rag from search result by document ids
 2025-02-06
 + plots is working now
 - encode plots with 1024 and 2500
