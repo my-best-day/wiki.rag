@@ -79,7 +79,7 @@ class TestStore(unittest.TestCase):
         path = '/tmp/test_store_elements.json'
         self.store.store_elements(path, [section])
 
-        mock_file.assert_called_once_with(path, 'w')
+        mock_file.assert_called_once_with(path, 'w', encoding='utf-8')
         handle = mock_file()
         handle.write.assert_called()
 

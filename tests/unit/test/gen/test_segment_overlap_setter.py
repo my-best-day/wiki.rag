@@ -77,7 +77,7 @@ class TestSegmentOverlapSetter(unittest.TestCase):
         self.assertEqual(adjusted_records, expected_records)
         self.assertEqual(adjusted_segments_per_document, expected_segments_per_document)
 
-    @patch('gen.segment_overlap_setter.OverlapSetter.get_overlaps')
+    @patch('gen.segment_overlap_setter.SegmentOverlapSetter.get_overlaps')
     def test_set_overlaps_for_segments(self, mock_get_overlaps):
         max_len = 10
 

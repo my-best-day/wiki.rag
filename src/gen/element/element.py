@@ -52,13 +52,22 @@ class Element(ABC):
         """
         Create an element from xdata.
         """
+        result = Element._hierarchy_from_xdata(xdata, byte_reader)
+        if result is None:
+            raise ValueError(f"Unknown class: {xdata['class']}")
+        return result
+
+    @classmethod
+    def _hierarchy_from_xdata(cls, xdata: dict, byte_reader: ByteReader):
+        """
+        Create an element from xdata.
+        """
         if xdata['class'] == cls.__name__:
             return cls.from_xdata(xdata, byte_reader)
         for subclass in cls.__subclasses__():
-            result = subclass.hierarchy_from_xdata(xdata, byte_reader)
+            result = subclass._hierarchy_from_xdata(xdata, byte_reader)
             if result is not None:
                 return result
-        raise ValueError(f"Unknown class: {xdata['class']}")
 
     @classmethod
     def from_xdata(cls, xdata: dict, byte_reader: ByteReader):

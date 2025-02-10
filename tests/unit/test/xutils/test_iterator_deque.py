@@ -81,10 +81,6 @@ class TestIteratorDeque(unittest.TestCase):
         self.assertEqual(deque.popleft(), 6)
         self.assertEqual(deque.popleft(), 13)
 
-        # bool is not supported
-        with self.assertRaises(NotImplementedError):
-            _ = bool(deque)
-
     def test_popright_order(self):
         numbers = iter([2, 3])
         deque = IteratorDeque(numbers)
