@@ -18,7 +18,7 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from gen.data.plot import PlotData, Plot
+from gen.data.plot import PlotRecord, Plot
 from xutils.byte_reader import ByteReader
 from gen.index_builder_plots import IndexBuilderPlots
 from gen.data.plot_store import PlotStore
@@ -33,14 +33,14 @@ def list_long_and_short_plots(plots_df: pd.DataFrame):
     byte_reader = ByteReader(args.plots_dir / "plots")
 
     for i, plot_array in enumerate(short_plots.values):
-        plot_data = PlotData(*plot_array)
-        plot = Plot(plot_data, byte_reader)
+        plot_record = PlotRecord(*plot_array)
+        plot = Plot(plot_record, byte_reader)
         print(f"Shortest plot {i}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")
         print(plot.bytes[:200])
 
     for i, plot_array in enumerate(long_plots.values):
-        plot_data = PlotData(*plot_array)
-        plot = Plot(plot_data, byte_reader)
+        plot_record = PlotRecord(*plot_array)
+        plot = Plot(plot_record, byte_reader)
         print(f"Longest plot {i}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")
         print(plot.bytes[:200])
 
@@ -49,11 +49,11 @@ def main(args):
     plots_dir = args.plots_dir
     builder: IndexBuilderPlots = IndexBuilderPlots(plots_dir)
 
-    plot_data_list = builder.build_index()
+    plot_record_list = builder.build_index()
 
     plot_store = PlotStore(plots_dir)
 
-    plots_df = plot_store.build_plots_dataframe(plot_data_list)
+    plots_df = plot_store.build_plots_dataframe(plot_record_list)
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(plots_df['byte_length'].describe())
     plot_store.write_plots_dataframe(plots_df)
@@ -61,7 +61,7 @@ def main(args):
     if args.debug:
         list_long_and_short_plots(plots_df)
 
-    print(f"Done. {len(plot_data_list)} plots")
+    print(f"Done. {len(plot_record_list)} plots")
 
 
 if __name__ == "__main__":

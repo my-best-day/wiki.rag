@@ -33,6 +33,7 @@ class ElementValidator:
 
     @property
     def byte_reader(self) -> ByteReader:
+        """Get and memoize the ByteReader."""
         if self._byte_reader is None:
             self._byte_reader = ByteReader(self.args.text)
         return self._byte_reader
@@ -74,8 +75,9 @@ class ElementValidator:
             self._byte_reader = None
 
 
-def format_text(bytes: bytes) -> str:
-    text = bytes.decode('utf-8')
+def format_text(_bytes: bytes) -> str:
+    """Format the text to a string of a max length of 200 characters."""
+    text = _bytes.decode('utf-8')
     if len(text) > 200:
         m = 100
         return text[:m] + "...." + text[-m:]

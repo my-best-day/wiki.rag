@@ -102,7 +102,7 @@ Element
 
 
 ====
-PlotData
+PlotRecord
   uid
   title
   offset

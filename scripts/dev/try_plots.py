@@ -5,25 +5,25 @@ import logging
 from pathlib import Path
 
 from xutils.byte_reader import ByteReader
-from gen.data.plot import PlotData, Plot
+from gen.data.plot import PlotRecord, Plot
 
 logger = logging.getLogger(__name__)
 
 
 def show_plot(plot_dir, index, show_full_text):
-    plot_data_file_path = plot_dir / "plots_data.csv"
+    plot_record_file_path = plot_dir / "plots_data.csv"
     plot_file_path = plot_dir / "plots"
 
-    with open(plot_data_file_path, "rt") as plot_data_file:
-        plot_data_lines = plot_data_file.readlines()
-    plot_data_lines.pop(0)
-    plot_line = plot_data_lines[index]
+    with open(plot_record_file_path, "rt") as plot_record_file:
+        plot_record_lines = plot_record_file.readlines()
+    plot_record_lines.pop(0)
+    plot_line = plot_record_lines[index]
     plot_record = plot_line.split(",")
     plot_record[2] = int(plot_record[2])
     plot_record[3] = int(plot_record[3])
-    plot_data = PlotData(*plot_record)
+    plot_record = PlotRecord(*plot_record)
     byte_reader = ByteReader(plot_file_path)
-    plot = Plot(plot_data, byte_reader)
+    plot = Plot(plot_record, byte_reader)
     print(f"plot {index}: {plot.uid}:  {plot.title}: {plot.byte_length} bytes")
     text = plot.text()
     if not show_full_text:

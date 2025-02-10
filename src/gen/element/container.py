@@ -1,3 +1,6 @@
+"""
+Container - grouping of elements
+"""
 from uuid import UUID
 from abc import ABC, abstractmethod
 from typing import Iterator, Union, Optional
@@ -6,9 +9,14 @@ from gen.element.element import Element
 
 class Container(Element, ABC):
     """
-    A Container is an element that contains (group) other elements.
+    Container is an element that contains (group) other elements.
     """
     def __init__(self, uid: Optional[UUID] = None) -> None:
+        """
+        Initialize the container.
+        Args:
+            uid: the uid of the container if loading from xdata
+        """
         Element.__init__(self, uid=uid)
         ABC.__init__(self)
         # for caching, see reset()

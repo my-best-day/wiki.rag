@@ -1,3 +1,7 @@
+"""
+Encoder class for encoding sentences.
+Abstracts working with SentenceTransformer.
+"""
 import logging
 from typing import List
 from numpy.typing import NDArray
@@ -18,6 +22,10 @@ encoder_configs = {
 
 
 class Encoder:
+    """
+    Encoder class for encoding sentences.
+    Abstracts working with SentenceTransformer.
+    """
     def __init__(
             self,
             batch_size: int,
@@ -28,21 +36,26 @@ class Encoder:
         self._model = None
 
     def encode(self, sentences: List[str]) -> NDArray:
+        """Encode sentences into embeddings."""
         query_embedding = self.model.encode(sentences, batch_size=self.batch_size)
         return query_embedding
 
     @property
     def model(self):
+        """Get and memoize the model."""
         if self._model is None:
             self._model = self.get_model()
         return self._model
 
     def get_model(self):
+        """Get the SentenceTransformer model by model_id."""
         model_id = self.encoder_config["model_id"]
         model = self._get_model(model_id)
         return model
 
     def _get_model(self, model_id: str):
+        """Get the SentenceTransformer model by model_id."""
+        # delay the import to speed up startup time
         from sentence_transformers import SentenceTransformer
         device = self.get_device()
         model = SentenceTransformer(
@@ -54,6 +67,8 @@ class Encoder:
 
     @staticmethod
     def get_device():
+        """Get the PyTorch device cuda/cpu."""
+        # delay the import to speed up startup time
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
         return device

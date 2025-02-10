@@ -1,3 +1,6 @@
+"""
+Sentence utilities for splitting sentences into fragments.
+"""
 import re
 import math
 import logging
@@ -7,8 +10,16 @@ from xutils.encoding_utils import EncodingUtils
 
 logger = logging.getLogger(__name__)
 
+# markers for splitting
+PRD = b'<prd>'
+STOP = b'<stop>'
+
 
 class SentenceUtils:
+    """
+    Split sentences into fragments attempting not to split words, making sure
+    not to split multi-byte characters.
+    """
 
     @staticmethod
     def split_sentence(sentence: bytes, max_length: int, max_extend: int = 24) -> List[bytes]:
@@ -153,8 +164,6 @@ class SentenceUtils:
         Returns:
             list[bytes]: List of sentences as bytes.
         """
-        PRD = b'<prd>'
-        STOP = b'<stop>'
 
         def sub(pattern, repl, text):
             return re.sub(pattern, repl, text)

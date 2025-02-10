@@ -1,8 +1,11 @@
+"""
+A collection of stores for a search.
+"""
 import logging
 from uuid import UUID
-from numpy.typing import NDArray
 from threading import RLock, Thread
 from typing import List, Tuple, Optional
+from numpy.typing import NDArray
 
 
 from xutils.utils import Utils
@@ -17,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class Stores:
+    """
+    A collection of stores for a search.
+    """
 
     def __init__(
         self,
@@ -25,18 +31,31 @@ class Stores:
         segment_record_store: SegmentRecordStore,
         embedding_store: EmbeddingStore
     ) -> None:
-
+        """
+        Initialize the stores.
+        Args:
+            text_byte_reader: A byte reader for the text, used in conjunction with the
+                segment records to get segment text.
+            document_store: A store for the documents (articles, plots, etc.)
+            segment_record_store: A store for the segment records.
+            embedding_store: A store for the embeddings.
+        """
         self.text_byte_reader = text_byte_reader
         self.document_store = document_store
         self.segment_record_store = segment_record_store
         self.embedding_store = embedding_store
 
         self._lock = RLock()
+
+        # lazy loaded
         self._documents: Optional[List[Document]] = None
         self._segment_records: Optional[List[SegmentRecord]] = None
         self._uids_and_embeddings: Optional[Tuple[List[UUID], NDArray]] = None
 
     def background_load(self):
+        """
+        Pre-load the documents, segment records, and embeddings in the background.
+        """
         if Utils.is_env_var_truthy("UNIT_TESTING"):
             return
 
@@ -59,6 +78,7 @@ class Stores:
         thread.start()
 
     def get_segment_text(self, segment_record: SegmentRecord) -> str:
+        """Get the text of a segment."""
         _bytes = self.text_byte_reader.read_bytes(
             segment_record.offset,
             segment_record.length)
@@ -66,22 +86,26 @@ class Stores:
         return text
 
     def get_document_by_index(self, document_index: int) -> Document:
+        """Get a document by index."""
         documents = self.documents
         document = documents[document_index]
         return document
 
     def get_segment_record_by_index(self, segment_index: int) -> SegmentRecord:
+        """Get a segment record by index."""
         segment_records = self.segment_records
         segment_record = segment_records[segment_index]
         return segment_record
 
     def get_embeddings_article_indexes(self) -> List[int]:
+        """Get the article indexes of the embeddings."""
         segment_records = self.segment_records
         document_indexes = [record.document_index for record in segment_records]
         return document_indexes
 
     @property
     def documents(self) -> List[Document]:
+        """Get the documents."""
         if self._documents is None:
             with self._lock:
                 if self._documents is None:
@@ -90,6 +114,7 @@ class Stores:
 
     @property
     def segment_records(self) -> List[SegmentRecord]:
+        """Get the segment records."""
         if self._segment_records is None:
             with self._lock:
                 if self._segment_records is None:
@@ -98,6 +123,7 @@ class Stores:
 
     @property
     def uids_and_embeddings(self) -> Tuple[List[UUID], NDArray]:
+        """Get the uids and embeddings."""
         if self._uids_and_embeddings is None:
             with self._lock:
                 if self._uids_and_embeddings is None:
@@ -105,17 +131,19 @@ class Stores:
         return self._uids_and_embeddings
 
     def _load_documents(self) -> None:
+        """Load the documents."""
         document_store = self.document_store
         documents = document_store.load_documents()
         self._documents = documents
 
     def _load_segment_records(self) -> None:
-        """reads segment records from a csv file"""
+        """Load the segment records from a csv file."""
         segment_record_store = self.segment_record_store
         segment_records = segment_record_store.load_segment_records()
         self._segment_records = segment_records
 
     def _load_uids_and_embeddings(self) -> None:
+        """Load the uids and embeddings."""
         embedding_store = self.embedding_store
         uids_and_embeddings = embedding_store.load_embeddings()
         self._uids_and_embeddings = uids_and_embeddings

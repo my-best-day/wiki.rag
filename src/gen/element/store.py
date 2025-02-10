@@ -24,19 +24,30 @@ logger = logging.getLogger(__name__)
 
 
 class Store:
+    """
+    Multi-purpose store for elements and segments.
+    """
     _buffer_size = 100
 
     def __init__(self, single_store: bool = True) -> None:
+        """
+        Initialize the store.
+        Args:
+            single_store: if true, when loading elements, assert Element.instances is empty
+        """
         self.single_store = single_store
 
     def store_elements(self, path: Path, elements: list[Element]) -> None:
         """
         Store elements in the store.
         """
-        with open(path, 'w') as file:
+        with open(path, 'w', encoding='utf-8') as file:
             self.write_elements_to_handle(file, elements)
 
     def write_elements_to_handle(self, file, elements: list[Element]) -> None:
+        """
+        Write elements to a file handle.
+        """
         buffer = []
         for element in elements:
             element_data = element.to_xdata()
@@ -67,7 +78,7 @@ class Store:
         element_store_path: Path
     ) -> None:
         """Load elements from a file using a byte reader."""
-        with open(element_store_path, 'r') as file:
+        with open(element_store_path, 'r', encoding='utf-8') as file:
             self.load_elements_from_handle(text_byte_reader, file)
 
     def load_elements_from_handle(self, byte_reader, file) -> None:

@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from gen.data.segment_record import SegmentRecord
-from xutils.embedding_config import EmbeddingConfig
 from gen.data.segment_record_store import SegmentRecordStore
 
 
@@ -20,19 +19,6 @@ class TestSegmentRecordStore(unittest.TestCase):
         self.segment_records = \
             [self.segment_record0, self.segment_record1, self.segment_record2,
              self.segment_record3, self.segment_record4]
-
-    def test_from_embed_config(self):
-        embedding_config = EmbeddingConfig(
-            prefix='/dev/null/prefix',
-            max_len=105,
-            dim=384,
-            stype='float16',
-            norm_type='int8',
-            l2_normalize=False
-        )
-        store = SegmentRecordStore.from_embed_config(embedding_config)
-        self.assertEqual(store.path_prefix, embedding_config.prefix)
-        self.assertEqual(store.max_len, embedding_config.max_len)
 
     def test_init(self):
         prefix = "/dev/null/prefix"

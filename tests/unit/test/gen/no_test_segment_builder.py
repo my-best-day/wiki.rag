@@ -55,7 +55,7 @@ class TestSegmentBuilder(unittest.TestCase):
         sentence_generator = get_article_sentences_generator(articles)
         document_offsets = [article.offset for article in articles]
         segment_file_path = f"{marker}_{max_len}_flat_segments.json"
-        text_file_path = None
+        text_byte_reader = None
         segment_dump_path = None
         document_count = None
 
@@ -64,10 +64,10 @@ class TestSegmentBuilder(unittest.TestCase):
             sentence_generator,
             document_offsets,
             segment_file_path,
-            text_file_path,
+            text_byte_reader,
             segment_dump_path,
             document_count
-            )
+        )
 
         self.assertEqual(len(builder.segments), 3)
         self.assertEqual(builder.segments[0].bytes, b'Article 1Paragraph 1')

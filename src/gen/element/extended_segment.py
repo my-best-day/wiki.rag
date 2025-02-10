@@ -1,3 +1,6 @@
+"""
+ExtendedSegment is a container of a segment and its (optional) overlaps.
+"""
 from uuid import UUID
 from typing import Iterator, Optional
 from gen.element.element import Element
@@ -8,9 +11,15 @@ from gen.element.container import Container
 
 class ExtendedSegment(Container):
     """
-    ExtendedSegment is a container that contains a segment and (optional) overlaps.
+    ExtendedSegment is a container of a segment and its (optional) overlaps.
     """
     def __init__(self, segment: Segment, uid: Optional[UUID] = None) -> None:
+        """
+        Initialize the ExtendedSegment.
+        Args:
+            segment: the segment to contain
+            uid: the uid of the ExtendedSegment when loading from xdata
+        """
         super().__init__(uid=uid)
         self._before_overlap: Optional[Element] = None
         # most likely we will segment.segment = segment. init _segment to None
@@ -19,28 +28,34 @@ class ExtendedSegment(Container):
 
     @property
     def before_overlap(self) -> Optional[Element]:
+        """Get the leading overlap."""
         return self._before_overlap
 
     @before_overlap.setter
     def before_overlap(self, value: Element) -> None:
+        """Set the leading overlap."""
         self._before_overlap = value
         self.reset()
 
     @property
     def segment(self) -> Segment:
+        """Get the segment."""
         return self._segment
 
     @property
     def after_overlap(self) -> Optional[Element]:
+        """Get the trailing overlap."""
         return self._after_overlap
 
     @after_overlap.setter
     def after_overlap(self, value: Element) -> None:
+        """Set the trailing overlap."""
         self._after_overlap = value
         self.reset()
 
     @property
     def elements(self) -> Iterator[Element]:
+        """Get the elements in the extended segment (container)."""
         if self.before_overlap:
             yield self.before_overlap
         yield self.segment
@@ -48,14 +63,13 @@ class ExtendedSegment(Container):
             yield self.after_overlap
 
     def append_element(self, element: Element) -> None:
+        """Append an element to the extended segment."""
         self.segment.append_element(element)
         self.reset()
 
     @property
     def offset(self) -> int:
-        """
-        The offset of the extended segment.
-        """
+        """Get the offset of the extended segment."""
         if self.before_overlap:
             offset = self.before_overlap.offset
         else:
@@ -65,9 +79,7 @@ class ExtendedSegment(Container):
 
     @property
     def element_count(self) -> int:
-        """
-        The number of elements in the extended segment.
-        """
+        """The number of elements in the extended segment."""
         count = 1 if self.segment.element_count > 0 else 0
         if self.before_overlap:
             count += 1
@@ -77,9 +89,11 @@ class ExtendedSegment(Container):
 
     @property
     def article(self):
+        """Get the article of the extended segment."""
         return self.segment.article
 
     def to_xdata(self):
+        """Convert the extended segment to xdata."""
         xdata = super().to_xdata()
         xdata['segment_uid'] = str(self.segment.uid)
         if self.before_overlap:
@@ -89,10 +103,12 @@ class ExtendedSegment(Container):
         return xdata
 
     def to_flat_extended_segment(self):
-        return FlatExtendedSegment(self.uid, self.article.uid, self.offset, self.byte_length, None)
+        """Convert the extended segment to a flat extended segment."""
+        return FlatExtendedSegment(self.uid, self.article.uid, self.offset, self.byte_length)
 
     @classmethod
     def from_xdata(cls, xdata, byte_reader):
+        """Create an extended segment from xdata."""
         uid = UUID(xdata['uid'])
         segment_uid = UUID(xdata['segment_uid'])
         segment = Element.instances[segment_uid]
@@ -100,6 +116,7 @@ class ExtendedSegment(Container):
         return extended_segment
 
     def resolve_dependencies(self, xdata):
+        """Resolve the dependencies of the extended segment."""
         super().resolve_dependencies(xdata)
 
         if 'before_overlap_uid' in xdata:

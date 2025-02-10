@@ -1,27 +1,20 @@
 """
-Build an index of articles and their paragraphs which includes the article/paragraph
-offset in the file (in bytes, suitable for file_handle.seek()), and byte, text, and clean-text
-lengths. Byte length is used to read the text from the file and clean-text length to calculate
-segments for encoding / embedding
-
-The implementation is more complicated than it should be because of some
-experiments I did with the Chainable pattern and parallelization. This is
-a learning exercise. The code could be much simpler.
-
-Here we have
-- IndexBuilder: builds the index (articles and paragraphs)
-- IndexValidator: validates the offsets and byte lengths
-- IndexDumper: dumps the index in a human readable format
+Create an index of plots.
+PlotRecord holds the plot's index, title, offset, and byte length.
 """
 import logging
 from typing import List
 from pathlib import Path
-from gen.data.plot import PlotData
+from gen.data.plot import PlotRecord
 
 logger = logging.getLogger(__name__)
 
 
 class IndexBuilderPlots:
+    """
+    Create an index of plots.
+    PlotRecord holds the plot's index, title, offset, and byte length.
+    """
     LOG_INTERVAL = 10000
 
     def __init__(
@@ -31,7 +24,11 @@ class IndexBuilderPlots:
         super().__init__()
         self.plots_dir = plots_dir
 
-    def build_index(self) -> List[PlotData]:
+    def build_index(self) -> List[PlotRecord]:
+        """
+        Opens the plots (text) file and the titles file.
+        And call _build_index to build the index of plots.
+        """
         plot_dir = self.plots_dir
         plots_file_path = plot_dir / "plots"
         titles_file_path = plot_dir / "titles"
@@ -43,7 +40,11 @@ class IndexBuilderPlots:
             return self._build_index(titles, plots_handle)
 
     def _build_index(self, titles: List[str], plots_handle):
-        plot_data_list: List[PlotData] = []
+        """
+        Builds the index of plots.
+        Keeps track of the offset and byte length of the plots.
+        """
+        plot_record_list: List[PlotRecord] = []
 
         offset: int = 0
         byte_length = 0
@@ -64,16 +65,16 @@ class IndexBuilderPlots:
                 break
 
             elif line == b'<EOS>\n':
-                uid = len(plot_data_list)
+                uid = len(plot_record_list)
                 title = titles[uid]
-                plot_data = PlotData(uid, title, offset, byte_length)
-                plot_data_list.append(plot_data)
-                if len(plot_data_list) % self.LOG_INTERVAL == 0:
-                    logger.info(f"processed {len(plot_data_list)} / {len(titles)} plots")
+                plot_record = PlotRecord(uid, title, offset, byte_length)
+                plot_record_list.append(plot_record)
+                if len(plot_record_list) % self.LOG_INTERVAL == 0:
+                    logger.info("processed %d / %d plots", len(plot_record_list), len(titles))
                 new_plot = True
 
             else:
                 line_length = len(line)
                 byte_length += line_length
 
-        return plot_data_list
+        return plot_record_list

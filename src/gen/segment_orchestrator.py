@@ -10,9 +10,9 @@ In essence:
 """
 import json
 import logging
-import pandas as pd
 from pathlib import Path
 from typing import List, Iterator, Optional
+import pandas as pd
 
 from xutils.byte_reader import ByteReader
 from gen.segment_verifier import SegmentVerifier
@@ -25,6 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 class SegmentOrchestrator:
+    """
+    Orchestrates the segment building process.
+
+    In essence:
+    1. building shingling segments
+    2. set overlaps across segments
+    3. optionally dump segment text to a file for debugging
+    4. optionally verify the segments against the original text
+    5. save the segment records to a csv file
+    """
 
     @staticmethod
     def build_segments(
@@ -32,7 +42,7 @@ class SegmentOrchestrator:
         sentences_per_document: Iterator[List[bytes]],
         document_offsets: List[int],
         segment_record_store: SegmentRecordStore,
-        text_file_path: Optional[Path],
+        text_byte_reader: Optional[ByteReader],
         segment_dump_path: Optional[Path] = None,
         document_count: Optional[int] = None,
     ) -> None:
@@ -41,20 +51,20 @@ class SegmentOrchestrator:
         and optionally performs various operations such as dumping segments to a file,
         verifying segments against the original text, and saving segment records to a CSV file.
 
-        Parameters:
-        max_len (int): The maximum length of each segment.
-        sentences_per_document (Iterator[List[bytes]]): An iterator that yields lists of byte
-            strings, where each list represents the sentences of a document.
-        document_offsets (List[int]): A list of offsets for each document, indicating where each
-            document starts in the original text.
-        segment_record_store (SegmentRecordStore):
-            The store where the segment records will be saved.
-        text_file_path (Optional[Path]): The file path of the original text for verification
-            purposes.
-        segment_dump_path (Optional[Path]): The file path where raw segments will be dumped for
-            debugging.
-        document_count (Optional[int]): The number of documents to process; if None, all documents
-            will be processed.
+        Args:
+            max_len (int): The maximum length of each segment.
+            sentences_per_document (Iterator[List[bytes]]): An iterator that yields lists of byte
+                strings, where each list represents the sentences of a document.
+            document_offsets (List[int]): A list of offsets for each document, indicating where each
+                document starts in the original text.
+            segment_record_store (SegmentRecordStore):
+                The store where the segment records will be saved.
+            text_byte_reader (Optional[ByteReader]): The byte reader for the original text for
+                verification purposes.
+            segment_dump_path (Optional[Path]): The file path where raw segments will be dumped for
+                debugging.
+            document_count (Optional[int]): The number of documents to process; if None,
+                all documents will be processed.
 
         Returns:
         None: This method does not return any value. It performs operations that affect the file
@@ -80,9 +90,12 @@ class SegmentOrchestrator:
         if segment_dump_path:
             SegmentOrchestrator.dump_raw_segments(segment_dump_path, segments_per_document)
 
-        if text_file_path:
-            byte_reader = ByteReader(text_file_path)
-            SegmentOrchestrator.verify_segments(byte_reader, segments_per_document, segment_records)
+        if text_byte_reader:
+            SegmentOrchestrator.verify_segments(
+                text_byte_reader,
+                segments_per_document,
+                segment_records
+            )
 
         segment_record_store.save_segment_records(segment_records)
 
@@ -120,7 +133,7 @@ class SegmentOrchestrator:
             for document_segments in segments_per_document
         ]
 
-        with open(segment_dump_path, 'w') as json_file:
+        with open(segment_dump_path, 'w', encoding='utf-8') as json_file:
             json.dump(segments_per_document, json_file)
 
     @staticmethod
@@ -129,7 +142,7 @@ class SegmentOrchestrator:
         segments_per_document: List[List[bytes]],
         segment_records: List[SegmentRecord]
     ):
-
+        """verify segments against the original text"""
         SegmentVerifier.verify(
             byte_reader,
             segment_records,

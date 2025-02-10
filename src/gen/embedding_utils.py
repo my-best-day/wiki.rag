@@ -1,6 +1,9 @@
+"""
+Utility class for embedding operations.
+"""
 import logging
-import numpy as np
 from typing import Optional, Literal
+import numpy as np
 from numpy.typing import NDArray
 from xutils.embedding_config import EmbeddingConfig
 from xutils.timer import LoggingTimer, log_timeit
@@ -11,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingUtils:
+    """
+    Utility class for embedding operations.
+    """
 
     @log_timeit(logger=logger)
     @staticmethod

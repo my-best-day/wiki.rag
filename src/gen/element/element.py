@@ -1,3 +1,6 @@
+"""
+Define Element, an abstract base class for all elements.
+"""
 from typing import TYPE_CHECKING, Tuple, Optional, Dict
 import re
 import unicodedata
@@ -5,6 +8,7 @@ from abc import ABC
 from uuid import UUID, uuid4
 
 from xutils.encoding_utils import EncodingUtils
+from xutils.byte_reader import ByteReader
 
 if TYPE_CHECKING:  # pragma: no cover
     from gen.element.fragment import Fragment  # pragma: no cover
@@ -36,6 +40,7 @@ class Element(ABC):
         return f"{self.__class__.__name__} (uid={self.uid})"
 
     def to_xdata(self) -> dict:
+        """Convert the element to xdata."""
         xdata = {
             'class': self.__class__.__name__,
             'uid': str(self.uid)
@@ -43,20 +48,25 @@ class Element(ABC):
         return xdata
 
     @classmethod
-    def hierarchy_from_xdata(cls, data, reader):
-        if data['class'] == cls.__name__:
-            return cls.from_xdata(data, reader)
+    def hierarchy_from_xdata(cls, xdata: dict, byte_reader: ByteReader):
+        """
+        Create an element from xdata.
+        """
+        if xdata['class'] == cls.__name__:
+            return cls.from_xdata(xdata, byte_reader)
         for subclass in cls.__subclasses__():
-            result = subclass.hierarchy_from_xdata(data, reader)
+            result = subclass.hierarchy_from_xdata(xdata, byte_reader)
             if result is not None:
                 return result
+        raise ValueError(f"Unknown class: {xdata['class']}")
 
     @classmethod
-    def from_xdata(cls, xdata, byte_reader):
+    def from_xdata(cls, xdata: dict, byte_reader: ByteReader):
+        """Create an element from xdata."""
         raise NotImplementedError
 
-    def resolve_dependencies(self, xdata):
-        """resolved references to other elements"""
+    def resolve_dependencies(self, xdata: dict):
+        """Resolved references to other elements."""
         pass
 
     @property
@@ -149,6 +159,7 @@ class Element(ABC):
             a tuple with the first and remainder fragment, or None if the caller does not
             want to generate one of the fragments
         """
+        # import here to avoid circular import
         from gen.element.fragment import Fragment
 
         first_bytes, remainder_bytes = EncodingUtils.split_at(

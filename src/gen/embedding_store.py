@@ -1,12 +1,16 @@
+"""
+Incremental store for embeddings.
+"""
 import os
 import logging
-import numpy as np
 from pathlib import Path
-from filelock import FileLock
-from typing import List, Tuple, Any
-from numpy.typing import NDArray
-from xutils.embedding_config import EmbeddingConfig
 from enum import Enum, auto
+from typing import List, Tuple, Any
+import numpy as np
+from filelock import FileLock
+from numpy.typing import NDArray
+
+from xutils.embedding_config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +43,7 @@ class StoreMode(Enum):
 
 class EmbeddingStore:
     """
-    Simple incremental store for embeddings.
+    Incremental store for embeddings.
     """
 
     # Indirection allows easier substitution for testing purposes
@@ -75,6 +79,7 @@ class EmbeddingStore:
 
     @property
     def lock_path(self):
+        """Get the path to the lock file."""
         return self.path.with_suffix(".lock")
 
     def extend_embeddings(self, uids: List[Any], embeddings: np.ndarray) -> None:
@@ -133,7 +138,7 @@ class EmbeddingStore:
         """
         if not self.does_store_exist():
             if allow_empty:
-                return np.array([]), np.array([])
+                np_str_uids, np_embeddings = np.array([]), np.array([])
             else:
                 raise FileNotFoundError(f"Embeddings store {self.path} does not exist")
         else:
@@ -141,7 +146,7 @@ class EmbeddingStore:
                 np_str_uids = data["uids"]
                 np_embeddings = data["embeddings"]
 
-        logger.info(f"EmbeddingStore: {len(np_str_uids)} embeddings loaded")
+        logger.info("EmbeddingStore: %d embeddings loaded", len(np_str_uids))
         return np_str_uids, np_embeddings
 
     # for testing purposes we move file.path.exists here

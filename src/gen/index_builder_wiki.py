@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_non_negative_int(value: int) -> bool:
+    """is value an integer >= 0"""
     return isinstance(value, int) and value >= 0
 
 
@@ -42,7 +43,7 @@ class Chunk:
         """
         Create a new chunk.
         """
-        assert is_non_negative_int(offset), 'offset must be a positive integer'
+        assert is_non_negative_int(offset), 'offset must be an  integer >= 0'
         assert isinstance(_bytes, bytes), 'bytes must be bytes'
 
         self._offset: int = offset
@@ -50,13 +51,16 @@ class Chunk:
 
     @property
     def offset(self) -> int:
+        """get the offset of the chunk"""
         return self._offset
 
     @property
     def bytes(self) -> bytes:
+        """get the bytes of the chunk"""
         return self._bytes
 
     def prepend_bytes(self, _bytes: bytes) -> None:
+        """prepend bytes to the chunk"""
         assert isinstance(_bytes, bytes), 'bytes must be bytes'
 
         self._bytes = _bytes + self._bytes
@@ -66,6 +70,10 @@ class Chunk:
 
 
 class IndexBuilderWiki:
+    """
+    Build an index of articles and their paragraphs.
+    The articles index is a list of elements (header, paragraph, etc.)
+    """
     CHUNK_SIZE_BYTES = 2 ** 15  # 32KB
 
     # looks for lines that looks like ' = Heading 1 = '
@@ -146,6 +154,9 @@ class IndexBuilderWiki:
         Paragraph(offset, matched_bytes, self.articles[-1])
 
     def read_chunks(self) -> Generator[Section, None, None]:
+        """
+        Read the text file in chunks of bytes without splitting multi-byte characters.
+        """
         with open(self.args.text, "rb") as inp:
             # buffer holds the leading bytes of a multi-byte Unicode character that
             # was split between chunks and couldn't be decoded in the previous chunk

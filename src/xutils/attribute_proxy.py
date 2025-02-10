@@ -1,3 +1,8 @@
+"""
+A proxy class that facilitates attribute access on a parent object.
+"""
+
+
 class AttributeProxy:
     """A proxy class that facilitates attribute access on a parent object.
 

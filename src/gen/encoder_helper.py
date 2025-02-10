@@ -1,3 +1,6 @@
+"""
+Load the SentenceTransformer model in the background.
+"""
 import logging
 import threading
 import torch
@@ -31,8 +34,8 @@ if Utils.is_env_var_truthy("UNIT_TESTING"):
             model.encode(["Hello, world!"], batch_size=1)
             timer.restart("Encoded test string")
 
-        except Exception as e:
-            logger.warning(f"Load failed: {e}")
+        except Exception:
+            logger.exception("Load failed")
 
         timer.total(None, "INFO")
 

@@ -49,13 +49,13 @@
 2025-01-03
 
 New Segment Builder:
-uses PlotData:
+uses PlotRecord:
   segmentize_plots
-    calls segmentize_plot with plot_segments: List[PlotData]
+    calls segmentize_plot with plot_segments: List[PlotRecord]
 
   segmentize_plot
     get_balanced_seg_length(length)
-    plot_reader(plot_data) : uses offset and length -> bytes
+    plot_reader(plot_record) : uses offset and length -> bytes
 
 -> to generalized we can take a list of bytes
 

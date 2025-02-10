@@ -12,9 +12,9 @@ from gen.segment_orchestrator import SegmentOrchestrator
 from gen.data.segment_record_store import SegmentRecordStore
 
 
-def get_plot_sentences_generator(plot_data_list, byte_reader):
-    for plot_data in plot_data_list:
-        text = byte_reader.read_bytes(plot_data.offset, plot_data.byte_length)
+def get_plot_sentences_generator(plot_record_list, byte_reader):
+    for plot_record in plot_record_list:
+        text = byte_reader.read_bytes(plot_record.offset, plot_record.byte_length)
         sentences = split_plot_text(text)
         yield sentences
 
@@ -54,24 +54,24 @@ def main():
     args = parse_args()
 
     text_file_path = args.plots_dir / "plots"
-    byte_reader = ByteReader(text_file_path)
+    text_byte_reader = ByteReader(text_file_path)
 
     plot_store = PlotStore(args.plots_dir)
-    plot_data_list = plot_store.load_plot_data_list()
+    plot_record_list = plot_store.load_plot_record_list()
 
     max_len = args.max_len
-    plot_sentences_generator = get_plot_sentences_generator(plot_data_list, byte_reader)
-    document_offsets = [plot_data.offset for plot_data in plot_data_list]
+    plot_sentences_generator = get_plot_sentences_generator(plot_record_list, text_byte_reader)
+    document_offsets = [plot_record.offset for plot_record in plot_record_list]
     segment_record_store = SegmentRecordStore(args.plots_dir / "plots", max_len)
     segment_dump_path = args.plots_dir / f"segments_{max_len}.json" if args.dump_segments else None
-    plot_count = len(plot_data_list)
+    plot_count = len(plot_record_list)
 
     SegmentOrchestrator.build_segments(
         max_len,
         plot_sentences_generator,
         document_offsets,
         segment_record_store,
-        text_file_path,
+        text_byte_reader,
         segment_dump_path,
         plot_count
     )

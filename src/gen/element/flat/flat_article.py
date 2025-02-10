@@ -1,3 +1,7 @@
+"""
+FlatArticle is a flat representation of an article.
+It holds the body text as a whole, not broken into paragraphs.
+"""
 from uuid import UUID
 from gen.element.element import Element
 from xutils.byte_reader import ByteReader
@@ -5,6 +9,10 @@ from xutils.attribute_proxy import AttributeProxy
 
 
 class FlatArticle(Element):
+    """
+    A flat article is a flat representation of an article.
+    It holds the body text as a whole, not broken into paragraphs.
+    """
     def __init__(
         self,
         uid: UUID,
@@ -14,6 +22,9 @@ class FlatArticle(Element):
         body_byte_length: int,
         byte_reader: ByteReader
     ) -> None:
+        """
+        Initialize the flat article.
+        """
         super().__init__(uid=uid)
         self._header_offset: int = header_offset
         self._header_byte_length: int = header_byte_length

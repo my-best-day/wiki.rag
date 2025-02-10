@@ -7,4 +7,5 @@ sentence_transformers
 einops
 openai
 pysocks # coverage might needs it
-httpx  # not sure if needs to be mentioned explicitly
+httpx  
+distutils

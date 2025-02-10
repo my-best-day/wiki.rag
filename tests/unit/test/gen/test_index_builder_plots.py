@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch, call
 
-from gen.data.plot import PlotData
+from gen.data.plot import PlotRecord
 from gen.index_builder_plots import IndexBuilderPlots
 
 
@@ -42,7 +42,7 @@ class TestIndexBuilderPlots(unittest.TestCase):
     def setUp(self):
         self.plots_dir = Path("plot_dir")
 
-        self.plot_data_list = []
+        self.plot_record_list = []
 
         plot_offset = 0
         plot_length = 0
@@ -50,10 +50,10 @@ class TestIndexBuilderPlots(unittest.TestCase):
             length = len(line)
 
             if line == b'<EOS>\n':
-                plot_index = len(self.plot_data_list)
+                plot_index = len(self.plot_record_list)
                 title = titles[plot_index]
-                plot_data = PlotData(plot_index, title, plot_offset, plot_length)
-                self.plot_data_list.append(plot_data)
+                plot_record = PlotRecord(plot_index, title, plot_offset, plot_length)
+                self.plot_record_list.append(plot_record)
                 plot_offset = plot_offset + plot_length + len(line)
                 plot_length = 0
             else:
@@ -75,7 +75,7 @@ class TestIndexBuilderPlots(unittest.TestCase):
         open_2nd_enter = MagicMock()
         open_2nd_enter.__enter__.return_value = mock_plots_file
 
-        mock_build_index.return_value = self.plot_data_list
+        mock_build_index.return_value = self.plot_record_list
 
         side_effect = [open_1st_enter, open_2nd_enter]
 
@@ -84,7 +84,7 @@ class TestIndexBuilderPlots(unittest.TestCase):
             plots_file_path = self.plots_dir / "plots"
 
             index_builder = IndexBuilderPlots(self.plots_dir)
-            plot_data_list = index_builder.build_index()
+            plot_record_list = index_builder.build_index()
 
             mock_open_func.assert_has_calls([
                 call(titles_file_path, "rb"),  # First call
@@ -92,10 +92,10 @@ class TestIndexBuilderPlots(unittest.TestCase):
             ])
 
             mock_build_index.assert_called_once_with(titles, mock_plots_file)
-            self.assertEqual(plot_data_list, self.plot_data_list)
+            self.assertEqual(plot_record_list, self.plot_record_list)
 
     def test_protected_build_index(self):
-        offsets = [plot.offset for plot in self.plot_data_list]
+        offsets = [plot.offset for plot in self.plot_record_list]
         offsets.append(None)
 
         plots_file_handle = MagicMock()
@@ -104,9 +104,9 @@ class TestIndexBuilderPlots(unittest.TestCase):
 
         with patch.object(IndexBuilderPlots, "LOG_INTERVAL", 3):
             index_builder = IndexBuilderPlots(self.plots_dir)
-            plot_data_list = index_builder._build_index(titles, plots_file_handle)
+            plot_record_list = index_builder._build_index(titles, plots_file_handle)
 
-        self.assertEqual(plot_data_list, self.plot_data_list)
+        self.assertEqual(plot_record_list, self.plot_record_list)
 
 
 if __name__ == "__main__":

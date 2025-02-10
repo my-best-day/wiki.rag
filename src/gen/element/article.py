@@ -1,3 +1,6 @@
+"""
+Article is a container of a header and paragraphs.
+"""
 from uuid import UUID
 from typing import Iterator, Optional
 
@@ -56,8 +59,9 @@ class Article(Container):
         """
         Append a paragraph to the article.
         """
-        assert isinstance(paragraph, Paragraph), 'paragraph must be an Paragraph '
-        f'(got {type(paragraph)})'
+        assert isinstance(paragraph, Paragraph), (
+            f'paragraph must be a Paragraph (got {type(paragraph)})'
+        )
 
         self.body.append_element(paragraph)
 

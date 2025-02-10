@@ -73,6 +73,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
         sentences_per_document = MagicMock()
         document_offsets = [record.offset for record in self.records]
         text_file_path = Path('text_file.txt')
+        text_byte_reader = ByteReader(text_file_path)
         segment_dump_path = Path('segment_dump.txt')
         document_count = 8
 
@@ -87,7 +88,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
             sentences_per_document,
             document_offsets,
             segment_record_store,
-            text_file_path,
+            text_byte_reader,
             segment_dump_path,
             document_count
         )
@@ -142,7 +143,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
         max_len = 10
         sentences_per_document = MagicMock()
         document_offsets = [record.offset for record in self.records]
-        text_file_path = None
+        text_byte_reader = None
         segment_dump_path = None
         document_count = None
 
@@ -157,7 +158,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
             sentences_per_document,
             document_offsets,
             segment_record_store,
-            text_file_path,
+            text_byte_reader,
             segment_dump_path,
             document_count
         )
@@ -222,7 +223,7 @@ class TestSegmentOrchestrator(unittest.TestCase):
             self.adjusted_segments_per_document
         )
 
-        mock_open_func.assert_called_once_with(segment_dump_path, 'w')
+        mock_open_func.assert_called_once_with(segment_dump_path, 'w', encoding='utf-8')
         mock_json_dump.assert_called_once_with(
             stringified_adjusted_segments_per_document,
             mock_open_func.return_value

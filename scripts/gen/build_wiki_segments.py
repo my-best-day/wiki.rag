@@ -65,6 +65,7 @@ def main():
     sentences_generator = get_article_sentences_generator(articles)
 
     max_len = args.max_len
+    text_byte_reader = ByteReader(text_file_path)
     document_offsets = [document.offset for document in articles]
     segment_record_store = SegmentRecordStore(args.path_prefix, max_len)
     if args.dump_segments:
@@ -78,7 +79,7 @@ def main():
         sentences_generator,
         document_offsets,
         segment_record_store,
-        text_file_path,
+        text_byte_reader,
         segment_dump_path,
         document_count
     )

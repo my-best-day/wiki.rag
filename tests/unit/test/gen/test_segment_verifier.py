@@ -315,7 +315,7 @@ class TestSegmentVerifier(unittest.TestCase):
         mock_convert_segment_strings_to_bytes.return_value = self.segments_per_document
 
         dump = SegmentVerifier.read_segment_dump('test.dump')
-        mock_open.assert_called_once_with('test.dump', 'r')
+        mock_open.assert_called_once_with('test.dump', 'r', encoding='utf-8')
         mock_convert_segment_strings_to_bytes.assert_called_once_with(string_dump)
         self.assertEqual(dump, self.segments_per_document)
 

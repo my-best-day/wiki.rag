@@ -1,21 +1,24 @@
+"""
+Utilities to work with bytes/character conversions.
+"""
 from typing import Tuple, Optional, Union
 
-bytes_or_str = Union[bytes, str]
+BytesOrStr = Union[bytes, str]
 
 
 class EncodingUtils:
     """
-    Utilities for encoding operations.
+    Utilities to work with bytes/character conversions.
     """
 
     @staticmethod
     def split_at(
-        text: bytes_or_str,
+        text: BytesOrStr,
         index: int,
         after_char: bool = False,
         include_first: bool = True,
         include_remainder: bool = True
-    ) -> Tuple[Optional[bytes_or_str], Optional[bytes_or_str]]:
+    ) -> Tuple[Optional[BytesOrStr], Optional[BytesOrStr]]:
 
         """
         Split the bytes/string into a first and remainder while adjusting the split point, if
@@ -29,8 +32,8 @@ class EncodingUtils:
             a tuple with the first and remainder fragment, or None if the caller does not
             want to generate one of the fragments
         """
-        leading: bytes_or_str = None
-        remainder: bytes_or_str = None
+        leading: BytesOrStr = None
+        remainder: BytesOrStr = None
 
         # prevent splitting in the middle of a multi-byte character
         split_point = EncodingUtils.adjust_split_point(text, index, after_char)
@@ -45,7 +48,7 @@ class EncodingUtils:
 
     @staticmethod
     def adjust_split_point(
-        text: bytes_or_str,
+        text: BytesOrStr,
         index: int,
         after_char: bool,
         sign_mode: int = 1
@@ -92,6 +95,9 @@ class EncodingUtils:
 
     @staticmethod
     def index_in_bound(array: list, index: int) -> bool:
+        """
+        Check if the index is within the bounds of the array supporting negative indices.
+        """
         return -len(array) <= index <= len(array)
 
     @staticmethod

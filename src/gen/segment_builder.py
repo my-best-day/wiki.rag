@@ -1,3 +1,10 @@
+"""
+This class responsible for the segmentization of documents.
+
+Document's sentences are split into segments that match the max length, attempting to
+balance the length of the segments, leaving room for overlaps.
+Overlaps are not handled here.
+"""
 import math
 import logging
 from typing import List, Optional, Iterator
@@ -67,7 +74,12 @@ class SegmentBuilder:
         sentences: List[bytes],
         split_sentence: callable = None,
     ) -> List[bytes]:
-
+        """
+        Create segments for (sentences) of a single document.
+        Gets the balanced length which based on the base length adjusted to the length of the text.
+        Add sentences to a segment as long as they fit.
+        If a sentence is too long, split it into fragments.
+        """
         split_sentence = split_sentence or SegmentBuilder.split_sentence
 
         text_length = sum([len(sentence) for sentence in sentences])
@@ -113,6 +125,7 @@ class SegmentBuilder:
 
     @staticmethod
     def is_sentence_too_long(base_length: int, sentence: str) -> bool:
+        """Check if a sentence length is greater than base_length."""
         result = len(sentence) > base_length
         return result
 
@@ -123,6 +136,7 @@ class SegmentBuilder:
         segment: str,
         sentence: str
     ) -> bool:
+        """Check if there is room in the segment for the sentence."""
         is_short = len(segment) <= 0.6 * base_length
         max_length = base_length if is_short else balanced_length
         result = len(segment) + len(sentence) <= max_length

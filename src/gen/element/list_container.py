@@ -1,14 +1,20 @@
+"""
+A list of elements.
+"""
 from uuid import UUID
+from typing import Iterator, List, Optional
 from gen.element.element import Element
 from gen.element.container import Container
-from typing import Iterator, List, Optional
-
-
-# TODO: make this generic so we can have ListContainer[Element] and ListContainer[Paragraph]
 
 
 class ListContainer(Container):
+    """
+    ListContainer is a container that contains a list of elements.
+    """
     def __init__(self, element: Optional[Element] = None, uid: Optional[UUID] = None):
+        """
+        Initialize the list container.
+        """
         super().__init__(uid=uid)
         self._elements: List[Element] = []
         if element is not None:

@@ -1,16 +1,19 @@
+"""
+Routes for the combined app.
+"""
+
 import re
 import os
 import logging
 import datetime
-
+from dataclasses import dataclass
+from typing import List
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
-from fastapi import Form, Request, APIRouter, Depends
+from fastapi import Request, APIRouter, Depends
 from fastapi.templating import Jinja2Templates
 
-
 from xutils.app_config import AppConfig
-from typing import List
 from search.services.combined_service import (
     CombinedService,
     CombinedRequest,
@@ -24,7 +27,24 @@ from search.services.combined_service import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class CombinedRequestForm:
+    """
+    Dataclass for the combined request that is used for the form.
+    """
+    id: str
+    action: str
+    kind: str
+    query: str
+    k: int = 5
+    threshold: float = 0.3
+    max: int = 10
+
+
 class CombinedRequestModel(BaseModel):
+    """
+    Pydantic model for the combined request that is used for the API.
+    """
     id: str
     action: Action
     kind: Kind
@@ -34,6 +54,10 @@ class CombinedRequestModel(BaseModel):
     max: int = 10
 
     def to_combined_request(self) -> CombinedRequest:
+        """
+        Converts the CombinedRequestModel to a CombinedRequest which
+        is used for the service.
+        """
         return CombinedRequest(
             id=self.id,
             action=self.action,
@@ -44,11 +68,11 @@ class CombinedRequestModel(BaseModel):
             max=self.max,
         )
 
-    class Config:
-        use_enum_values = True
-
 
 class CombinedAppResponseModel(BaseModel):
+    """
+    Pydantic model for the result of the combined service.
+    """
     id: str
     action: Action
     prompt: str
@@ -61,6 +85,9 @@ class CombinedAppResponseModel(BaseModel):
         cls,
         combined_response: CombinedResponse
     ) -> "CombinedAppResponseModel":
+        """
+        Constructs a CombinedAppResponseModel from a CombinedResponse from the service.
+        """
         return CombinedAppResponseModel(
             id=combined_response.id,
             action=combined_response.action,
@@ -72,6 +99,9 @@ class CombinedAppResponseModel(BaseModel):
 
 
 class CombinedMetaModel(BaseModel):
+    """
+    Pydantic model for the meta data part of the response.
+    """
     text_file: str
     max_len: int
     received: datetime.datetime
@@ -80,33 +110,21 @@ class CombinedMetaModel(BaseModel):
 
 
 class CombinedResponseModel(BaseModel):
+    """
+    Pydantic model for the response that includes the results and the meta data.
+    """
     data: CombinedAppResponseModel
     meta: CombinedMetaModel
 
 
-def parse_combined_request(
-    id: str = Form(...),
-    action: str = Form(...),
-    kind: str = Form(...),
-    query: str = Form(...),
-    k: int = Form(5),
-    threshold: float = Form(0.3),
-    max: int = Form(10)
-) -> CombinedRequest:
-
-    request = CombinedRequest(
-        id=id,
-        action=action,
-        kind=kind,
-        query=query,
-        k=k,
-        threshold=threshold,
-        max=max,
-    )
+def parse_combined_request(form: CombinedRequestForm) -> CombinedRequest:
+    """Get the data from the submitted form and convert it to a CombinedRequest."""
+    request = CombinedRequest(**vars(form))
     return request
 
 
 def clean_header(text):
+    """Clean the header of the text to make it more readable."""
     return re.sub(r'(^\s*=\s+)|(\s+=\s*$)', '', text)
 
 
@@ -114,7 +132,7 @@ def create_combined_router(
     app_config: AppConfig,
     service: CombinedService
 ) -> APIRouter:
-
+    """Create the FastAPI router for the combined service."""
     router = APIRouter()
 
     templates = Jinja2Templates(directory="web-ui/templates")
@@ -123,6 +141,12 @@ def create_combined_router(
 
     @router.get("/", response_class=HTMLResponse)
     async def index(request: Request) -> HTMLResponse:
+        """Render the combined app form page."""
+        return await combined_get(request)
+
+    @router.get("/combined", response_class=HTMLResponse)
+    async def combined_get(request: Request) -> HTMLResponse:
+        """Render the combined app form."""
         template_vars = {
             "request": request,
             "kind": Kind
@@ -130,15 +154,13 @@ def create_combined_router(
         response = templates.TemplateResponse("combined.html", template_vars)
         return response
 
-    @router.get("/combined", response_class=HTMLResponse)
-    async def combined_get(request: Request) -> HTMLResponse:
-        return await index(request)
-
     @router.post("/combined", response_class=HTMLResponse)
     async def combined(
         request: Request,
         combined_request: CombinedRequest = Depends(parse_combined_request)
     ) -> HTMLResponse:
+        """Process the combined request and render the results page."""
+
         received = datetime.datetime.now()
 
         action = combined_request.action
@@ -148,10 +170,10 @@ def create_combined_router(
         threshold = combined_request.threshold
         max_len = combined_request.max
 
-        logger.info(f"Received query: action: {action}, kind: {kind}, "
-                    f"({k}, {threshold}, {max_len}, received: {received.isoformat()}"
-                    f"\nquery: {query})")
-        logger.info(f"Received request: {combined_request}")
+        logger.info("Received query: action: %s, kind: %s, (%d, %f, %d, received: %s)",
+                    action, kind, k, threshold, max_len, received.isoformat())
+        logger.info("Query: %s", query)
+        logger.info("Received request: %s", combined_request)
 
         combined_response = service.combined(combined_request)
 
@@ -163,7 +185,6 @@ def create_combined_router(
             "app_request": combined_request,
             "app_response": combined_response,
             "text_file": text_file_name,
-            # TODO: remove, max_len is available in the request
             "max_len": app_config.embed_config.max_len,
             "received": received,
             "completed": completed,
@@ -175,6 +196,8 @@ def create_combined_router(
 
     @router.post("/api/combined", response_model=CombinedResponseModel)
     async def combined_api(request: CombinedRequestModel):
+        """Process the combined api request and return the response."""
+
         received = datetime.datetime.now()
 
         combined_request = request.to_combined_request()

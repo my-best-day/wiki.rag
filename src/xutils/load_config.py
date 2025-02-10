@@ -1,3 +1,6 @@
+"""
+Load configuration from a file and command line arguments.
+"""
 import os
 import logging
 import argparse
@@ -8,6 +11,10 @@ from search.services.combined_service import Action
 
 
 def get_app_config_and_query(logger: logging.Logger) -> tuple[AppConfig, str, Action]:
+    """
+    Get the application configuration and query.
+    For instances where the query comes from the command line.
+    """
     app_config, args = _get_app_config(logger, True)
     query = args.query
     action = args.action
@@ -15,6 +22,10 @@ def get_app_config_and_query(logger: logging.Logger) -> tuple[AppConfig, str, Ac
 
 
 def get_app_config(logger: logging.Logger) -> AppConfig:
+    """
+    Get the app config override by command line arguments
+    (query is not expected).
+    """
     app_config, _ = _get_app_config(logger, False)
     return app_config
 
@@ -24,9 +35,12 @@ def _get_app_config(
     expect_query: bool
 ) -> tuple[AppConfig, argparse.Namespace]:
     """
-    loads the config from a file, gets the command line arguments,
-    and combine the two by having the command line arguments overriding
-    the config file.
+    Get the app config override by command line arguments.
+    Args:
+        logger: The logger to use.
+        expect_query: Whether to expect a query.
+    Returns:
+        A tuple of the app config and the command line arguments.
     """
     app_config = load_app_config(logger)
     args = parse_args(expect_query)
@@ -55,6 +69,13 @@ def _get_app_config(
 
 
 def load_app_config(logger) -> AppConfig:
+    """
+    Load the app config from a file.
+    Args:
+        logger: The logger to use.
+    Returns:
+        The app config.
+    """
     config_file = "config.ini"
     if "CONFIG_FILE" in os.environ:
         config_file = os.environ["CONFIG_FILE"]
@@ -88,6 +109,13 @@ def load_app_config(logger) -> AppConfig:
 
 
 def load_embed_config(config: configparser.ConfigParser) -> EmbeddingConfig:
+    """
+    Load the embed config from a file.
+    Args:
+        config: The config parser to use.
+    Returns:
+        The embed config.
+    """
     embed_sec = config["SEARCH-APP.EMBEDDINGS"]
     prefix = embed_sec.get("prefix")
     max_len = embed_sec.getint("max-len")
@@ -109,6 +137,13 @@ def load_embed_config(config: configparser.ConfigParser) -> EmbeddingConfig:
 
 
 def load_run_config(config: configparser.ConfigParser) -> RunConfig:
+    """
+    Load the run config from a file.
+    Args:
+        config: The config parser to use.
+    Returns:
+        The run config.
+    """
     run_sec = config["SEARCH-APP.RUN"]
     hostname = run_sec.get("hostname")
     port = run_sec.getint("port")
@@ -124,6 +159,13 @@ def load_run_config(config: configparser.ConfigParser) -> RunConfig:
 
 
 def parse_args(expect_query: bool) -> argparse.Namespace:
+    """
+    Parse the command line arguments that may override the config file.
+    Args:
+        expect_query: Whether to expect a query.
+    Returns:
+        The command line arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--hostname", type=str, default=None)
     parser.add_argument("--port", type=int, default=None)

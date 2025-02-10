@@ -1,5 +1,5 @@
 import unittest
-from gen.data.plot import Plot, PlotData
+from gen.data.plot import Plot, PlotRecord
 from ...xutils.byte_reader_tst import TestByteReader
 
 
@@ -9,7 +9,7 @@ class TestPlot(unittest.TestCase):
         title = "title"
         offset = 0
         byte_length = 100
-        doc_data = PlotData(uid, title, offset, byte_length)
+        doc_data = PlotRecord(uid, title, offset, byte_length)
         self.assertEqual(doc_data.uid, uid)
         self.assertEqual(doc_data.title, title)
         self.assertEqual(doc_data.offset, offset)
@@ -20,7 +20,7 @@ class TestPlot(unittest.TestCase):
         title = "title"
         offset = 4
         byte_length = 5
-        doc_data = PlotData(uid, title, offset, byte_length)
+        doc_data = PlotRecord(uid, title, offset, byte_length)
         byte_reader = TestByteReader(b'01234567890')
         plot = Plot(doc_data, byte_reader)
         self.assertEqual(plot.uid, uid)

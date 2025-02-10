@@ -1,3 +1,13 @@
+"""
+Verify the offset and length of segments by using these to read from the text file
+and compare the result with the segment bytes.
+
+The segments bytes are either given from the segment when it is created, or from the
+dump that saves the bytes.
+
+Offer various way to select segments to verify such as random, first of each document,
+all segments of a documents, specific segment, or all segments.
+"""
 import json
 import random
 import logging
@@ -119,6 +129,10 @@ class SegmentVerifier:
         record: SegmentRecord,
         segments_per_document: List[List[bytes]]
     ) -> bool:
+        """
+        Verify the segment's offset and length are correct by reading from the text file
+        and comparing the result with the segment bytes.
+        """
         reader_bytes = byte_reader.read_bytes(record.offset, record.length)
         segment_bytes = segments_per_document[record.document_index][record.relative_segment_index]
 
@@ -167,7 +181,7 @@ actual  : %s
             # relative-index == 0 -> first segment of a document
             if record.relative_segment_index == 0:
                 sample_records.append(record)
-                if n > 1 and len(sample_records) >= n:
+                if n > 0 and len(sample_records) >= n:
                     break
 
         return sample_records
@@ -211,7 +225,7 @@ actual  : %s
     @staticmethod
     def read_segment_dump(segment_file_path: str) -> List[List[bytes]]:
         """reads segment strings from a json file, converts them to bytes"""
-        with open(segment_file_path, 'r') as json_file:
+        with open(segment_file_path, 'r', encoding='utf-8') as json_file:
             segment_strings_per_document = json.load(json_file)
 
         segments_per_document = SegmentVerifier.convert_segment_strings_to_bytes(
