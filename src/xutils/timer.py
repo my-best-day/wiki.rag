@@ -118,34 +118,6 @@ class Timer:
             raise ValueError(f"Unknown time type: '{self._time}'")
         return _time
 
-    def __enter__(self):
-        """
-        Enter the context.
-        """
-        self._start_time = self._time()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """
-        Exit the context.
-        """
-        elapsed = self.elapsed()
-        print(self.format("completed", elapsed))
-
-    async def __aenter__(self):  # NOSONAR
-        """
-        Enter the context asynchronously.
-        """
-        self._start_time = self._time()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):  # NOSONAR
-        """
-        Exit the context asynchronously.
-        """
-        elapsed = self.elapsed()
-        print(self.format("completed", elapsed))
-
 
 class LoggingTimer(Timer):
     """
@@ -228,6 +200,27 @@ class LoggingTimer(Timer):
             restart (bool): Whether to restart the timer.
         """
         return self.step(title, restart)
+
+    def __enter__(self):
+        """
+        Enter the context.
+        """
+        self._start_time = self._time()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """
+        Exit the context.
+        """
+        elapsed = self.elapsed()
+        self.logger.log(level=self.level, msg=self.format("completed", elapsed))
+
+    async def __aenter__(self):  # NOSONAR
+        """
+        Enter the context asynchronously.
+        """
+        self._start_time = self._time()
+        return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):  # NOSONAR
         """
