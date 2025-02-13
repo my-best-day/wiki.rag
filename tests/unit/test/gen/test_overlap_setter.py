@@ -6,14 +6,14 @@ from gen.element.article import Article
 from gen.element.segment import Segment
 from gen.element.section import Section
 from gen.element.extended_segment import ExtendedSegment
-from xutils.overlap_setter import OverlapSetter
+from gen.segment_overlap_setter import SegmentOverlapSetter
 
 marker = "no article"
 
 
 # Tests here are identical to those in test_segment_builder_set_overlaps.py
 
-class TestOverlapSetter(unittest.TestCase):
+class TestSegmentOverlapSetter(unittest.TestCase):
     def setUp(self):
         header = Header(0, b'')
         self.article = Article(header)
@@ -25,7 +25,7 @@ class TestOverlapSetter(unittest.TestCase):
         return ExtendedSegment(Segment(article, Section(byte_length, _bytes)))
 
     def get_overlaps(self, max_len, before_element, target_element, after_element):
-        return OverlapSetter.get_overlaps(
+        return SegmentOverlapSetter.get_overlaps(
             max_len,
             target_element.bytes,
             before_element.bytes if before_element else None,
