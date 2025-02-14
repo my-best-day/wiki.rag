@@ -5,10 +5,9 @@ import os
 import logging
 from enum import Enum
 from uuid import UUID
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from openai import OpenAI
 from pydantic.dataclasses import dataclass
-from gen.data.segment_record import SegmentRecord
 from xutils.timer import LoggingTimer
 from xutils.embedding_config import EmbeddingConfig
 from search.stores import Stores
@@ -43,14 +42,14 @@ def parse_enum(enum_class, value):
         return enum_class[value.upper()]
     except KeyError:
         logger.exception("Invalid kind: %s", value)
-        raise
+        raise ValueError(f"Invalid {enum_class.__name__}: {value}")
 
 
 @dataclass
 class ResultElement:
     """a single search result"""
     similarity: float
-    record: SegmentRecord
+    record: Any
     caption: str
     text: str
 
@@ -112,8 +111,7 @@ class CombinedService:
 
         self._client = None
 
-    @property
-    def openai_client(self):
+    def get_openai_client(self):
         """Get the OpenAI client."""
         project_id = os.getenv("OPENAI_PROJECT_ID")
         if project_id is None:
@@ -192,36 +190,33 @@ class CombinedService:
             f"of the question:\n{elements_text}"
         )
 
-        if not query.startswith("what, are you doing? this is not right!"):
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful assistant. "
-                        "You will answer the question based on the information provided. "
-                        "If the information is not enough to answer the question, "
-                        "you will say that you don't know. "
-                        "If the information is too much to answer the question, "
-                        "you will say that you are overwhelmed."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": prompt}
-            ]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant. "
+                    "You will answer the question based on the information provided. "
+                    "If the information is not enough to answer the question, "
+                    "you will say that you don't know. "
+                    "If the information is too much to answer the question, "
+                    "you will say that you are overwhelmed."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt}
+        ]
 
-            timer.restart("calling openai")
-            completion = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                temperature=0.4,
-                max_completion_tokens=1000
-            )
-            timer.restart("completion created")
-            logger.info("completion: %s", completion)
-            answer = completion.choices[0].message.content
-        else:
-            prompt, answer = "na", "na"
+        timer.restart("calling openai")
+        completion = self.get_openai_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.4,
+            max_completion_tokens=1000
+        )
+        timer.restart("completion created")
+        logger.info("completion: %s", completion)
+        answer = completion.choices[0].message.content
 
         return prompt, answer
 
@@ -257,30 +252,32 @@ class CombinedService:
         """
         Get the element results based on the kind.
         """
-        if kind is Kind.ARTICLE:
-            element_results = self.get_article_results(element_id_similarity_tuple_list)
-        elif kind is Kind.SEGMENT:
+
+        # TODO: if kind is Kind.ARTICLE:
+        #     element_results = self.get_article_results(element_id_similarity_tuple_list)
+        if kind is Kind.SEGMENT:
             element_results = self.get_segment_results(element_id_similarity_tuple_list)
         else:
             raise ValueError(f"Invalid kind: {kind}")
 
         return element_results
 
-    def get_article_results(
-        self,
-        article_id_similarity_tuple_list: List[Tuple[UUID, float]]
-    ) -> List[ResultElement]:
-        """
-        Get the article results.
-        """
-        results = []
-        for article_id, similarity in article_id_similarity_tuple_list:
-            article = self.stores.get_article(article_id)
-            header_text = article.header.text
-            caption_text = header_text
-            article_text = article.text
-            results.append(ResultElement(similarity, article, caption_text, article_text))
-        return results
+    # TODO: implement
+    # def get_article_results(
+    #     self,
+    #     article_id_similarity_tuple_list: List[Tuple[UUID, float]]
+    # ) -> List[ResultElement]:
+    #     """
+    #     Get the article results.
+    #     """
+    #     results = []
+    #     for article_id, similarity in article_id_similarity_tuple_list:
+    #         article = self.stores.get_article(article_id)
+    #         header_text = article.header.text
+    #         caption_text = header_text
+    #         article_text = article.text
+    #         results.append(ResultElement(similarity, article, caption_text, article_text))
+    #     return results
 
     def get_segment_results(
         self,

@@ -1,3 +1,12 @@
+2025-02-14
+- get done with the unit testing
+- add a react based ui
+- add readme
+- consider publishing on a host ***limit / control submissions to avoid charges
+  by the openai service. check if there is a cheaper option than openai
+
+https://chatgpt.com/share/67af9105-4814-800b-beb7-38363dcb8ca8
+
 2025-02-08
 + test newly encoded, 768, embeddings
 - make domain a .... not sure what I wanted to say, instead:
