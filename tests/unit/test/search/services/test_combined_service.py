@@ -402,6 +402,7 @@ class TestCombinedService(unittest.TestCase):
         with self.assertRaises(ValueError):
             combined_service.find_nearest_elements(combined_request)
 
+    # TODO: pending reintroduction of article results
     # def test_get_element_results_article(self):
     #     combined_service = CombinedService(
     #         stores=None,
