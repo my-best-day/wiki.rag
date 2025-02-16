@@ -26,6 +26,7 @@ tmp/
 /wiki
 **/checkpoints/
 **/logs/
+node_modules/
 
 # windsurf rules
 .windsurfrules
