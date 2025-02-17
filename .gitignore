@@ -27,6 +27,7 @@ tmp/
 **/checkpoints/
 **/logs/
 node_modules/
+.vscode/
 
 # windsurf rules
 .windsurfrules

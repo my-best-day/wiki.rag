@@ -10,6 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from xutils.app_config import AppConfig
 from xutils.byte_reader import ByteReader
@@ -36,6 +37,14 @@ def create_combined_app(app_config: AppConfig) -> FastAPI:
     """Creates the FastAPI app for the combined search and RAG service."""
 
     app = FastAPI()
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],  # React frontend URL
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows POST requests
+        allow_headers=["*"],
+    )
 
     app.mount("/static", StaticFiles(directory="web-ui/static"), name="static")
 

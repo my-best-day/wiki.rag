@@ -6,6 +6,16 @@
     "configurations": [
 
         {
+            "name": "combined CLI",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/run/combined.py",
+            "console": "integratedTerminal",
+            "args": [
+                "romantic comedy"
+            ]
+        },
+        {
             "name": "combined service",
             "type": "debugpy",
             "request": "launch",

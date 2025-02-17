@@ -68,6 +68,9 @@ class CombinedRequestModel(BaseModel):
             max=self.max,
         )
 
+    class Config:
+        use_enum_values = True
+
 
 class CombinedAppResponseModel(BaseModel):
     """
