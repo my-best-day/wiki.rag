@@ -4,18 +4,15 @@ import SearchForm from "../components/SearchForm";
 import SearchResults from "../components/SearchResults";
 import { fetchSearchResults } from "../api/search";
 
+import { SearchResult } from "../types/SearchResult";
+
 type SearchResponse = {
     meta: {
         completed: string;
         received: string;
     };
     data: {
-        results: Array<{
-            similarity: number;
-            record: [string, string, number, number, number];
-            caption: string;
-            text: string;
-        }>;
+        results: SearchResult[];
         prompt: string;
         answer: string;
     };

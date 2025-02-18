@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { SearchResult } from '../types/SearchResult';
+
 import {
     Box,
     Button,
@@ -13,13 +15,6 @@ import {
     StatLabel,
     StatNumber,
 } from '@chakra-ui/react';
-
-type SearchResult = {
-    caption: string;
-    text: string;
-    similarity: number;
-    record: [string, string, number, number, number]; // [segment id, document id, segment index, offset, length]
-};
 
 type SearchMetadata = {
     completed: string;
