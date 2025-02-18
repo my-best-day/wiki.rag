@@ -1,32 +1,53 @@
 import { useState } from "react";
+import { Box } from "@chakra-ui/react";
 import SearchForm from "../components/SearchForm";
 import SearchResults from "../components/SearchResults";
 import { fetchSearchResults } from "../api/search";
 
-export default function Home() {
-    const [results, setResults] = useState([]);
+type SearchResponse = {
+    meta: {
+        completed: string;
+        received: string;
+    };
+    data: {
+        results: Array<{
+            similarity: number;
+            record: [string, string, number, number, number];
+            caption: string;
+            text: string;
+        }>;
+        prompt: string;
+        answer: string;
+    };
+};
 
-    const handleSearch = async (
-        query: string,
-        atLeast: number,
-        threshold: number,
-        atMost: number
-    ) => {
+export default function Home() {
+    const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
+
+    const handleSearch = async (query: string, atLeast: number, threshold: number, atMost: number) => {
         try {
             const data = await fetchSearchResults(query, atLeast, threshold, atMost);
-            const results = data.data.results;
-            console.log("*** in handleSearch, search results fetched: ", results)
-            setResults(results || []);
+            console.log("*** in handleSearch, search results fetched: ", data);
+            setSearchResponse(data);
         } catch (error) {
             console.error("Error fetching results", error);
         }
     };
 
     return (
-        <div>
-            <h1>Search App</h1>
+        <Box>
             <SearchForm onSearch={handleSearch} />
-            <SearchResults results={results} />
-        </div>
-    )
+            {searchResponse && (
+                <SearchResults
+                    results={searchResponse.data.results}
+                    metadata={{
+                        completed: searchResponse.meta.completed,
+                        received: searchResponse.meta.received,
+                        prompt: searchResponse.data.prompt,
+                        answer: searchResponse.data.answer,
+                    }}
+                />
+            )}
+        </Box>
+    );
 }
