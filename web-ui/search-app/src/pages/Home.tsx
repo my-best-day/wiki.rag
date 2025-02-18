@@ -6,9 +6,14 @@ import { fetchSearchResults } from "../api/search";
 export default function Home() {
     const [results, setResults] = useState([]);
 
-    const handleSearch = async (query: string) => {
+    const handleSearch = async (
+        query: string,
+        atLeast: number,
+        threshold: number,
+        atMost: number
+    ) => {
         try {
-            const data = await fetchSearchResults(query);
+            const data = await fetchSearchResults(query, atLeast, threshold, atMost);
             const results = data.data.results;
             console.log("*** in handleSearch, search results fetched: ", results)
             setResults(results || []);
