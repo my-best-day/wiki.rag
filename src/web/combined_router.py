@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import List
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
-from fastapi import Request, APIRouter, Depends
+from fastapi import Request, APIRouter, Depends, Form
 from fastapi.templating import Jinja2Templates
 
 from xutils.app_config import AppConfig
@@ -68,7 +68,9 @@ class CombinedRequestModel(BaseModel):
             max=self.max,
         )
 
+    # pylint: disable=too-few-public-methods
     class Config:
+        """tells pydantic to use the enum values"""
         use_enum_values = True
 
 
@@ -120,10 +122,27 @@ class CombinedResponseModel(BaseModel):
     meta: CombinedMetaModel
 
 
-def parse_combined_request(form: CombinedRequestForm) -> CombinedRequest:
+# pylint: disable=redefined-builtin
+def parse_combined_request(
+        id: str = Form(...),
+        action: str = Form(...),
+        kind: str = Form(...),
+        query: str = Form(...),
+        k: int = Form(5),
+        threshold: float = Form(0.3),
+        max: int = Form(10),
+) -> CombinedRequest:
     """Get the data from the submitted form and convert it to a CombinedRequest."""
-    request = CombinedRequest(**vars(form))
-    return request
+    # pylint: disable=too-many-arguments, too-many-positional-arguments, missing-function-docstring
+    return CombinedRequest(
+        id=id,
+        action=Action(action),
+        kind=Kind(kind),
+        query=query,
+        k=k,
+        threshold=threshold,
+        max=max,
+    )
 
 
 def clean_header(text):
@@ -160,7 +179,7 @@ def create_combined_router(
     @router.post("/combined", response_class=HTMLResponse)
     async def combined(
         request: Request,
-        combined_request: CombinedRequest = Depends(parse_combined_request)
+        combined_request: CombinedRequestForm = Depends(parse_combined_request)
     ) -> HTMLResponse:
         """Process the combined request and render the results page."""
 
