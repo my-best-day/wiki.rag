@@ -12,11 +12,12 @@ config.ini
 /data
 /ignore
 /plots
-
+todo.txt
 
 # directories to be ignored
 # must end with / to avoid ignoring files with the same prefix
 # anywhere in the directory tree
+.vscode/
 venv/
 test_venv/
 tmp/
@@ -27,7 +28,6 @@ tmp/
 **/checkpoints/
 **/logs/
 node_modules/
-.vscode/
 
 # windsurf rules
 .windsurfrules
