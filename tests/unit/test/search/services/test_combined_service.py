@@ -200,13 +200,13 @@ class TestCombinedService(unittest.TestCase):
     @patch.dict(os.environ, {}, clear={"OPENAI_PROJECT_ID"})
     @patch("search.services.combined_service.OpenAI")
     def test_get_openai_client_no_project_id(self, mock_openai):
+        # project id is optional
         combined_service = CombinedService(
             stores=None,
             embed_config=None,
             finder=None
         )
-        with self.assertRaises(ValueError):
-            combined_service.get_openai_client()
+        combined_service.get_openai_client()
 
     @patch.dict(os.environ, {"OPENAI_PROJECT_ID": "test_project_id"})
     @patch("search.services.combined_service.OpenAI")

@@ -113,9 +113,8 @@ class CombinedService:
 
     def get_openai_client(self):
         """Get the OpenAI client."""
+        # project_id is optional
         project_id = os.getenv("OPENAI_PROJECT_ID")
-        if project_id is None:
-            raise ValueError("OPENAI_PROJECT_ID is not set")
         if self._client is None:
             self._client = OpenAI(project=project_id)
         return self._client

@@ -102,7 +102,11 @@ export default function SearchResults({ results, metadata }: SearchResultsProps)
                 index={expandedIndices}
                 onChange={(expandedIndex) => setExpandedIndices(expandedIndex as number[])}
             >
-                {results.map((result, index) => (
+                {results.map((result, index) => {
+                    // for debugging
+                    const rec = result.record;
+                    const record_info = `${rec[0]}, ${rec[1]}, ${rec[2]}`;
+                    return (
                     <AccordionItem key={result.record[0]}>
                         <AccordionButton py={1}>
                             <Box flex="1">
@@ -115,7 +119,7 @@ export default function SearchResults({ results, metadata }: SearchResultsProps)
                                     <Box width="7.5rem">
                                         <HStack spacing={0} color="gray.500">
                                             <Stat fontSize="xs">
-                                                <StatLabel>Similarity: </StatLabel>
+                                                <StatLabel title={record_info}>Similarity: </StatLabel>
                                             </Stat>
                                             <Stat>
                                                 <StatNumber fontSize="xs">{result.similarity.toFixed(2)}</StatNumber>
@@ -133,7 +137,8 @@ export default function SearchResults({ results, metadata }: SearchResultsProps)
                             </Text>
                         </AccordionPanel>
                     </AccordionItem>
-                ))}
+                    )
+                })}
             </Accordion>
         </Box>
     );
