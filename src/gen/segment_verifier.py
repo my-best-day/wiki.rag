@@ -17,7 +17,7 @@ import pandas as pd
 from xutils.byte_reader import ByteReader
 from gen.data.segment_record import SegmentRecord
 from gen.data.segment_record_store import SegmentRecordStore
-
+from gen.segment_builder import SegmentBuffer
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +68,7 @@ class SegmentVerifier:
     def verify(
         byte_reader: ByteReader,
         segment_records: List[SegmentRecord],
-        segments_per_document: List[List[bytes]],
+        extended_segment_buffers_per_document: List[List[SegmentBuffer]],
         mode: str,
         n: int
     ):
@@ -79,7 +79,8 @@ class SegmentVerifier:
         Args:
             byte_reader (ByteReader): Byte reader to read from the text file.
             segment_records (List[SegmentRecord]): List of segment records.
-            segments_per_document (List[List[bytes]]): List of segments per document.
+            extended_segment_buffers_per_document (List[List[SegmentBuffer]]): List of
+                segment buffers per document.
             mode (str): Mode to select segments to verify.
             n (int): Number of segments to verify.
         """
@@ -98,14 +99,14 @@ class SegmentVerifier:
         SegmentVerifier.verify_records(
             byte_reader,
             sample_records,
-            segments_per_document
+            extended_segment_buffers_per_document
         )
 
     @staticmethod
     def verify_records(
         byte_reader: ByteReader,
         sample_records: List[SegmentRecord],
-        segments_per_document: List[List[bytes]]
+        segment_buffers_per_document: List[List[SegmentBuffer]]
     ) -> None:
         """
         Verify the segments' offset and length are correct by reading from the text file
@@ -114,27 +115,30 @@ class SegmentVerifier:
         Args:
             byte_reader (ByteReader): Byte reader to read from the text file.
             sample_records (List[SegmentRecord]): List of segment records to verify.
-            segments_per_document (List[List[bytes]]): List of segments per document.
+            segment_buffers_per_document (List[List[SegmentBuffer]]): List of segment buffers
+                per document.
         """
         for record in sample_records:
             SegmentVerifier.verify_record(
                 byte_reader,
                 record,
-                segments_per_document
+                segment_buffers_per_document
             )
 
     @staticmethod
     def verify_record(
         byte_reader: ByteReader,
         record: SegmentRecord,
-        segments_per_document: List[List[bytes]]
+        segment_buffers_per_document: List[List[SegmentBuffer]]
     ) -> bool:
         """
         Verify the segment's offset and length are correct by reading from the text file
         and comparing the result with the segment bytes.
         """
         reader_bytes = byte_reader.read_bytes(record.offset, record.length)
-        segment_bytes = segments_per_document[record.document_index][record.relative_segment_index]
+        segment_buffer = \
+            segment_buffers_per_document[record.document_index][record.relative_segment_index]
+        segment_bytes = segment_buffer.bytes()
 
         is_match = segment_bytes == reader_bytes
         if is_match:

@@ -17,7 +17,7 @@ import pandas as pd
 from xutils.byte_reader import ByteReader
 from gen.segment_verifier import SegmentVerifier
 from gen.data.segment_record import SegmentRecord
-from gen.segment_builder import SegmentBuilder
+from gen.segment_builder import SegmentBuilder, SegmentBuffer
 from gen.segment_overlap_setter import SegmentOverlapSetter
 from gen.data.segment_record_store import SegmentRecordStore
 
@@ -70,30 +70,35 @@ class SegmentOrchestrator:
         None: This method does not return any value. It performs operations that affect the file
         system and logs information about the segment building process.
         """
-        segments_per_document = SegmentBuilder.segmentize_documents(
-            max_len,
-            sentences_per_document,
-            split_sentence=None,
-            document_count=document_count
-        )
+        segment_buffers_per_document: List[List[SegmentBuffer]] = \
+            SegmentBuilder.segmentize_documents(
+                max_len,
+                sentences_per_document,
+                split_sentence=None,
+                document_count=document_count
+            )  # noqa: E123
 
-        SegmentOrchestrator.describe_segments(segments_per_document, max_len)
+        SegmentOrchestrator.describe_segments(segment_buffers_per_document, max_len)
 
-        segment_records, segments_per_document = SegmentOverlapSetter.set_overlaps_for_documents(
-            max_len,
-            document_offsets,
-            segments_per_document
-        )
+        segment_records, extended_segment_buffers_per_document = \
+            SegmentOverlapSetter.set_overlaps_for_documents(
+                max_len,
+                document_offsets,
+                segment_buffers_per_document
+            )
 
-        SegmentOrchestrator.describe_segments(segments_per_document, max_len)
+        SegmentOrchestrator.describe_segments(extended_segment_buffers_per_document, max_len)
 
         if segment_dump_path:
-            SegmentOrchestrator.dump_raw_segments(segment_dump_path, segments_per_document)
+            SegmentOrchestrator.dump_raw_segments(
+                segment_dump_path,
+                extended_segment_buffers_per_document
+            )
 
         if text_byte_reader:
             SegmentOrchestrator.verify_segments(
                 text_byte_reader,
-                segments_per_document,
+                extended_segment_buffers_per_document,
                 segment_records
             )
 
@@ -101,16 +106,17 @@ class SegmentOrchestrator:
 
     @staticmethod
     def describe_segments(
-        segments_per_document: List[List[bytes]],
+        segment_buffers_per_document: List[List[SegmentBuffer]],
         max_len: int
     ) -> None:
         """log segment statistics - segment count per document and segment lengths"""
-        segment_count_per_document = [len(segment_list) for segment_list in segments_per_document]
+        segment_count_per_document = [len(segment_list) for segment_list in
+                                      segment_buffers_per_document]
         count_series = pd.Series(segment_count_per_document)
 
         segment_lengths = [
             len(segment)
-            for document_segments in segments_per_document
+            for document_segments in segment_buffers_per_document
             for segment in document_segments
         ]
         segment_lengths_series = pd.Series(segment_lengths)
@@ -123,14 +129,14 @@ class SegmentOrchestrator:
     @staticmethod
     def dump_raw_segments(
         segment_dump_path: Path,
-        segments_per_document: List[List[bytes]]
+        extended_segment_buffers_per_document: List[List[SegmentBuffer]]
     ) -> None:
         """
         Save the segments' text to a json file to be used by verify_segments.py
         """
         segments_per_document = [
-            [segment.decode('utf-8') for segment in document_segments]
-            for document_segments in segments_per_document
+            [segment_buffer.bytes().decode('utf-8') for segment_buffer in document_segment_buffers]
+            for document_segment_buffers in extended_segment_buffers_per_document
         ]
 
         with open(segment_dump_path, 'w', encoding='utf-8') as json_file:
@@ -139,14 +145,14 @@ class SegmentOrchestrator:
     @staticmethod
     def verify_segments(
         byte_reader: ByteReader,
-        segments_per_document: List[List[bytes]],
+        extended_segment_buffers_per_document: List[List[SegmentBuffer]],
         segment_records: List[SegmentRecord]
     ):
         """verify segments against the original text"""
         SegmentVerifier.verify(
             byte_reader,
             segment_records,
-            segments_per_document,
+            extended_segment_buffers_per_document,
             mode="all",
             n=-10
         )

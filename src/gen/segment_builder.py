@@ -15,6 +15,39 @@ from xutils.sentence_utils import SentenceUtils
 logger = logging.getLogger(__name__)
 
 
+class SegmentBuffer:
+    def __init__(self, sentence: Optional[bytes] = None):
+        self.sentences = []
+        self.length = 0
+        if sentence:
+            self.append_sentence(sentence)
+
+    def append_sentence(self, sentence: bytes):
+        self.sentences.append(sentence)
+        self.length += len(sentence)
+
+    def prepend_sentence(self, sentence: bytes):
+        self.sentences.insert(0, sentence)
+        self.length += len(sentence)
+
+    def __len__(self):
+        return self.length
+
+    def sentence_count(self) -> int:
+        return len(self.sentences)
+
+    def bytes(self) -> bytes:
+        return b''.join(self.sentences)
+
+    @classmethod
+    def concat(cls, buffers: list['SegmentBuffer']) -> 'SegmentBuffer':
+        new_buffer = cls()
+        for buf in buffers:
+            new_buffer.sentences.extend(buf.sentences)
+            new_buffer.length += buf.length
+        return new_buffer
+
+
 class SegmentBuilder:
     """
     This class responsible for the segmentization of documents.
@@ -31,7 +64,7 @@ class SegmentBuilder:
         sentences_per_document: Iterator[bytes],
         split_sentence: callable = None,
         document_count: Optional[int] = None,
-    ) -> List[List[bytes]]:
+    ) -> List[List[SegmentBuffer]]:
         """
         Segments sentences from documents into chunks based on a maximum length.
 
@@ -49,59 +82,69 @@ class SegmentBuilder:
         Returns:
             List[List[bytes]]: A list of segments for each document.
         """
-        segments_per_document = []
+        segment_buffers_per_document: List[List[SegmentBuffer]] = []
         base_length = int(0.8 * max_length)
 
         count_part = f" of {document_count}" if document_count else " of unknown"
 
         for sentences in sentences_per_document:
-            text_segments = SegmentBuilder.segmentize_document(
+            segment_buffers = SegmentBuilder.segmentize_document(
                 base_length,
                 sentences,
                 split_sentence
             )
-            segments_per_document.append(text_segments)
+            segment_buffers_per_document.append(segment_buffers)
 
-            if len(segments_per_document) % SegmentBuilder.LOG_INTERVAL == 0:
-                msg = f"processed {len(segments_per_document)}{count_part} texts"
+            if len(segment_buffers_per_document) % SegmentBuilder.LOG_INTERVAL == 0:
+                msg = f"processed {len(segment_buffers_per_document)}{count_part} texts"
                 logger.debug(msg)
 
-        return segments_per_document
+        return segment_buffers_per_document
 
     @staticmethod
     def segmentize_document(
         base_length: int,
         sentences: List[bytes],
         split_sentence: callable = None,
-    ) -> List[bytes]:
+    ) -> List[SegmentBuffer]:
         """
         Create segments for (sentences) of a single document.
         Gets the balanced length which based on the base length adjusted to the length of the text.
         Add sentences to a segment as long as they fit.
         If a sentence is too long, split it into fragments.
+
+        Args:
+            base_length (int): max length minus margin left for overlaps
+            sentences (List[bytes]): sentences to segmentize
+            split_sentence (callable, optional): The function to split long sentences. Defaults to a
+                standard method if not provided.
+
+        Returns:
+            List[bytes]: segments
         """
         split_sentence = split_sentence or SegmentBuilder.split_sentence
 
         text_length = sum([len(sentence) for sentence in sentences])
         balanced_length = SegmentBuilder.get_balanced_seg_length(text_length, base_length)
         sentence_deque = IteratorDeque(iter(sentences))
-        segments = []
-        segment = b''
+        segment_buffer_list: List[SegmentBuffer] = []
+        segment_buffer: SegmentBuffer = SegmentBuffer()
 
         for sentence in sentence_deque:
             if len(sentence) > base_length:
                 fragments = split_sentence(sentence, base_length)
                 sentence_deque.extendleft(fragments)
-            elif SegmentBuilder.can_add_sentence(base_length, balanced_length, segment, sentence):
-                segment += sentence
+            elif SegmentBuilder.can_add_sentence(
+                    base_length, balanced_length, segment_buffer, sentence):
+                segment_buffer.append_sentence(sentence)
             else:
-                segments.append(segment)
-                segment = sentence
+                segment_buffer_list.append(segment_buffer)
+                segment_buffer = SegmentBuffer(sentence)
 
-        if segment:  # Add the last segment
-            segments.append(segment)
+        if segment_buffer:  # Add the last segment
+            segment_buffer_list.append(segment_buffer)
 
-        return segments
+        return segment_buffer_list
 
     @staticmethod
     def get_balanced_seg_length(byte_length: int, base_length: int) -> int:
@@ -133,11 +176,11 @@ class SegmentBuilder:
     def can_add_sentence(
         base_length: int,
         balanced_length: int,
-        segment: str,
-        sentence: str
+        segment_buffer: SegmentBuffer,
+        sentence: bytes
     ) -> bool:
         """Check if there is room in the segment for the sentence."""
-        is_short = len(segment) <= 0.6 * base_length
+        is_short = len(segment_buffer) <= 0.6 * base_length
         max_length = base_length if is_short else balanced_length
-        result = len(segment) + len(sentence) <= max_length
+        result = len(segment_buffer) + len(sentence) <= max_length
         return result

@@ -2,10 +2,10 @@
 Set overlaps for a list of documents.
 """
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from gen.data.segment_record import SegmentRecord
-from xutils.encoding_utils import EncodingUtils
+from gen.segment_builder import SegmentBuffer
 
 BytesOrStr = Union[bytes, str]
 OptionalBytesOrStr = Union[BytesOrStr, None]
@@ -22,8 +22,8 @@ class SegmentOverlapSetter:
     def set_overlaps_for_documents(
         max_len: int,
         document_offsets: List[int],
-        segments_per_document: List[List[bytes]]
-    ) -> Tuple[List[SegmentRecord], List[List[bytes]]]:
+        segment_buffers_per_document: List[List[SegmentBuffer]]
+    ) -> Tuple[List[SegmentRecord], List[List[SegmentBuffer]]]:
         """
         Set overlaps for a list of documents.
 
@@ -34,35 +34,35 @@ class SegmentOverlapSetter:
         """
 
         segment_records: List[SegmentRecord] = []
-        extended_segments_per_document: List[List[bytes]] = []
+        extended_segment_buffers_per_document: List[List[SegmentBuffer]] = []
 
         segment_base_index: int = 0
 
-        for document_index, document_segments in enumerate(segments_per_document):
+        for document_index, document_segment_buffers in enumerate(segment_buffers_per_document):
             document_offset = document_offsets[document_index]
 
-            document_segment_records, document_extended_segments = \
-                SegmentOverlapSetter.set_overlaps_for_segments(
+            document_segment_records, document_extended_segment_buffers = \
+                SegmentOverlapSetter.set_overlaps_for_segment_buffers(
                     max_len,
                     segment_base_index,
                     document_index,
                     document_offset,
-                    document_segments
+                    document_segment_buffers
                 )
-            extended_segments_per_document.append(document_extended_segments)
+            extended_segment_buffers_per_document.append(document_extended_segment_buffers)
             segment_records.extend(document_segment_records)
-            segment_base_index += len(document_segments)
+            segment_base_index += len(document_segment_buffers)
 
-        return segment_records, extended_segments_per_document
+        return segment_records, extended_segment_buffers_per_document
 
     @staticmethod
-    def set_overlaps_for_segments(
+    def set_overlaps_for_segment_buffers(
         max_len: int,
         base_segment_index: int,
         document_index: int,
         base_offset: int,
-        segments: List[bytes]
-    ) -> Tuple[List[SegmentRecord], List[bytes]]:
+        segment_buffers: List[SegmentBuffer]
+    ) -> Tuple[List[SegmentRecord], List[SegmentBuffer]]:
         """
         Set overlaps on a list of related segments.
         Returns a list of segment records, and list of segments with overlaps.
@@ -73,43 +73,47 @@ class SegmentOverlapSetter:
         segment_with_overlap_list = []
         segment_records = []
 
-        segment_count = len(segments)
-        prev_segment_bytes = None
+        segment_count = len(segment_buffers)
+        prev_segment_buffer = None
         for i in range(segment_count):
-            target_segment_bytes = segments[i]
+            target_segment_buffer = segment_buffers[i]
             if i < segment_count - 1:
-                next_segment_bytes = segments[i + 1]
+                next_segment_buffer = segment_buffers[i + 1]
             else:
-                next_segment_bytes = None
+                next_segment_buffer = None
 
-            before_overlap, after_overlap = SegmentOverlapSetter.get_overlaps(
+            before_overlap_buffer, after_overlap_buffer = SegmentOverlapSetter.get_overlaps(
                 max_len,
-                target_segment_bytes,
-                prev_segment_bytes,
-                next_segment_bytes
+                target_segment_buffer,
+                prev_segment_buffer,
+                next_segment_buffer
             )
-            segment_with_overlaps = before_overlap + target_segment_bytes + after_overlap
+            segment_with_overlaps = SegmentBuffer.concat([
+                before_overlap_buffer,
+                target_segment_buffer,
+                after_overlap_buffer
+            ])
             segment_index = base_segment_index + i
-            offset = base_offset - len(before_overlap)
+            offset = base_offset - len(before_overlap_buffer)
             length = len(segment_with_overlaps)
             segment_record = SegmentRecord(segment_index, document_index, i, offset, length)
             segment_records.append(segment_record)
 
-            base_offset += len(target_segment_bytes)
+            base_offset += len(target_segment_buffer)
 
             segment_with_overlap_list.append(segment_with_overlaps)
 
-            prev_segment_bytes = target_segment_bytes
+            prev_segment_buffer = target_segment_buffer
 
         return segment_records, segment_with_overlap_list
 
     @staticmethod
     def get_overlaps(
         max_len: int,
-        target_seg_text: BytesOrStr,
-        prev_seg_text: OptionalBytesOrStr,
-        next_seg_text: OptionalBytesOrStr
-    ) -> Tuple[BytesOrStr, BytesOrStr]:
+        target_seg_buffer: SegmentBuffer,
+        prev_seg_buffer: Optional[SegmentBuffer],
+        next_seg_buffer: Optional[SegmentBuffer]
+    ) -> Tuple[SegmentBuffer, SegmentBuffer]:
         """
         Compute overlaps for the target segment.
 
@@ -122,88 +126,105 @@ class SegmentOverlapSetter:
         Returns:
             Tuple[opt_bytes_or_str, opt_bytes_or_str]: A tuple containing the before and after
             overlaps.
-
-        Overview:
-            * The method divides the extra space available in the target segment for overlaps
-              taken from the previous and next segments.
-            * assumes the target segment has room for overlaps, meaning
-              len(target_seg_text) < max_len
-            * overlap is limited to up to 0.2 * max-len
-
-        Dictionary:
-            * allowed: maximum overlap allowed regardless of room or availability
-            * initial_room: total extra space available in the target segment for overlaps,
-            divided equally between before and after.
-            * before_overlap_len, after_overlap_len: the lengths of the before and after overlaps
-            * target_seg_len, prev_seg_len, next_seg_len: the lengths of the target, before,
-            and after segments
-            * available_forward: unused room from before_overlap that can be reassigned to
-              after_overlap
-            * available_backward: unused room from after_overlap that can be reassigned to
-            before_overlap
-
-        Algorithm:
-            0.  Compute target_seg_length. If greater or equal max_len, return None, None
-            1.  Compute prev_seg_len and next_seg_len from the input, defaulting to 0 if None
-            2.  Set allowed = 0.2 * max_len
-            3.  Compute initial_room = (max-len - cur_seg_length) // 2
-            4.  Calculate before_overlap_len and after_overlap_len using the minimum of:
-                allowed, initial_room, and the length of the respective segments
-            5.  Adjust overlap length:
-            a.  if unused room remains after before_overlap, assign it to after_overlap
-            b.  if unused room remains after after_overlap, assign it to before_overlap
-            6.  Extract overlaps from the prev/next_seg_text using the calculated lengths
         """
+        before_overlap_buffer = SegmentBuffer()
+        after_overlap_buffer = SegmentBuffer()
 
-        target_type = type(target_seg_text)
-        assert \
-            isinstance(prev_seg_text, (target_type, type(None))) \
-            and \
-            isinstance(next_seg_text, (target_type, type(None)))
-
-        target_seg_len = len(target_seg_text)
+        target_seg_len = len(target_seg_buffer)
         if target_seg_len >= max_len:
             return b'', b''
 
-        prev_seg_len = len(prev_seg_text) if prev_seg_text else 0
-        next_seg_len = len(next_seg_text) if next_seg_text else 0
-        allowed = int(0.2 * max_len)
+        # maximum length of overlaps, to curtail the length of the overlaps
+        alloted = int(0.2 * max_len)
+        available = min(alloted, max_len - target_seg_len)
+        room = available // 2
 
-        initial_room = (max_len - target_seg_len) // 2
-        before_overlap_len = min(allowed, initial_room, prev_seg_len)
-        after_overlap_len = min(allowed, initial_room, next_seg_len)
+        prev_seg_indices = list(range(0, len(prev_seg_buffer.sentences))) if prev_seg_buffer else []
+        next_seg_indices = list(range(0, len(next_seg_buffer.sentences))) if next_seg_buffer else []
 
-        available_forward = initial_room - before_overlap_len
-        if available_forward > 0 and after_overlap_len < allowed:
-            after_overlap_len = min(allowed, initial_room + available_forward, next_seg_len)
-        else:
-            available_backward = initial_room - after_overlap_len
-            if available_backward > 0 and before_overlap_len < allowed:
-                before_overlap_len = min(allowed, initial_room + available_backward, prev_seg_len)
-
-        if before_overlap_len > 0:
-            # if prev_segment is None, we expect before_overlap to be 0
-            _, before_overlap_text = EncodingUtils.split_at(
-                text=prev_seg_text,
-                index=-before_overlap_len,
-                after_char=True,
-                include_first=False,
-                include_remainder=True
+        if prev_seg_indices:
+            SegmentOverlapSetter.prepend_if_room(
+                before_overlap_buffer,
+                prev_seg_buffer,
+                prev_seg_indices,
+                room
             )
-        else:
-            before_overlap_text = b''
 
-        if after_overlap_len > 0:
-            # if next_segment is None, we expect after_overlap to be 0
-            assert next_seg_text is not None
-            after_overlap_text, _ = EncodingUtils.split_at(
-                text=next_seg_text,
-                index=after_overlap_len,
-                after_char=False,
-                include_first=True,
-                include_remainder=False
+        if next_seg_indices:
+            SegmentOverlapSetter.append_if_room(
+                after_overlap_buffer,
+                next_seg_buffer,
+                next_seg_indices,
+                room
             )
-        else:
-            after_overlap_text = b''
 
-        return before_overlap_text, after_overlap_text
+        # try again to prepend
+        if prev_seg_indices:
+            current_length = (
+                len(target_seg_buffer)
+                + len(before_overlap_buffer)
+                + len(after_overlap_buffer)
+            )
+            room_left = max_len - current_length
+            if room_left > 0:
+                SegmentOverlapSetter.prepend_if_room(
+                    before_overlap_buffer,
+                    prev_seg_buffer,
+                    prev_seg_indices,
+                    room_left
+                )
+
+        if next_seg_indices:
+            current_length = (
+                len(target_seg_buffer)
+                + len(before_overlap_buffer)
+                + len(after_overlap_buffer)
+            )
+            room_left = max_len - current_length
+            if room_left > 0:
+                SegmentOverlapSetter.append_if_room(
+                    after_overlap_buffer,
+                    next_seg_buffer,
+                    next_seg_indices,
+                    room_left
+                )
+
+        return before_overlap_buffer, after_overlap_buffer
+
+    @staticmethod
+    def append_if_room(
+        target_buffer: SegmentBuffer,
+        next_buffer: SegmentBuffer,
+        next_indexes: List[int],
+        room: int
+    ) -> bool:
+        """
+        Append a sentence from the source buffer to the target buffer if there is room.
+        """
+        while next_indexes:
+            index = next_indexes.pop(0)
+            sentence = next_buffer.sentences[index]
+            if len(target_buffer) + len(sentence) <= room:
+                target_buffer.append_sentence(sentence)
+            else:
+                next_indexes.insert(0, index)
+                break
+
+    @staticmethod
+    def prepend_if_room(
+        target_buffer: SegmentBuffer,
+        prev_buffer: SegmentBuffer,
+        prev_indexes: List[int],
+        room: int
+    ) -> bool:
+        """
+        Prepend a sentence from the source buffer to the target buffer if there is room.
+        """
+        while prev_indexes:
+            index = prev_indexes.pop()
+            sentence = prev_buffer.sentences[index]
+            if len(target_buffer) + len(sentence) <= room:
+                target_buffer.prepend_sentence(sentence)
+            else:
+                prev_indexes.append(index)
+                break
