@@ -21,9 +21,9 @@ type SearchResponse = {
 export default function Home() {
     const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
 
-    const handleSearch = async (query: string, atLeast: number, threshold: number, atMost: number) => {
+    const handleSearch = async (action: string, query: string, atLeast: number, threshold: number, atMost: number) => {
         try {
-            const data = await fetchSearchResults(query, atLeast, threshold, atMost);
+            const data = await fetchSearchResults(action, query, atLeast, threshold, atMost);
             console.log("*** in handleSearch, search results fetched: ", data);
             setSearchResponse(data);
         } catch (error) {

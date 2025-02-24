@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 
 type SearchFormProps = {
-    readonly onSearch: (query: string, atLeast: number, threshold: number, atMost: number) => void;
+    readonly onSearch: (action: string, query: string, atLeast: number, threshold: number, atMost: number) => void;
 }
 
 export default function SearchForm({ onSearch }: SearchFormProps) {
@@ -21,17 +21,17 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
     const [threshold, setThreshold] = useState(0.6);
     const [atMost, setAtMost] = useState(5);
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSubmit = (action: string) => (e: React.FormEvent) => {
         e.preventDefault();
         if (query.trim()) {
-            onSearch(query, atLeast, threshold, atMost);
+            onSearch(action, query, atLeast, threshold, atMost);
         }
     };
 
     return (
         <Flex w="100vw" justify="center" pt={4}>
             <Box maxW="600px" w="100%" p={4}>
-                <form onSubmit={handleSearch}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <FormControl mb={4}>
                         <FormLabel>Search Query</FormLabel>
                         <Textarea
@@ -42,9 +42,22 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                         />
                     </FormControl>
 
-                    <Button type="submit" colorScheme="blue" mb={4}>
-                        Search!
-                    </Button>
+                    <Flex gap={4} mb={4}>
+                        <Button
+                            type="button"
+                            colorScheme="blue"
+                            onClick={handleSubmit('search')}
+                        >
+                            Search!
+                        </Button>
+                        <Button
+                            type="button"
+                            colorScheme="green"
+                            onClick={handleSubmit('rag')}
+                        >
+                            RAG!
+                        </Button>
+                    </Flex>
 
                     <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                         <GridItem>

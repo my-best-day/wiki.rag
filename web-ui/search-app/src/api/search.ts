@@ -1,4 +1,4 @@
-export async function fetchSearchResults(query: string, atLeast: number, threshold: number, atMost: number) {
+export async function fetchSearchResults(action: string, query: string, atLeast: number, threshold: number, atMost: number) {
     const response = await fetch("http://localhost:8023/api/combined", {
         method: "POST",
         headers: {
@@ -6,7 +6,7 @@ export async function fetchSearchResults(query: string, atLeast: number, thresho
         },
         body: JSON.stringify({
             id: "1",
-            action: "search",
+            action: action,
             kind: "segment",
             query: query,
             k: atLeast,
