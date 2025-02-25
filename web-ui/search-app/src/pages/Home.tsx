@@ -37,6 +37,7 @@ export default function Home() {
             {searchResponse && (
                 <SearchResults
                     results={searchResponse.data.results}
+                    answer={searchResponse.data.answer}
                     metadata={{
                         completed: searchResponse.meta.completed,
                         received: searchResponse.meta.received,

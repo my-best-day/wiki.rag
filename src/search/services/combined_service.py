@@ -3,9 +3,10 @@ Combined service abstracts the access to the search and RAG services.
 """
 import os
 import logging
+import json
 from enum import Enum
 from uuid import UUID
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 from openai import OpenAI
 from pydantic.dataclasses import dataclass
 from xutils.timer import LoggingTimer
@@ -67,6 +68,9 @@ class CombinedRequest:
     threshold: float
     max: int
 
+    search_query: Optional[str] = None
+    rag_query: Optional[str] = None
+
     def __str__(self):
         return f"CombinedRequest(action={self.action}, kind={self.kind}, " \
                f"query={self.query}, k={self.k}, threshold={self.threshold}, max={self.max})"
@@ -126,8 +130,13 @@ class CombinedService:
         """Process the combined request."""
         request_id = combined_request.id
         action = combined_request.action
+        query = combined_request.query
 
         timer = LoggingTimer('combined', logger=logger, level="INFO")
+
+        search_query, rag_query = self.split_query(action, query)
+        combined_request.search_query = search_query
+        combined_request.rag_query = rag_query
 
         element_id_similarity_tuple_list = self.find_nearest_elements(combined_request)
         timer.restart(f"Found {len(element_id_similarity_tuple_list)} results")
@@ -143,7 +152,9 @@ class CombinedService:
         timer.restart(f"total length: {total_length}")
 
         if combined_request.action == Action.RAG:
-            prompt, answer = self.do_rag(combined_request.query, element_results)
+            search_query = combined_request.search_query
+            rag_query = combined_request.rag_query
+            prompt, answer = self.do_rag(search_query, rag_query, element_results)
         elif combined_request.action == Action.SEARCH:
             prompt, answer = "na", "na"
         else:
@@ -164,7 +175,70 @@ class CombinedService:
 
         return combined_response
 
-    def do_rag(self, query: str, element_results: List[ResultElement]) -> Tuple[str, str]:
+    def split_query(self, action: Action, query: str) -> Tuple[str, str]:
+        """
+        Split the query into a search query and a RAG query.
+        """
+        logger.debug("action: %s", action)
+        prompt = f'''
+Extract two parts from the following user input:
+
+1. "query": A concise statement summarizing the narrative context (for document search).
+2. "question": The analytical question asking for further insights about the narrative.
+
+For example, if the user input is:
+"What are some common themes among plots in which a guy meets his high school sweetheart
+ many years after graduation?"
+the output should be:
+{{
+  "query": "a guy meets his high school sweetheart many years after graduation",
+  "question": "What are some common themes among these plots?"
+}}
+
+Now, extract the two parts from the following user input:
+"{query}"
+
+If you are unsure about a part, include the full input for that property.
+'''
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant that extracts structured information. "
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt}
+        ]
+
+        completion = self.get_openai_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.2,
+            max_completion_tokens=1000
+        )
+
+        response_json = completion.choices[0].message.content
+        logger.warning("*** response_json: %s", response_json)
+        cleaned_response_json = response_json.strip("```json").strip("```").strip()
+        logger.warning("*** cleaned_response_json: %s", cleaned_response_json)
+        response = json.loads(cleaned_response_json)
+        search_query = response.get("query")
+        rag_query = response.get("question")
+
+        logger.warning("*** search_query: %s", search_query)
+        logger.warning("*** rag_query   : %s", rag_query)
+
+        return search_query, rag_query
+
+    def do_rag(
+        self,
+        search_query: str,
+        question: str,
+        element_results: List[ResultElement]
+    ) -> Tuple[str, str]:
         """
         Process a retrieval-augmented generation (RAG) request.
 
@@ -183,11 +257,16 @@ class CombinedService:
         timer = LoggingTimer('do_rag', logger=logger, level="INFO")
         elements_text = self.get_elements_text(element_results)
 
-        prompt = (
-            f"question: {query}\n"
-            "the following information has been retrieved to assist in the answering "
-            f"of the question:\n{elements_text}"
-        )
+        prompt = f'''
+Search Query:
+{search_query}
+
+The following information has been retrieved to assist in the answering of the question:
+{elements_text}
+
+Based on the above documents and context, answer the question:
+{question}
+'''
 
         messages = [
             {
@@ -195,27 +274,44 @@ class CombinedService:
                 "content": (
                     "You are a helpful assistant. "
                     "You will answer the question based on the information provided. "
-                    "If the information is not enough to answer the question, "
-                    "you will say that you don't know. "
+                    "If the information is not directly answering the question, try to "
+                    "infer general trends based on the retrieved content."
                     "If the information is too much to answer the question, "
-                    "you will say that you are overwhelmed."
+                    "you will say that you are overwhelmed. "
+                    "Format your response in Markdown."
                 )
+            },
+            {
+                "role": "system",
+                "content": '''
+You are a helpful and knowledgeable assistant.
+You will answer the user's question based on the information provided.
+If the information does not directly answer the question, you will infer general trends and
+patterns from the retrieved content.
+If the retrieved content is unclear or contradictory, acknowledge the uncertainty and provide
+your best reasoned response.
+If the information is excessive and overwhelming, respond by stating that you need a more
+focused selection.
+Format your response in Markdown.
+'''
             },
             {
                 "role": "user",
                 "content": prompt}
         ]
+        logger.info("search prompt: %s", prompt)
 
         timer.restart("calling openai")
         completion = self.get_openai_client().chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             temperature=0.4,
-            max_completion_tokens=1000
+            max_completion_tokens=1200
         )
         timer.restart("completion created")
-        logger.info("completion: %s", completion)
+        logger.debug("completion: %s", completion)
         answer = completion.choices[0].message.content
+        logger.info("answer: %s", answer)
 
         return prompt, answer
 

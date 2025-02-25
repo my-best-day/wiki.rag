@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SearchResult } from '../types/SearchResult';
+import ReactMarkdown from 'react-markdown';
 
 import {
     Box,
@@ -27,10 +28,12 @@ type SearchMetadata = {
 
 type SearchResultsProps = {
     readonly results: SearchResult[];
+    readonly answer: string;
     readonly metadata?: SearchMetadata;
 };
 
-export default function SearchResults({ results, metadata }: SearchResultsProps) {
+export default function SearchResults({ results, answer, metadata } : SearchResultsProps
+) {
     const [expandedIndices, setExpandedIndices] = useState<number[]>([]);
 
     // Skip rendering if no results and no metadata
@@ -95,6 +98,13 @@ export default function SearchResults({ results, metadata }: SearchResultsProps)
                     </Text>
                 </Box>
             )}
+
+            {/* Answer */}
+            <Box bg="gray.50" p={4} borderRadius="md" mb={4}>
+                <ReactMarkdown>
+                    {answer}
+                </ReactMarkdown>
+            </Box>
 
             {/* Results List */}
             <Accordion
