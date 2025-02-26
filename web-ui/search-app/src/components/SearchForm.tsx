@@ -14,27 +14,36 @@ import {
 } from "@chakra-ui/react";
 
 type SearchFormProps = {
-    readonly onSearch: (action: string, query: string, atLeast: number, threshold: number, atMost: number) => void;
+    readonly onSearch: (
+        action: string,
+        query: string,
+        atLeast: number,
+        threshold: number,
+        atMost: number
+    ) => Promise<void>;
 }
 
-export default function SearchForm({ onSearch }: SearchFormProps) {
+export default function SearchForm({ onSearch  }: SearchFormProps) {
     const [query, setQuery] = useState("");
     const [atLeast, setAtLeast] = useState(3);
     const [threshold, setThreshold] = useState(0.6);
     const [atMost, setAtMost] = useState(5);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (action: string) => (e: React.FormEvent) => {
+    const handleSubmit = (action: string) => async (e: React.FormEvent) => {
         e.preventDefault();
         if (query.trim()) {
             setIsLoading(true);
 
-            // Call the onSearch function
-            onSearch(action, query, atLeast, threshold, atMost);
+            const timer = setTimeout(() => setIsLoading(false), 10000);
+            try {
+                // Call the onSearch function
+                await onSearch(action, query, atLeast, threshold, atMost);
+            } finally {
+                clearTimeout(timer);
+                setIsLoading(false);
+            }
 
-            // Reset loading state after a timeout as a fallback
-            // In a real app, you might want to handle this with a promise or callback
-            setTimeout(() => setIsLoading(false), 10000);
         }
     };
 
