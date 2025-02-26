@@ -179,7 +179,6 @@ class CombinedService:
         """
         Split the query into a search query and a RAG query.
         """
-        logger.debug("action: %s", action)
         prompt = f'''
 Extract two parts from the following user input:
 
@@ -221,17 +220,15 @@ If you are unsure about a part, include the full input for that property.
         )
 
         response_json = completion.choices[0].message.content
-        logger.warning("*** response_json: %s", response_json)
         cleaned_response_json = response_json.strip("```json").strip("```").strip()
-        logger.warning("*** cleaned_response_json: %s", cleaned_response_json)
         response = json.loads(cleaned_response_json)
         search_query = response.get("query")
-        rag_query = response.get("question")
+        question = response.get("question")
 
-        logger.warning("*** search_query: %s", search_query)
-        logger.warning("*** rag_query   : %s", rag_query)
+        logger.info("*** search_query: %s", search_query)
+        logger.info("*** question    : %s", question)
 
-        return search_query, rag_query
+        return search_query, question
 
     def do_rag(
         self,
@@ -299,7 +296,6 @@ Format your response in Markdown.
                 "role": "user",
                 "content": prompt}
         ]
-        logger.info("search prompt: %s", prompt)
 
         timer.restart("calling openai")
         completion = self.get_openai_client().chat.completions.create(
@@ -309,9 +305,7 @@ Format your response in Markdown.
             max_completion_tokens=1200
         )
         timer.restart("completion created")
-        logger.debug("completion: %s", completion)
         answer = completion.choices[0].message.content
-        logger.info("answer: %s", answer)
 
         return prompt, answer
 
