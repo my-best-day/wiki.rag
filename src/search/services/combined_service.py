@@ -134,7 +134,7 @@ class CombinedService:
 
         timer = LoggingTimer('combined', logger=logger, level="INFO")
 
-        search_query, rag_query = self.split_query(action, query)
+        search_query, rag_query = self.split_query(query)
         combined_request.search_query = search_query
         combined_request.rag_query = rag_query
 
@@ -175,7 +175,7 @@ class CombinedService:
 
         return combined_response
 
-    def split_query(self, action: Action, query: str) -> Tuple[str, str]:
+    def split_query(self, query: str) -> Tuple[str, str]:
         """
         Split the query into a search query and a RAG query.
         """
