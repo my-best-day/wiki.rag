@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchResult } from '../types/SearchResult';
 import ReactMarkdown from 'react-markdown';
 
@@ -15,6 +15,7 @@ import {
     Stat,
     StatLabel,
     StatNumber,
+    Spacer,
 } from '@chakra-ui/react';
 
 import RelativeTime from '../components/RelativeTime';
@@ -32,9 +33,14 @@ type SearchResultsProps = {
     readonly metadata?: SearchMetadata;
 };
 
-export default function SearchResults({ results, answer, metadata } : SearchResultsProps
-) {
+export default function SearchResults({ results, answer, metadata } : SearchResultsProps) {
     const [expandedIndices, setExpandedIndices] = useState<number[]>([]);
+
+    useEffect(() => {
+        setExpandedIndices([])
+    }, [results])
+
+
 
     // Skip rendering if no results and no metadata
     if (!results.length && !metadata) {
@@ -115,28 +121,32 @@ export default function SearchResults({ results, answer, metadata } : SearchResu
                 {results.map((result, index) => {
                     // for debugging
                     const rec = result.record;
-                    const record_info = `${rec[0]}, ${rec[1]}, ${rec[2]}`;
+                    const recordInfo = `${rec[0]}, ${rec[1]}, ${rec[2]}`;
+                    const prefixLength = Math.max(0, 70 - result.caption.length);
                     return (
                     <AccordionItem key={result.record[0]}>
                         <AccordionButton py={1}>
                             <Box flex="1">
-                                <HStack spacing={4}>
-
-                                    <Text flex="1" textAlign="left" ml={4}>
-                                        {index}: {result.caption}
+                                <HStack spacing={4} align="center">
+                                    <Text textAlign="left" ml={4}>
+                                        {index + 1}: {result.caption}
                                     </Text>
-
+                                    <Spacer />
+                                    {!expandedIndices.includes(index) && (
+                                        <Text fontSize="xs" color="gray.500">
+                                            {result.text.slice(0, prefixLength)}{result.text.length > prefixLength ? "..." : ""}
+                                        </Text>
+                                    )}
                                     <Box width="7.5rem">
                                         <HStack spacing={0} color="gray.500">
                                             <Stat fontSize="xs">
-                                                <StatLabel title={record_info}>Similarity: </StatLabel>
+                                                <StatLabel title={recordInfo}>Similarity: </StatLabel>
                                             </Stat>
                                             <Stat>
                                                 <StatNumber fontSize="xs">{result.similarity.toFixed(2)}</StatNumber>
                                             </Stat>
                                         </HStack>
                                     </Box>
-
                                 </HStack>
                             </Box>
                             <AccordionIcon />
@@ -147,7 +157,7 @@ export default function SearchResults({ results, answer, metadata } : SearchResu
                             </Text>
                         </AccordionPanel>
                     </AccordionItem>
-                    )
+                    );
                 })}
             </Accordion>
         </Box>
