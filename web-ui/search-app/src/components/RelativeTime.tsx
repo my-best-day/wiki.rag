@@ -11,6 +11,9 @@ type RelativeTimeProps = {
 export default function RelativeTime({ iso }: RelativeTimeProps) {
     const [relative, setRelative] = useState(dayjs(iso).fromNow());
     const formattedDate = dayjs(iso).format('MM/DD/YY HH:mm:ss');
+    useEffect(() => {
+        setRelative(dayjs(iso).fromNow());
+    }, [iso]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
