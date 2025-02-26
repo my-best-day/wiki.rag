@@ -9,6 +9,8 @@ import {
     Input,
     Textarea,
     Flex,
+    Spinner,
+    Text,
 } from "@chakra-ui/react";
 
 type SearchFormProps = {
@@ -20,11 +22,19 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
     const [atLeast, setAtLeast] = useState(3);
     const [threshold, setThreshold] = useState(0.6);
     const [atMost, setAtMost] = useState(5);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = (action: string) => (e: React.FormEvent) => {
         e.preventDefault();
         if (query.trim()) {
+            setIsLoading(true);
+
+            // Call the onSearch function
             onSearch(action, query, atLeast, threshold, atMost);
+
+            // Reset loading state after a timeout as a fallback
+            // In a real app, you might want to handle this with a promise or callback
+            setTimeout(() => setIsLoading(false), 10000);
         }
     };
 
@@ -39,14 +49,18 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQuery(e.target.value)}
                             placeholder="Enter search query..."
                             rows={4}
+                            isDisabled={isLoading}
                         />
                     </FormControl>
 
-                    <Flex gap={4} mb={4}>
+                    <Flex gap={4} mb={4} align="center">
                         <Button
                             type="button"
                             colorScheme="blue"
                             onClick={handleSubmit('search')}
+                            //isLoading={isLoading}
+                            loadingText="Searching"
+                            isDisabled={isLoading || !query.trim()}
                         >
                             Search!
                         </Button>
@@ -54,9 +68,19 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                             type="button"
                             colorScheme="green"
                             onClick={handleSubmit('rag')}
+                            // isLoading={isLoading}
+                            loadingText="Processing"
+                            isDisabled={isLoading || !query.trim()}
                         >
                             RAG!
                         </Button>
+
+                        {isLoading && (
+                            <Flex align="center" ml={2}>
+                                <Spinner size="sm" mr={2} />
+                                <Text fontSize="sm">Processing request...</Text>
+                            </Flex>
+                        )}
                     </Flex>
 
                     <Grid templateColumns="repeat(3, 1fr)" gap={4}>
@@ -71,6 +95,7 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                                     }
                                     min={1}
                                     step={1}
+                                    isDisabled={isLoading}
                                 />
                             </FormControl>
                         </GridItem>
@@ -86,6 +111,7 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                                     min={0}
                                     max={1}
                                     step={0.05}
+                                    isDisabled={isLoading}
                                 />
                             </FormControl>
                         </GridItem>
@@ -100,6 +126,7 @@ export default function SearchForm({ onSearch }: SearchFormProps) {
                                     }
                                     min={1}
                                     step={1}
+                                    isDisabled={isLoading}
                                 />
                             </FormControl>
                         </GridItem>
