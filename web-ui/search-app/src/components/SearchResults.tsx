@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SearchResult } from '../types/SearchResult';
 import ReactMarkdown from 'react-markdown';
+import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 
 import {
     Box,
@@ -16,6 +17,9 @@ import {
     StatLabel,
     StatNumber,
     Spacer,
+    Heading,
+    useDisclosure,
+    Collapse,
 } from '@chakra-ui/react';
 
 import RelativeTime from '../components/RelativeTime';
@@ -23,24 +27,31 @@ import RelativeTime from '../components/RelativeTime';
 type SearchMetadata = {
     completed: string;
     received: string;
-    prompt: string;
-    answer: string;
 };
 
 type SearchResultsProps = {
+    readonly searchQuery: string;
+    readonly ragQuery: string;
+    readonly prompt: string;
     readonly results: SearchResult[];
     readonly answer: string;
     readonly metadata?: SearchMetadata;
 };
 
-export default function SearchResults({ results, answer, metadata } : SearchResultsProps) {
+export default function SearchResults({
+    searchQuery,
+    ragQuery,
+    prompt,
+    results,
+    answer,
+    metadata
+} : SearchResultsProps) {
     const [expandedIndices, setExpandedIndices] = useState<number[]>([]);
+    const { isOpen: isAnswerOpen, onToggle: onAnswerToggle } = useDisclosure({ defaultIsOpen: true });
 
     useEffect(() => {
         setExpandedIndices([])
     }, [results])
-
-
 
     // Skip rendering if no results and no metadata
     if (!results.length && !metadata) {
@@ -54,9 +65,9 @@ export default function SearchResults({ results, answer, metadata } : SearchResu
         const completedFormatted = completed.toLocaleTimeString("en-US", { hour12: false });
         const received = new Date(metadata.received);
         const elapsedTime = ((completed.getTime() - received.getTime()) / 1000).toFixed(3);
-        const promptTokens = Math.round(metadata.prompt.length / 4.5);
+        const promptTokens = Math.round(prompt.length / 4.5);
         const promptCost = ((promptTokens * 15) / 1e6).toFixed(4);
-        const answerTokens = Math.round(metadata.answer.length / 4.5);
+        const answerTokens = Math.round(answer.length / 4.5);
         const answerCost = ((answerTokens * 60) / 1e6).toFixed(4);
 
         return {
@@ -84,17 +95,17 @@ export default function SearchResults({ results, answer, metadata } : SearchResu
         <Box maxW="800px" mx="auto" p={4}>
             {/* Expand/Collapse Controls */}
             <HStack spacing={4} mb={4} justify="flex-end">
-                <Button onClick={handleExpandAll} size="sm">
+                <Button onClick={handleExpandAll} size="xs">
                     Expand All
                 </Button>
-                <Button onClick={handleCollapseAll} size="sm">
+                <Button onClick={handleCollapseAll} size="xs">
                     Collapse All
                 </Button>
             </HStack>
 
             {/* Query Info Section */}
             {metadata && metrics && (
-                <Box bg="gray.50" p={4} borderRadius="md" mb={4} textAlign="center">
+                <Box bg="gray.50" p={4} pb={1} borderRadius="md" mb={0} textAlign="left">
                     <Text fontSize="xs">
                         {`Completed `} <RelativeTime iso={metadata.completed} /> {' '}
                         |{` Elapsed: ${metrics.elapsedTime} sec`} {' '}
@@ -104,15 +115,52 @@ export default function SearchResults({ results, answer, metadata } : SearchResu
                     </Text>
                 </Box>
             )}
+            <Box bg="gray.50" p={4} pt={1} pb={2} borderRadius="md" mb={4} textAlign="center">
+                <HStack spacing={4} align="center">
+                    <Text fontSize="xs">
+                        {`Query: `}
+                    </Text>
+                    <Text fontSize="xs">
+                        {`${searchQuery}`}
+                    </Text>
+                </HStack>
+                <HStack spacing={4} align="center">
+                    <Text fontSize="xs">
+                        {`Question: `}
+                    </Text>
+                    <Text fontSize="xs">
+                        {`${ragQuery}`}
+                    </Text>
+                </HStack>
+            </Box>
 
-            {/* Answer */}
-            <Box bg="gray.50" p={4} borderRadius="md" mb={4}>
-                <ReactMarkdown>
-                    {answer}
-                </ReactMarkdown>
+            {/* Answer Section */}
+            <Box mb={4}>
+                <HStack mb={2}>
+                    <Heading size="md">Answer</Heading>
+                    <Spacer />
+                    <Button onClick={onAnswerToggle} size="xs" ml={2}>
+                        {isAnswerOpen ? 'Collapse' : 'Expand'}
+                    </Button>
+                </HStack>
+                <Collapse in={isAnswerOpen} animateOpacity>
+                    <Box
+                        bg="gray.50"
+                        p={4}
+                        borderRadius="md"
+                        maxH="calc(50vh)"
+                        minH="300px"
+                        overflowY="auto"
+                    >
+                        <ReactMarkdown components={ChakraUIRenderer()}>
+                            {answer}
+                        </ReactMarkdown>
+                    </Box>
+                </Collapse>
             </Box>
 
             {/* Results List */}
+            <Heading size="md" mb={2}>Search Results</Heading>
             <Accordion
                 allowMultiple
                 index={expandedIndices}
