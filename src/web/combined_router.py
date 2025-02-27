@@ -80,6 +80,8 @@ class CombinedAppResponseModel(BaseModel):
     """
     id: str
     action: Action
+    search_query: str
+    rag_query: str
     prompt: str
     results: List[ResultElement]
     answer: str
@@ -96,6 +98,8 @@ class CombinedAppResponseModel(BaseModel):
         return CombinedAppResponseModel(
             id=combined_response.id,
             action=combined_response.action,
+            search_query=combined_response.search_query,
+            rag_query=combined_response.rag_query,
             prompt=combined_response.prompt,
             results=combined_response.results,
             answer=combined_response.answer,

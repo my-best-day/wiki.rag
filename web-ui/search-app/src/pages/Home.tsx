@@ -13,6 +13,8 @@ type SearchResponse = {
     };
     data: {
         results: SearchResult[];
+        search_query: string;
+        rag_query: string;
         prompt: string;
         answer: string;
     };
@@ -24,7 +26,7 @@ export default function Home() {
     const handleSearch = async (action: string, query: string, atLeast: number, threshold: number, atMost: number) => {
         try {
             const data = await fetchSearchResults(action, query, atLeast, threshold, atMost);
-            console.log("*** in handleSearch, search results fetched: ", data);
+            console.log("in handleSearch, search results fetched: ", data);
             setSearchResponse(data);
         } catch (error) {
             console.error("Error fetching results", error);
@@ -36,13 +38,14 @@ export default function Home() {
             <SearchForm onSearch={handleSearch} />
             {searchResponse && (
                 <SearchResults
+                    searchQuery={searchResponse.data.search_query}
+                    ragQuery={searchResponse.data.rag_query}
+                    prompt={searchResponse.data.prompt}
                     results={searchResponse.data.results}
                     answer={searchResponse.data.answer}
                     metadata={{
                         completed: searchResponse.meta.completed,
                         received: searchResponse.meta.received,
-                        prompt: searchResponse.data.prompt,
-                        answer: searchResponse.data.answer,
                     }}
                 />
             )}

@@ -83,6 +83,8 @@ class CombinedResponse:
     """
     id: str
     action: Action
+    search_query: str
+    rag_query: str
     prompt: str
     results: List[ResultElement]
     answer: str
@@ -167,6 +169,8 @@ class CombinedService:
         combined_response = CombinedResponse(
             id=request_id,
             action=action,
+            search_query=search_query,
+            rag_query=rag_query,
             prompt=prompt,
             results=element_results,
             answer=answer,
@@ -225,8 +229,9 @@ If you are unsure about a part, include the full input for that property.
         search_query = response.get("query")
         question = response.get("question")
 
-        logger.info("*** search_query: %s", search_query)
-        logger.info("*** question    : %s", question)
+        logger.info("query: %s", query)
+        logger.info("search_query: %s", search_query)
+        logger.info("question: %s", question)
 
         return search_query, question
 
@@ -392,7 +397,8 @@ Format your response in Markdown.
         """
         element_texts = []
         for i, (element_result) in enumerate(element_results):
+            caption = element_result.caption
             text = element_result.text
-            element_texts.append(f"Context document {i}: {text[:15000]}")
+            element_texts.append(f"Context {i}: Document: {caption}\nText: {text[:15000]}\n")
         elements_text = "\n\n".join(element_texts)
         return elements_text

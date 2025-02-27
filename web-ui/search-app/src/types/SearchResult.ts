@@ -1,4 +1,7 @@
 export type SearchResult = {
+    searchQuery: string;
+    ragQuery: string;
+    prompt: string;
     caption: string;
     text: string;
     similarity: number;
