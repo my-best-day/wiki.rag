@@ -19,5 +19,7 @@ export async function fetchSearchResults(action: string, query: string, atLeast:
         throw new Error(`Error fetch search results: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("in fetchSearchResults, data: ", data);
+    return data;
 }
