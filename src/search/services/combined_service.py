@@ -6,13 +6,14 @@ import logging
 import json
 from enum import Enum
 from uuid import UUID
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Dict
 from openai import OpenAI
 from pydantic.dataclasses import dataclass
 from xutils.timer import LoggingTimer
 from xutils.embedding_config import EmbeddingConfig
 from search.stores import Stores
 from search.k_nearest_finder import KNearestFinder
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,23 @@ class CombinedService:
             self._client = OpenAI(project=project_id)
         return self._client
 
+    def get_completion(
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        temperature: float,
+        max_completion_tokens: int
+    ):
+        timer = LoggingTimer('get_completion', logger=logger, level="INFO")
+        completion = self.get_openai_client().chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            max_completion_tokens=max_completion_tokens
+        )
+        timer.restart(f"completion created using model: {model}")
+        return completion
+
     def combined(
         self,
         combined_request: CombinedRequest
@@ -137,10 +155,12 @@ class CombinedService:
         timer = LoggingTimer('combined', logger=logger, level="INFO")
 
         search_query, rag_query = self.split_query(query)
+        timer.restart("split_query")
+
         combined_request.search_query = search_query
         combined_request.rag_query = rag_query
 
-        element_id_similarity_tuple_list = self.find_nearest_elements(combined_request)
+        element_id_similarity_tuple_list = self.do_search(combined_request)
         timer.restart(f"Found {len(element_id_similarity_tuple_list)} results")
 
         element_results = self.get_element_results(
@@ -179,6 +199,7 @@ class CombinedService:
 
         return combined_response
 
+    @lru_cache(maxsize=16)
     def split_query(self, query: str) -> Tuple[str, str]:
         """
         Split the query into a search query and a RAG query.
@@ -190,12 +211,13 @@ Extract two parts from the following user input:
 2. "question": The analytical question asking for further insights about the narrative.
 
 For example, if the user input is:
-"What are some common themes among plots in which a guy meets his high school sweetheart
- many years after graduation?"
+
+"What are some common themes among plots in which a guy meets his high school
+sweetheart. many years after graduation? give a detailed answer."
 the output should be:
 {{
   "query": "a guy meets his high school sweetheart many years after graduation",
-  "question": "What are some common themes among these plots?"
+  "question": "What are some common themes among these plots? give a detailed answer."
 }}
 
 Now, extract the two parts from the following user input:
@@ -216,12 +238,9 @@ If you are unsure about a part, include the full input for that property.
                 "content": prompt}
         ]
 
-        completion = self.get_openai_client().chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.2,
-            max_completion_tokens=1000
-        )
+        timer = LoggingTimer('split_query', logger=logger, level="INFO")
+        completion = self.get_completion(messages, "gpt-4o-mini", 0.2, 1000)
+        timer.restart("completion created")
 
         response_json = completion.choices[0].message.content
         cleaned_response_json = response_json.strip("```json").strip("```").strip()
@@ -303,18 +322,15 @@ Format your response in Markdown.
         ]
 
         timer.restart("calling openai")
-        completion = self.get_openai_client().chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.4,
-            max_completion_tokens=1200
-        )
+        # model = "gpt-4o-mini"
+        model = 'gpt-4o'
+        completion = self.get_completion(messages, model, 0.2, 1000)
         timer.restart("completion created")
         answer = completion.choices[0].message.content
 
         return prompt, answer
 
-    def find_nearest_elements(
+    def do_search(
         self,
         combined_request: CombinedRequest
     ) -> List[Tuple[UUID, float]]:

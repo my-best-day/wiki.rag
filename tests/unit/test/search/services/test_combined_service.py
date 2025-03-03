@@ -231,7 +231,7 @@ class TestCombinedService(unittest.TestCase):
             embed_config=None,
             finder=None
         )
-        combined_service.find_nearest_elements = lambda req: [(0, 0.7), (1, 0.6)]
+        combined_service.do_search = lambda req: [(0, 0.7), (1, 0.6)]
         combined_service.get_element_results = lambda kind, tuple_list: self.result_elements
 
         combined_request = CombinedRequest(
@@ -260,7 +260,7 @@ class TestCombinedService(unittest.TestCase):
             embed_config=None,
             finder=None
         )
-        combined_service.find_nearest_elements = lambda req: [(0, 0.7), (1, 0.6)]
+        combined_service.do_search = lambda req: [(0, 0.7), (1, 0.6)]
         combined_service.get_element_results = lambda kind, tuple_list: self.result_elements
         combined_service.do_rag = lambda query, element_results: ("prompt", "answer")
 
@@ -294,7 +294,7 @@ class TestCombinedService(unittest.TestCase):
             embed_config=None,
             finder=None
         )
-        combined_service.find_nearest_elements = lambda req: [(0, 0.7), (1, 0.6)]
+        combined_service.do_search = lambda req: [(0, 0.7), (1, 0.6)]
         combined_service.get_element_results = lambda kind, tuple_list: self.result_elements
         combined_service.do_rag = lambda query, element_results: ("prompt", "answer")
 
@@ -321,7 +321,7 @@ class TestCombinedService(unittest.TestCase):
         mock_completion.choices[0].message.content = "answer"
         mock_openai.chat.completions.create.return_value = mock_completion
 
-        combined_service.find_nearest_elements = lambda req: [(0, 0.7), (1, 0.6)]
+        combined_service.do_search = lambda req: [(0, 0.7), (1, 0.6)]
         combined_service.get_element_results = lambda kind, tuple_list: self.result_elements
         combined_service.get_openai_client = lambda: mock_openai
 
@@ -351,7 +351,7 @@ class TestCombinedService(unittest.TestCase):
             finder=finder
         )
 
-        result = combined_service.find_nearest_elements(combined_request)
+        result = combined_service.do_search(combined_request)
         self.assertEqual(result, [(0, 0.7), (1, 0.6)])
 
     def test_find_nearest_elements_segment(self):
@@ -375,7 +375,7 @@ class TestCombinedService(unittest.TestCase):
             finder=finder
         )
 
-        result = combined_service.find_nearest_elements(combined_request)
+        result = combined_service.do_search(combined_request)
         self.assertEqual(result, [(0, 0.7), (1, 0.6)])
 
     def test_find_nearest_elements_invalid_kind(self):
@@ -400,7 +400,7 @@ class TestCombinedService(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError):
-            combined_service.find_nearest_elements(combined_request)
+            combined_service.do_search(combined_request)
 
     # TODO: pending reintroduction of article results
     # def test_get_element_results_article(self):
