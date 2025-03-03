@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 import torch
 import numpy as np
 import polars as pl
+from functools import lru_cache
 
 from gen.encoder import Encoder
 from gen.embedding_utils import EmbeddingUtils
@@ -68,6 +69,7 @@ class KNearestFinder:
                 EmbeddingUtils.morph_embeddings(embeddings, self.input_embed_config)
         return self._uids, self._normalized_embeddings
 
+    @lru_cache(maxsize=16)
     def find_k_nearest_segments(
         self,
         query: str,
@@ -228,6 +230,7 @@ class KNearestFinder:
         return np.concatenate(similarities, axis=0)
 
     @log_timeit(logger=logger)
+    @lru_cache(maxsize=16)
     def encode_query(self, query: str) -> np.ndarray:
         """
         Encode the query and morph the embeddings if needed.
